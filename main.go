@@ -3,51 +3,73 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log"
 	"os"
 	"os/signal"
 	"path/filepath"
 	"strconv"
 	"syscall"
 
-	"github.com/spf13/viper"
+	"github.com/cometbft/cometbft/p2p"
+	"github.com/cometbft/cometbft/privval"
+	"github.com/cometbft/cometbft/proxy"
+	"github.com/timshannon/badgerhold/v4"
 
-	"github.com/ochain.gg/ochain-validator-network/config"
-	abci "github.com/tendermint/tendermint/abci/types"
-	cfg "github.com/tendermint/tendermint/config"
-	tmflags "github.com/tendermint/tendermint/libs/cli/flags"
-	"github.com/tendermint/tendermint/libs/log"
-	nm "github.com/tendermint/tendermint/node"
-	"github.com/tendermint/tendermint/p2p"
-	"github.com/tendermint/tendermint/privval"
-	"github.com/tendermint/tendermint/proxy"
-	"github.com/timshannon/badgerhold"
+	cfg "github.com/cometbft/cometbft/config"
+	cmtflags "github.com/cometbft/cometbft/libs/cli/flags"
+	cmtlog "github.com/cometbft/cometbft/libs/log"
+	nm "github.com/cometbft/cometbft/node"
+	ochainCfg "github.com/ochain.gg/ochain-network-validator/config"
+	"github.com/spf13/viper"
 )
 
-var configFile string
+var homeDir string
 var evmChainId string
 var evmRpc string
 var evmPortalAddress string
 
 func init() {
-	flag.StringVar(&configFile, "config", "$HOME/.tendermint/config/config.toml", "Path to config.toml")
+	flag.StringVar(&homeDir, "cmt-home", "", "Path to the CometBFT config directory (if empty, uses $HOME/.cometbft)")
 	flag.StringVar(&evmChainId, "chainId", "31337", "OChain portal chainId")
 	flag.StringVar(&evmRpc, "evmRpc", "http://localhost:8545/", "OChain portal chain rpc address")
 	flag.StringVar(&evmPortalAddress, "portalAddress", "0x8A791620dd6260079BF849Dc5567aDC3F2FdC318", "OChain portal address")
 }
 
 func main() {
-	options := badgerhold.DefaultOptions
-	options.Dir = "data"
-	options.ValueDir = "data"
-	db, err := badgerhold.Open(options)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to open badger db: %v", err)
-		os.Exit(1)
+	flag.Parse()
+	if homeDir == "" {
+		homeDir = os.ExpandEnv("$HOME/.cometbft")
 	}
 
-	defer db.Close()
+	config := cfg.DefaultConfig()
+	config.SetRoot(homeDir)
+	viper.SetConfigFile(fmt.Sprintf("%s/%s", homeDir, "config/config.toml"))
 
-	ochainConfig := config.DefaultConfig()
+	if err := viper.ReadInConfig(); err != nil {
+		log.Fatalf("Reading config: %v", err)
+	}
+	if err := viper.Unmarshal(config); err != nil {
+		log.Fatalf("Decoding config: %v", err)
+	}
+	if err := config.ValidateBasic(); err != nil {
+		log.Fatalf("Invalid configuration data: %v", err)
+	}
+	dbPath := filepath.Join(homeDir, "badger")
+	options := badgerhold.DefaultOptions
+	options.Dir = dbPath
+	options.ValueDir = "ochain-data"
+	db, err := badgerhold.Open(options)
+
+	if err != nil {
+		log.Fatalf("Opening database: %v", err)
+	}
+	defer func() {
+		if err := db.Close(); err != nil {
+			log.Printf("Closing database: %v", err)
+		}
+	}()
+
+	ochainConfig := ochainCfg.DefaultConfig()
 	parsedChainId, _ := strconv.ParseUint(evmChainId, 10, 64)
 	ochainConfig.EVMChainId = parsedChainId
 	ochainConfig.EVMRpc = evmRpc
@@ -55,12 +77,36 @@ func main() {
 
 	app := NewOChainValidatorApplication(*ochainConfig, db)
 
-	flag.Parse()
+	pv := privval.LoadFilePV(
+		config.PrivValidatorKeyFile(),
+		config.PrivValidatorStateFile(),
+	)
 
-	node, err := newTendermint(app, configFile)
+	nodeKey, err := p2p.LoadNodeKey(config.NodeKeyFile())
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "%v", err)
-		os.Exit(2)
+		log.Fatalf("failed to load node's key: %v", err)
+	}
+
+	logger := cmtlog.NewTMLogger(cmtlog.NewSyncWriter(os.Stdout))
+	logger, err = cmtflags.ParseLogLevel(config.LogLevel, logger, cfg.DefaultLogLevel)
+
+	if err != nil {
+		log.Fatalf("failed to parse log level: %v", err)
+	}
+
+	node, err := nm.NewNode(
+		config,
+		pv,
+		nodeKey,
+		proxy.NewLocalClientCreator(app),
+		nm.DefaultGenesisDocProviderFunc(config),
+		cfg.DefaultDBProvider,
+		nm.DefaultMetricsProvider(config.Instrumentation),
+		logger,
+	)
+
+	if err != nil {
+		log.Fatalf("Creating node: %v", err)
 	}
 
 	node.Start()
@@ -72,58 +118,4 @@ func main() {
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 	<-c
-	os.Exit(0)
-}
-
-func newTendermint(app abci.Application, configFile string) (*nm.Node, error) {
-	// read config
-	config := cfg.DefaultConfig()
-	config.RootDir = filepath.Dir(filepath.Dir(configFile))
-
-	viper.SetConfigFile(configFile)
-	if err := viper.ReadInConfig(); err != nil {
-		return nil, fmt.Errorf("viper failed to read config file: %w", err)
-	}
-	if err := viper.Unmarshal(config); err != nil {
-		return nil, fmt.Errorf("viper failed to unmarshal config: %w", err)
-	}
-	if err := config.ValidateBasic(); err != nil {
-		return nil, fmt.Errorf("config is invalid: %w", err)
-	}
-
-	// create logger
-	logger := log.NewTMLogger(log.NewSyncWriter(os.Stdout))
-	var err error
-	logger, err = tmflags.ParseLogLevel(config.LogLevel, logger, cfg.DefaultLogLevel)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse log level: %w", err)
-	}
-
-	// read private validator
-	pv := privval.LoadFilePV(
-		config.PrivValidatorKeyFile(),
-		config.PrivValidatorStateFile(),
-	)
-
-	// read node key
-	nodeKey, err := p2p.LoadNodeKey(config.NodeKeyFile())
-	if err != nil {
-		return nil, fmt.Errorf("failed to load node's key: %w", err)
-	}
-
-	// create node
-	node, err := nm.NewNode(
-		config,
-		pv,
-		nodeKey,
-		proxy.NewLocalClientCreator(app),
-		nm.DefaultGenesisDocProviderFunc(config),
-		nm.DefaultDBProvider,
-		nm.DefaultMetricsProvider(config.Instrumentation),
-		logger)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create new Tendermint node: %w", err)
-	}
-
-	return node, nil
 }

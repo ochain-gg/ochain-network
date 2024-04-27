@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/ochain.gg/ochain-validator-network/database"
-	"github.com/ochain.gg/ochain-validator-network/types"
+	"github.com/ochain.gg/ochain-network-validator/database"
+	"github.com/ochain.gg/ochain-network-validator/types"
 )
 
 var DefaultUniverse database.OChainUniverse = database.OChainUniverse{

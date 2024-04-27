@@ -6,12 +6,12 @@ import (
 	"errors"
 	"log"
 
-	"github.com/dgraph-io/badger"
+	"github.com/dgraph-io/badger/v4"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/ochain.gg/ochain-validator-network/config"
-	"github.com/ochain.gg/ochain-validator-network/contracts"
-	"github.com/ochain.gg/ochain-validator-network/database"
+	"github.com/ochain.gg/ochain-network-validator/config"
+	"github.com/ochain.gg/ochain-network-validator/contracts"
+	"github.com/ochain.gg/ochain-network-validator/database"
 )
 
 // New validator transaction

@@ -3,8 +3,8 @@ package database
 import (
 	"errors"
 
-	"github.com/dgraph-io/badger"
-	"github.com/timshannon/badgerhold"
+	"github.com/dgraph-io/badger/v4"
+	"github.com/timshannon/badgerhold/v4"
 )
 
 type OChainValidatorTable struct {

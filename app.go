@@ -6,25 +6,25 @@ import (
 	"log"
 	"math/big"
 
-	"github.com/dgraph-io/badger"
+	abcitypes "github.com/cometbft/cometbft/abci/types"
+	"github.com/cometbft/cometbft/crypto/secp256k1"
+	"github.com/cometbft/cometbft/proto/tendermint/crypto"
+	"github.com/dgraph-io/badger/v4"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/ochain.gg/ochain-validator-network/config"
-	"github.com/ochain.gg/ochain-validator-network/contracts"
-	"github.com/ochain.gg/ochain-validator-network/database"
-	"github.com/ochain.gg/ochain-validator-network/transactions"
-	abcitypes "github.com/tendermint/tendermint/abci/types"
-	"github.com/tendermint/tendermint/crypto/secp256k1"
-	"github.com/tendermint/tendermint/proto/tendermint/crypto"
-	"github.com/timshannon/badgerhold"
+	"github.com/ochain.gg/ochain-network-validator/config"
+	"github.com/ochain.gg/ochain-network-validator/contracts"
+	"github.com/ochain.gg/ochain-network-validator/database"
+	"github.com/ochain.gg/ochain-network-validator/transactions"
+	"github.com/timshannon/badgerhold/v4"
 )
 
 type OChainValidatorApplication struct {
-	config    config.OChainConfig
-	store     *badgerhold.Store
-	db        *database.OChainDatabase
-	currentTx *badger.Txn
+	config         config.OChainConfig
+	store          *badgerhold.Store
+	db             *database.OChainDatabase
+	ongoingBlockTx *badger.Txn
 
 	state      *database.OChainState
 	ValUpdates []abcitypes.ValidatorUpdate
@@ -40,15 +40,12 @@ func NewOChainValidatorApplication(config config.OChainConfig, store *badgerhold
 	}
 }
 
-func (OChainValidatorApplication) Info(req abcitypes.RequestInfo) abcitypes.ResponseInfo {
-	return abcitypes.ResponseInfo{}
+func (app *OChainValidatorApplication) Info(_ context.Context, info *abcitypes.RequestInfo) (*abcitypes.ResponseInfo, error) {
+	return &abcitypes.ResponseInfo{}, nil
 }
 
-func (OChainValidatorApplication) SetOption(req abcitypes.RequestSetOption) abcitypes.ResponseSetOption {
-	return abcitypes.ResponseSetOption{}
-}
+func (app *OChainValidatorApplication) InitChain(_ context.Context, chain *abcitypes.RequestInitChain) (*abcitypes.ResponseInitChain, error) {
 
-func (app *OChainValidatorApplication) InitChain(req abcitypes.RequestInitChain) abcitypes.ResponseInitChain {
 	tx := app.store.Badger().NewTransaction(true)
 
 	client, err := ethclient.Dial(app.config.EVMRpc)
@@ -99,133 +96,153 @@ func (app *OChainValidatorApplication) InitChain(req abcitypes.RequestInitChain)
 
 	tx.Commit()
 
-	return abcitypes.ResponseInitChain{
+	return &abcitypes.ResponseInitChain{
 		Validators: validators,
-	}
+	}, nil
 }
 
-func (app *OChainValidatorApplication) CheckTx(req abcitypes.RequestCheckTx) abcitypes.ResponseCheckTx {
+func (app *OChainValidatorApplication) CheckTx(_ context.Context, req *abcitypes.RequestCheckTx) (*abcitypes.ResponseCheckTx, error) {
 	tx, err := transactions.ParseTransaction(req.Tx)
 	if err != nil {
-		return abcitypes.ResponseCheckTx{Code: 1}
+		return &abcitypes.ResponseCheckTx{Code: 1}, nil
 	}
 
 	code := tx.IsValid()
 	if code != 0 {
-		return abcitypes.ResponseCheckTx{Code: code}
+		return &abcitypes.ResponseCheckTx{Code: code}, nil
 	}
 
 	switch tx.Type {
 	case transactions.NewValidator:
 		tx, err := transactions.ParseNewValidatorTransaction(tx)
 		if err != nil {
-			return abcitypes.ResponseCheckTx{Code: 1}
+			return &abcitypes.ResponseCheckTx{Code: 1}, nil
 		}
 
 		_, err = tx.Verify(app.config)
 		if err != nil {
-			return abcitypes.ResponseCheckTx{Code: 1}
+			return &abcitypes.ResponseCheckTx{Code: 1}, nil
 		}
 
 	case transactions.RemoveValidator:
 		tx, err := transactions.ParseRemoveValidatorTransaction(tx)
 		if err != nil {
-			return abcitypes.ResponseCheckTx{Code: 1}
+			return &abcitypes.ResponseCheckTx{Code: 1}, nil
 		}
 
 		_, err = tx.Verify(app.config)
 		if err != nil {
-			return abcitypes.ResponseCheckTx{Code: 1}
+			return &abcitypes.ResponseCheckTx{Code: 1}, nil
 		}
 	}
 
-	return abcitypes.ResponseCheckTx{Code: code, GasWanted: 0}
+	return &abcitypes.ResponseCheckTx{Code: code, GasWanted: 0}, nil
 }
 
-func (app *OChainValidatorApplication) BeginBlock(req abcitypes.RequestBeginBlock) abcitypes.ResponseBeginBlock {
+func (app *OChainValidatorApplication) PrepareProposal(_ context.Context, proposal *abcitypes.RequestPrepareProposal) (*abcitypes.ResponsePrepareProposal, error) {
+	return &abcitypes.ResponsePrepareProposal{}, nil
+}
+
+func (app *OChainValidatorApplication) ProcessProposal(_ context.Context, proposal *abcitypes.RequestProcessProposal) (*abcitypes.ResponseProcessProposal, error) {
+	return &abcitypes.ResponseProcessProposal{}, nil
+}
+
+func (app *OChainValidatorApplication) FinalizeBlock(_ context.Context, req *abcitypes.RequestFinalizeBlock) (*abcitypes.ResponseFinalizeBlock, error) {
 	app.ValUpdates = make([]abcitypes.ValidatorUpdate, 0)
-	app.currentTx = app.store.Badger().NewTransaction(true)
-	return abcitypes.ResponseBeginBlock{}
-}
+	app.ongoingBlockTx = app.store.Badger().NewTransaction(true)
 
-func (app *OChainValidatorApplication) DeliverTx(req abcitypes.RequestDeliverTx) abcitypes.ResponseDeliverTx {
+	var txs = make([]*abcitypes.ExecTxResult, len(req.Txs))
 
-	tx, err := transactions.ParseTransaction(req.Tx)
-	if err != nil {
-		return abcitypes.ResponseDeliverTx{Code: 1}
+	for i, tx := range req.Txs {
+
+		parsedTx, err := transactions.ParseTransaction(tx)
+		if err != nil {
+			txs[i] = &abcitypes.ExecTxResult{Code: 1}
+			continue
+		}
+
+		code := parsedTx.IsValid()
+		if code != 0 {
+			txs[i] = &abcitypes.ExecTxResult{Code: code}
+			continue
+		}
+
+		switch parsedTx.Type {
+		case transactions.NewValidator:
+			formatedTx, err := transactions.ParseNewValidatorTransaction(parsedTx)
+			if err != nil {
+				txs[i] = &abcitypes.ExecTxResult{Code: 1}
+				continue
+			}
+
+			_, err = formatedTx.Verify(app.config)
+			if err != nil {
+				txs[i] = &abcitypes.ExecTxResult{Code: 1}
+				continue
+			}
+
+			err = formatedTx.Execute(app.config, app.db, app.ongoingBlockTx)
+			if err != nil {
+				txs[i] = &abcitypes.ExecTxResult{Code: 1}
+				continue
+			}
+
+			pubkeyBytes, err := hex.DecodeString(formatedTx.FormatedData.PublicKey)
+			if err != nil {
+				txs[i] = &abcitypes.ExecTxResult{Code: 1}
+				continue
+			}
+
+			app.ValUpdates = append(app.ValUpdates, abcitypes.UpdateValidator(pubkeyBytes, 10000, "secp256k1"))
+			txs[i] = &abcitypes.ExecTxResult{Code: 0}
+
+		case transactions.RemoveValidator:
+			formatedTx, err := transactions.ParseRemoveValidatorTransaction(parsedTx)
+			if err != nil {
+				txs[i] = &abcitypes.ExecTxResult{Code: 1}
+				continue
+			}
+			_, err = formatedTx.Verify(app.config)
+			if err != nil {
+				txs[i] = &abcitypes.ExecTxResult{Code: 1}
+				continue
+			}
+
+			err = formatedTx.Execute(app.config, app.db, app.ongoingBlockTx)
+			if err != nil {
+				txs[i] = &abcitypes.ExecTxResult{Code: 1}
+				continue
+			}
+
+			validator, err := app.db.Validators.Get(formatedTx.FormatedData.ValidatorId, app.ongoingBlockTx)
+			if err != nil {
+				txs[i] = &abcitypes.ExecTxResult{Code: 1}
+				continue
+			}
+
+			pubkeyBytes, err := hex.DecodeString(validator.PublicKey)
+			if err != nil {
+				txs[i] = &abcitypes.ExecTxResult{Code: 1}
+				continue
+			}
+
+			app.ValUpdates = append(app.ValUpdates, abcitypes.UpdateValidator(pubkeyBytes, 0, "secp256k1"))
+			txs[i] = &abcitypes.ExecTxResult{Code: 1}
+
+		}
 	}
 
-	code := tx.IsValid()
-	if code != 0 {
-		return abcitypes.ResponseDeliverTx{Code: code}
-	}
-
-	switch tx.Type {
-	case transactions.NewValidator:
-		formatedTx, err := transactions.ParseNewValidatorTransaction(tx)
-		if err != nil {
-			return abcitypes.ResponseDeliverTx{Code: 1}
-		}
-		_, err = formatedTx.Verify(app.config)
-		if err != nil {
-			return abcitypes.ResponseDeliverTx{Code: 1}
-		}
-
-		err = formatedTx.Execute(app.config, app.db, app.currentTx)
-		if err != nil {
-			return abcitypes.ResponseDeliverTx{Code: 1}
-		}
-
-		pubkeyBytes, err := hex.DecodeString(formatedTx.FormatedData.PublicKey)
-		if err != nil {
-			return abcitypes.ResponseDeliverTx{Code: 1}
-		}
-
-		app.ValUpdates = append(app.ValUpdates, abcitypes.UpdateValidator(pubkeyBytes, 10000, "secp256k1"))
-		return abcitypes.ResponseDeliverTx{Code: 0}
-
-	case transactions.RemoveValidator:
-		formatedTx, err := transactions.ParseRemoveValidatorTransaction(tx)
-		if err != nil {
-			return abcitypes.ResponseDeliverTx{Code: 1}
-		}
-		_, err = formatedTx.Verify(app.config)
-		if err != nil {
-			return abcitypes.ResponseDeliverTx{Code: 1}
-		}
-
-		err = formatedTx.Execute(app.config, app.db, app.currentTx)
-		if err != nil {
-			return abcitypes.ResponseDeliverTx{Code: 1}
-		}
-
-		validator, err := app.db.Validators.Get(formatedTx.FormatedData.ValidatorId, app.currentTx)
-		if err != nil {
-			return abcitypes.ResponseDeliverTx{Code: 1}
-		}
-
-		pubkeyBytes, err := hex.DecodeString(validator.PublicKey)
-		if err != nil {
-			return abcitypes.ResponseDeliverTx{Code: 1}
-		}
-
-		app.ValUpdates = append(app.ValUpdates, abcitypes.UpdateValidator(pubkeyBytes, 0, "secp256k1"))
-		return abcitypes.ResponseDeliverTx{Code: 0}
-	}
-
-	return abcitypes.ResponseDeliverTx{Code: 1}
+	return &abcitypes.ResponseFinalizeBlock{
+		TxResults:        txs,
+		ValidatorUpdates: app.ValUpdates,
+	}, nil
 }
 
-func (app *OChainValidatorApplication) EndBlock(req abcitypes.RequestEndBlock) abcitypes.ResponseEndBlock {
-	app.currentTx.Commit()
-	return abcitypes.ResponseEndBlock{ValidatorUpdates: app.ValUpdates}
+func (app *OChainValidatorApplication) Commit(_ context.Context, commit *abcitypes.RequestCommit) (*abcitypes.ResponseCommit, error) {
+	return &abcitypes.ResponseCommit{}, app.ongoingBlockTx.Commit()
 }
 
-func (app *OChainValidatorApplication) Commit() abcitypes.ResponseCommit {
-	return abcitypes.ResponseCommit{Data: []byte{}}
-}
-
-func (app *OChainValidatorApplication) Query(reqQuery abcitypes.RequestQuery) (resQuery abcitypes.ResponseQuery) {
+func (app *OChainValidatorApplication) Query(_ context.Context, req *abcitypes.RequestQuery) (*abcitypes.ResponseQuery, error) {
 	// resQuery.Key = reqQuery.Data
 	// err := app.db.View(func(txn *badger.Txn) error {
 	// 	item, err := txn.Get(reqQuery.Data)
@@ -246,21 +263,28 @@ func (app *OChainValidatorApplication) Query(reqQuery abcitypes.RequestQuery) (r
 	// if err != nil {
 	// 	panic(err)
 	// }
-	return
+	return &abcitypes.ResponseQuery{}, nil
+}
+func (app *OChainValidatorApplication) ListSnapshots(_ context.Context, snapshots *abcitypes.RequestListSnapshots) (*abcitypes.ResponseListSnapshots, error) {
+	return &abcitypes.ResponseListSnapshots{}, nil
 }
 
-func (OChainValidatorApplication) ListSnapshots(abcitypes.RequestListSnapshots) abcitypes.ResponseListSnapshots {
-	return abcitypes.ResponseListSnapshots{}
+func (app *OChainValidatorApplication) OfferSnapshot(_ context.Context, snapshot *abcitypes.RequestOfferSnapshot) (*abcitypes.ResponseOfferSnapshot, error) {
+	return &abcitypes.ResponseOfferSnapshot{}, nil
 }
 
-func (OChainValidatorApplication) OfferSnapshot(abcitypes.RequestOfferSnapshot) abcitypes.ResponseOfferSnapshot {
-	return abcitypes.ResponseOfferSnapshot{}
+func (app *OChainValidatorApplication) LoadSnapshotChunk(_ context.Context, chunk *abcitypes.RequestLoadSnapshotChunk) (*abcitypes.ResponseLoadSnapshotChunk, error) {
+	return &abcitypes.ResponseLoadSnapshotChunk{}, nil
 }
 
-func (OChainValidatorApplication) LoadSnapshotChunk(abcitypes.RequestLoadSnapshotChunk) abcitypes.ResponseLoadSnapshotChunk {
-	return abcitypes.ResponseLoadSnapshotChunk{}
+func (app *OChainValidatorApplication) ApplySnapshotChunk(_ context.Context, chunk *abcitypes.RequestApplySnapshotChunk) (*abcitypes.ResponseApplySnapshotChunk, error) {
+	return &abcitypes.ResponseApplySnapshotChunk{Result: abcitypes.ResponseApplySnapshotChunk_ACCEPT}, nil
 }
 
-func (OChainValidatorApplication) ApplySnapshotChunk(abcitypes.RequestApplySnapshotChunk) abcitypes.ResponseApplySnapshotChunk {
-	return abcitypes.ResponseApplySnapshotChunk{}
+func (app *OChainValidatorApplication) ExtendVote(_ context.Context, extend *abcitypes.RequestExtendVote) (*abcitypes.ResponseExtendVote, error) {
+	return &abcitypes.ResponseExtendVote{}, nil
+}
+
+func (app *OChainValidatorApplication) VerifyVoteExtension(_ context.Context, verify *abcitypes.RequestVerifyVoteExtension) (*abcitypes.ResponseVerifyVoteExtension, error) {
+	return &abcitypes.ResponseVerifyVoteExtension{}, nil
 }

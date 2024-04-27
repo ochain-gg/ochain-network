@@ -3,9 +3,9 @@ package database
 import (
 	"errors"
 
-	"github.com/dgraph-io/badger"
-	"github.com/ochain.gg/ochain-validator-network/types"
-	"github.com/timshannon/badgerhold"
+	"github.com/dgraph-io/badger/v4"
+	"github.com/ochain.gg/ochain-network-validator/types"
+	"github.com/timshannon/badgerhold/v4"
 )
 
 type OChainPlanetTable struct {

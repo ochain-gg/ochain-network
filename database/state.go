@@ -1,7 +1,7 @@
 package database
 
 import (
-	"github.com/timshannon/badgerhold"
+	"github.com/timshannon/badgerhold/v4"
 )
 
 type OChainStateTable struct {
