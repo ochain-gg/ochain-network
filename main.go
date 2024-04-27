@@ -1,6 +1,8 @@
 package main
 
 import (
+	"crypto/ecdsa"
+	"encoding/hex"
 	"flag"
 	"fmt"
 	"log"
@@ -10,6 +12,10 @@ import (
 	"strconv"
 	"syscall"
 
+	"github.com/decred/dcrd/dcrec/secp256k1/v4"
+	"github.com/ethereum/go-ethereum/crypto"
+
+	cometSecp256k1 "github.com/cometbft/cometbft/crypto/secp256k1"
 	"github.com/cometbft/cometbft/p2p"
 	"github.com/cometbft/cometbft/privval"
 	"github.com/cometbft/cometbft/proxy"
@@ -75,17 +81,74 @@ func main() {
 	ochainConfig.EVMRpc = evmRpc
 	ochainConfig.EVMPortalAddress = evmPortalAddress
 
-	app := NewOChainValidatorApplication(*ochainConfig, db)
-
-	pv := privval.LoadFilePV(
-		config.PrivValidatorKeyFile(),
-		config.PrivValidatorStateFile(),
-	)
-
 	nodeKey, err := p2p.LoadNodeKey(config.NodeKeyFile())
 	if err != nil {
 		log.Fatalf("failed to load node's key: %v", err)
 	}
+
+	log.Println("PrivValidatorKeyFile: " + config.PrivValidatorKeyFile())
+	log.Println("PrivValidatorStateFile: " + config.PrivValidatorStateFile())
+	log.Println("NodeKeyFile: " + config.NodeKeyFile())
+
+	privateKey, err := crypto.HexToECDSA(string(nodeKey.PrivKey.Bytes()))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	privateKeyBytes := crypto.FromECDSA(privateKey)
+	ecdsaPublicKeyBase := privateKey.Public()
+
+	ecdsaPublicKeyUncompressed, ok := ecdsaPublicKeyBase.(*ecdsa.PublicKey)
+	if !ok {
+		log.Fatal("error casting public key to ECDSA")
+	}
+	ecdsaPublicKeyUncompressedBytes := crypto.FromECDSAPub(ecdsaPublicKeyUncompressed)
+	ecdsaPublicKeyCompressedBytes := crypto.CompressPubkey(ecdsaPublicKeyUncompressed)
+	ecdsaAddress := crypto.PubkeyToAddress(*ecdsaPublicKeyUncompressed)
+	log.Println("privatekey detected: " + hex.EncodeToString(privateKeyBytes))
+
+	log.Println("___________________ ECDSA key management ___________________")
+
+	log.Println("compressed publickey detected: " + hex.EncodeToString(ecdsaPublicKeyCompressedBytes))
+	log.Println("uncompressed publickey detected: " + hex.EncodeToString(ecdsaPublicKeyUncompressedBytes))
+	log.Println("address detected: " + ecdsaAddress.String())
+
+	//ed25519PrivateKey := ed25519.NewKeyFromSeed(privateKeyBytes)
+	log.Println("___________________ secp256k1 key management ___________________")
+	secp256k1PrivateKey := secp256k1.PrivKeyFromBytes(privateKeyBytes)
+	secp256k1PublicKeyCompressedBytes := secp256k1PrivateKey.PubKey().SerializeCompressed()
+	secp256k1PublicKeyUncompressedBytes := secp256k1PrivateKey.PubKey().SerializeUncompressed()
+	log.Println("PublicKey compressed: " + string(hex.EncodeToString(secp256k1PublicKeyCompressedBytes)))
+	log.Println("PublicKey uncompressed: " + string(hex.EncodeToString(secp256k1PublicKeyUncompressedBytes)))
+
+	log.Println("___________________ Node Before ___________________")
+	log.Println("ID: " + string(hex.EncodeToString(nodeKey.PubKey().Address())))
+	log.Println("Public key: " + string(hex.EncodeToString(nodeKey.PubKey().Bytes())))
+
+	nodeKey.PrivKey = cometSecp256k1.PrivKey(privateKeyBytes)
+
+	log.Println("___________________ Node ___________________")
+	log.Println("ID: " + string(hex.EncodeToString(nodeKey.PubKey().Address())))
+	log.Println("Public key: " + string(hex.EncodeToString(nodeKey.PubKey().Bytes())))
+
+	unformatedPv := privval.LoadFilePV(
+		config.PrivValidatorKeyFile(),
+		config.PrivValidatorStateFile(),
+	)
+	// pv := privval.NewFilePV()
+
+	privvalPublicKey, _ := unformatedPv.GetPubKey()
+	log.Println("___________________ unformatedPv ___________________")
+	log.Println("ID: " + privvalPublicKey.Address().String())
+	log.Println("Public key: " + string(hex.EncodeToString(privvalPublicKey.Bytes())))
+
+	formatedPv := privval.NewFilePV(nodeKey.PrivKey, config.PrivValidatorKeyFile(), config.PrivValidatorStateFile())
+	privvalFormatedPublicKey, _ := formatedPv.GetPubKey()
+	log.Println("___________________ formatedPv ___________________")
+	log.Println("ID: " + privvalFormatedPublicKey.Address().String())
+	log.Println("Public key: " + string(hex.EncodeToString(privvalFormatedPublicKey.Bytes())))
+
+	app := NewOChainValidatorApplication(*ochainConfig, db, privateKeyBytes)
 
 	logger := cmtlog.NewTMLogger(cmtlog.NewSyncWriter(os.Stdout))
 	logger, err = cmtflags.ParseLogLevel(config.LogLevel, logger, cfg.DefaultLogLevel)
@@ -96,7 +159,7 @@ func main() {
 
 	node, err := nm.NewNode(
 		config,
-		pv,
+		formatedPv,
 		nodeKey,
 		proxy.NewLocalClientCreator(app),
 		nm.DefaultGenesisDocProviderFunc(config),

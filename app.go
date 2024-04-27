@@ -5,12 +5,12 @@ import (
 	"encoding/hex"
 	"log"
 	"math/big"
+	"strconv"
 
 	abcitypes "github.com/cometbft/cometbft/abci/types"
 	"github.com/cometbft/cometbft/crypto/secp256k1"
 	"github.com/cometbft/cometbft/proto/tendermint/crypto"
 	"github.com/dgraph-io/badger/v4"
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ochain.gg/ochain-network-validator/config"
@@ -26,17 +26,20 @@ type OChainValidatorApplication struct {
 	db             *database.OChainDatabase
 	ongoingBlockTx *badger.Txn
 
+	remotePrivateKey []byte
+
 	state      *database.OChainState
 	ValUpdates []abcitypes.ValidatorUpdate
 }
 
 var _ abcitypes.Application = (*OChainValidatorApplication)(nil)
 
-func NewOChainValidatorApplication(config config.OChainConfig, store *badgerhold.Store) *OChainValidatorApplication {
+func NewOChainValidatorApplication(config config.OChainConfig, store *badgerhold.Store, remotePrivateKey []byte) *OChainValidatorApplication {
 	return &OChainValidatorApplication{
-		config: config,
-		store:  store,
-		db:     database.NewOChainDatabase(store),
+		config:           config,
+		store:            store,
+		db:               database.NewOChainDatabase(store),
+		remotePrivateKey: remotePrivateKey,
 	}
 }
 
@@ -53,27 +56,34 @@ func (app *OChainValidatorApplication) InitChain(_ context.Context, chain *abcit
 		log.Fatal(err)
 	}
 
+	log.Println("Requesting validators on rpc: " + app.config.EVMRpc)
+	log.Println("Requesting validators on portal: " + app.config.EVMPortalAddress)
+
 	address := common.HexToAddress(app.config.EVMPortalAddress)
 	portal, err := contracts.NewOChainPortal(address, client)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	co := &bind.CallOpts{
-		Context: context.Background(),
-	}
-
-	info, err := portal.ValidatorNetworkInfo(co)
+	log.Println("Requesting validators info")
+	info, err := portal.ValidatorNetworkInfo(nil)
 	if err != nil {
 		log.Fatal(err)
 	}
 
+	log.Println("Requesting info retrieved")
+
 	validators := make([]abcitypes.ValidatorUpdate, 0)
 	for i := 0; i < int(info.ValidatorsLength.Int64()); i++ {
-		info, err := portal.ValidatorInfo(co, new(big.Int).SetInt64(int64(i)))
+		info, err := portal.ValidatorInfo(nil, new(big.Int).SetInt64(int64(i)))
 		if err != nil {
 			log.Fatal(err)
 		}
+
+		log.Println("Requesting validator info")
+		log.Println("Validator Id: " + strconv.Itoa(i))
+		log.Println("Validator PubKey: " + info.PublicKey)
+		log.Println("Enabled: " + strconv.FormatBool(info.Enabled))
 
 		if info.Enabled {
 			pubkeyBytes, err := hex.DecodeString(info.PublicKey)
@@ -86,6 +96,8 @@ func (app *OChainValidatorApplication) InitChain(_ context.Context, chain *abcit
 				PubKey: crypto.PublicKey{Sum: &crypto.PublicKey_Secp256K1{Secp256K1: pubkey}},
 				Power:  10000,
 			})
+
+			log.Println("adding validator address: " + pubkey.Address().String())
 		}
 	}
 
