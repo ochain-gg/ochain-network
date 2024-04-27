@@ -6,10 +6,12 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"strconv"
 	"syscall"
 
 	"github.com/spf13/viper"
 
+	"github.com/ochain.gg/ochain-validator-network/config"
 	abci "github.com/tendermint/tendermint/abci/types"
 	cfg "github.com/tendermint/tendermint/config"
 	tmflags "github.com/tendermint/tendermint/libs/cli/flags"
@@ -22,9 +24,15 @@ import (
 )
 
 var configFile string
+var evmChainId string
+var evmRpc string
+var evmPortalAddress string
 
 func init() {
 	flag.StringVar(&configFile, "config", "$HOME/.tendermint/config/config.toml", "Path to config.toml")
+	flag.StringVar(&evmChainId, "chainId", "31337", "OChain portal chainId")
+	flag.StringVar(&evmRpc, "evmRpc", "http://localhost:8545/", "OChain portal chain rpc address")
+	flag.StringVar(&evmPortalAddress, "portalAddress", "0x8A791620dd6260079BF849Dc5567aDC3F2FdC318", "OChain portal address")
 }
 
 func main() {
@@ -38,7 +46,14 @@ func main() {
 	}
 
 	defer db.Close()
-	app := NewOChainValidatorApplication(db)
+
+	ochainConfig := config.DefaultConfig()
+	parsedChainId, err := strconv.ParseUint(evmChainId, 10, 64)
+	ochainConfig.EVMChainId = parsedChainId
+	ochainConfig.EVMRpc = evmRpc
+	ochainConfig.EVMPortalAddress = evmPortalAddress
+
+	app := NewOChainValidatorApplication(*ochainConfig, db)
 
 	flag.Parse()
 

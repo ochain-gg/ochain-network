@@ -14,6 +14,10 @@ type OChainAccountTable struct {
 
 type OChainAccountIAM struct {
 	Pubkey []byte
+	Nonce  uint64
+
+	GuardianQuorum uint64
+	Guardians      [][]byte
 
 	DeleguatedTo [][]byte
 }
