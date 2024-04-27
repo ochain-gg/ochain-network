@@ -48,7 +48,7 @@ func main() {
 	defer db.Close()
 
 	ochainConfig := config.DefaultConfig()
-	parsedChainId, err := strconv.ParseUint(evmChainId, 10, 64)
+	parsedChainId, _ := strconv.ParseUint(evmChainId, 10, 64)
 	ochainConfig.EVMChainId = parsedChainId
 	ochainConfig.EVMRpc = evmRpc
 	ochainConfig.EVMPortalAddress = evmPortalAddress
