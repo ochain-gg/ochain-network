@@ -18,7 +18,7 @@ import (
 type NewValidatorTransactionData struct {
 	ValidatorId           uint64 `json:"validatorId"`
 	RemoteTransactionHash string `json:"remoteTransactionHash"`
-	PublicKey             []byte `json:"publicKey"`
+	PublicKey             string `json:"publicKey"`
 }
 
 type NewValidatorTransaction struct {
@@ -36,7 +36,7 @@ func (tx *NewValidatorTransaction) Verify(cfg config.OChainConfig) (contracts.OC
 		log.Fatal(err)
 	}
 
-	remoteTx, _, err := client.TransactionByHash(context.Background(), common.HexToHash(string(tx.FormatedData.RemoteTransactionHash)))
+	remoteTx, _, err := client.TransactionByHash(context.Background(), common.HexToHash(tx.FormatedData.RemoteTransactionHash))
 	if err != nil {
 		return contracts.OChainPortalOChainNewValidator{}, err
 	}
@@ -49,7 +49,7 @@ func (tx *NewValidatorTransaction) Verify(cfg config.OChainConfig) (contracts.OC
 		return contracts.OChainPortalOChainNewValidator{}, errors.New("wrong to address")
 	}
 
-	remoteTxReceipt, err := client.TransactionReceipt(context.Background(), common.HexToHash(string(tx.FormatedData.RemoteTransactionHash)))
+	remoteTxReceipt, err := client.TransactionReceipt(context.Background(), common.HexToHash(tx.FormatedData.RemoteTransactionHash))
 	if err != nil {
 		return contracts.OChainPortalOChainNewValidator{}, err
 	}
@@ -72,7 +72,7 @@ func (tx *NewValidatorTransaction) Verify(cfg config.OChainConfig) (contracts.OC
 		}
 
 		if event.Raw.Address == common.HexToAddress(cfg.EVMPortalAddress) {
-			if event.PublicKey == string(tx.FormatedData.PublicKey) {
+			if event.PublicKey == tx.FormatedData.PublicKey {
 				return *event, nil
 			}
 		}

@@ -176,7 +176,12 @@ func (app *OChainValidatorApplication) DeliverTx(req abcitypes.RequestDeliverTx)
 			return abcitypes.ResponseDeliverTx{Code: 1}
 		}
 
-		app.ValUpdates = append(app.ValUpdates, abcitypes.UpdateValidator([]byte(formatedTx.FormatedData.PublicKey), 10000, "secp256k1"))
+		pubkeyBytes, err := hex.DecodeString(formatedTx.FormatedData.PublicKey)
+		if err != nil {
+			return abcitypes.ResponseDeliverTx{Code: 1}
+		}
+
+		app.ValUpdates = append(app.ValUpdates, abcitypes.UpdateValidator(pubkeyBytes, 10000, "secp256k1"))
 		return abcitypes.ResponseDeliverTx{Code: 0}
 
 	case transactions.RemoveValidator:
@@ -199,7 +204,12 @@ func (app *OChainValidatorApplication) DeliverTx(req abcitypes.RequestDeliverTx)
 			return abcitypes.ResponseDeliverTx{Code: 1}
 		}
 
-		app.ValUpdates = append(app.ValUpdates, abcitypes.UpdateValidator([]byte(validator.PublicKey), 0, "secp256k1"))
+		pubkeyBytes, err := hex.DecodeString(validator.PublicKey)
+		if err != nil {
+			return abcitypes.ResponseDeliverTx{Code: 1}
+		}
+
+		app.ValUpdates = append(app.ValUpdates, abcitypes.UpdateValidator(pubkeyBytes, 0, "secp256k1"))
 		return abcitypes.ResponseDeliverTx{Code: 0}
 	}
 
