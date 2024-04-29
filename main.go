@@ -23,6 +23,7 @@ import (
 	cmtlog "github.com/cometbft/cometbft/libs/log"
 	nm "github.com/cometbft/cometbft/node"
 	ochainCfg "github.com/ochain.gg/ochain-network-validator/config"
+	"github.com/ochain.gg/ochain-network-validator/scheduler"
 	"github.com/spf13/viper"
 )
 
@@ -117,9 +118,16 @@ func main() {
 	}
 
 	node.Start()
+	scheduler, err := scheduler.NewScheduler(app.config, app.db)
+	if err != nil {
+		log.Fatalf("Creating scheduler: %v", err)
+	}
+
+	scheduler.Scheduler.Start()
 	defer func() {
 		node.Stop()
 		node.Wait()
+		scheduler.Scheduler.Shutdown()
 	}()
 
 	c := make(chan os.Signal, 1)

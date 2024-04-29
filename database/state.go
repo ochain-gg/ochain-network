@@ -13,6 +13,8 @@ type OChainState struct {
 	Size    int64  `json:"size"`
 	Height  int64  `json:"height"`
 	AppHash []byte `json:"app_hash"`
+
+	LatestPortalUpdate uint64
 }
 
 func (table *OChainStateTable) Get() (OChainState, error) {

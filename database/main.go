@@ -12,6 +12,7 @@ type OChainDatabase struct {
 	UniverseAccounts   *OChainUniverseAccountTable
 	Planets            *OChainPlanetTable
 	Fleets             *OChainFleetTable
+	State              *OChainStateTable
 }
 
 func NewOChainDatabase(db *badgerhold.Store) *OChainDatabase {
@@ -23,5 +24,6 @@ func NewOChainDatabase(db *badgerhold.Store) *OChainDatabase {
 		UniverseAccounts:   NewOChainUniverseAccountTable(db),
 		Planets:            NewOChainPlanetTable(db),
 		Fleets:             NewOChainFleetTable(db),
+		State:              NewOChainStateTable(db),
 	}
 }
