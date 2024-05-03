@@ -2,12 +2,12 @@ package transactions
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"log"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/fxamacker/cbor/v2"
 	"github.com/ochain.gg/ochain-network-validator/contracts"
 	"github.com/ochain.gg/ochain-network-validator/database"
 )
@@ -23,20 +23,19 @@ const (
 )
 
 type OChainPortalInteractionTransactionData struct {
-	Type      OChainPortalInteractionType `json:"type"`
-	Arguments string                      `json:"data"`
+	Type      OChainPortalInteractionType `cbor:"1,keyasint"`
+	Arguments []byte                      `cbor:"2,keyasint"`
 }
 
 type OChainPortalInteractionTransaction struct {
-	Hash string                                 `json:"hash"`
-	Type TransactionType                        `json:"type"`
-	Data OChainPortalInteractionTransactionData `json:"data"`
+	Type TransactionType
+	Data OChainPortalInteractionTransactionData
 }
 
-func (tx *OChainPortalInteractionTransaction) Check(ctx TransactionContext) error {
+func (tx OChainPortalInteractionTransaction) Check(ctx TransactionContext) error {
 	switch tx.Data.Type {
 	case NewValidatorPortalInteractionType:
-		newValidatorTx, err := ParseNewValidatorTransaction(*tx)
+		newValidatorTx, err := ParseNewValidatorTransaction(tx)
 		if err != nil {
 			return err
 		}
@@ -45,7 +44,7 @@ func (tx *OChainPortalInteractionTransaction) Check(ctx TransactionContext) erro
 		return err
 
 	case RemoveValidatorPortalInteractionType:
-		removeValidatorTx, err := ParseRemoveValidatorTransaction(*tx)
+		removeValidatorTx, err := ParseRemoveValidatorTransaction(tx)
 		if err != nil {
 			return err
 		}
@@ -57,10 +56,10 @@ func (tx *OChainPortalInteractionTransaction) Check(ctx TransactionContext) erro
 	return errors.New("portal interaction type not exists")
 }
 
-func (tx *OChainPortalInteractionTransaction) Execute(ctx TransactionContext) error {
+func (tx OChainPortalInteractionTransaction) Execute(ctx TransactionContext) error {
 	switch tx.Data.Type {
 	case NewValidatorPortalInteractionType:
-		newValidatorTx, err := ParseNewValidatorTransaction(*tx)
+		newValidatorTx, err := ParseNewValidatorTransaction(tx)
 		if err != nil {
 			return err
 		}
@@ -69,7 +68,7 @@ func (tx *OChainPortalInteractionTransaction) Execute(ctx TransactionContext) er
 		return err
 
 	case RemoveValidatorPortalInteractionType:
-		removeValidatorTx, err := ParseRemoveValidatorTransaction(*tx)
+		removeValidatorTx, err := ParseRemoveValidatorTransaction(tx)
 		if err != nil {
 			return err
 		}
@@ -83,14 +82,13 @@ func (tx *OChainPortalInteractionTransaction) Execute(ctx TransactionContext) er
 
 func ParseNewOChainPortalInteraction(tx Transaction) (OChainPortalInteractionTransaction, error) {
 	var txData OChainPortalInteractionTransactionData
-	err := json.Unmarshal([]byte(tx.Data), &txData)
+	err := cbor.Unmarshal(tx.Data, &txData)
 
 	if err != nil {
 		return OChainPortalInteractionTransaction{}, err
 	}
 
 	return OChainPortalInteractionTransaction{
-		Hash: tx.Hash,
 		Type: tx.Type,
 		Data: txData,
 	}, nil
@@ -98,25 +96,29 @@ func ParseNewOChainPortalInteraction(tx Transaction) (OChainPortalInteractionTra
 
 // New validator transaction
 type NewValidatorTransactionDataArguments struct {
-	ValidatorId           uint64 `json:"validatorId"`
-	RemoteTransactionHash string `json:"remoteTransactionHash"`
-	PublicKey             string `json:"publicKey"`
+	ValidatorId           uint64 `cbor:"1,keyasint"`
+	RemoteTransactionHash string `cbor:"2,keyasint"`
+	PublicKey             string `cbor:"3,keyasint"`
+}
+
+type NewValidatorTransactionDataRaw struct {
+	Type      OChainPortalInteractionType `cbor:"1,keyasint"`
+	Arguments []byte                      `cbor:"2,keyasint"`
 }
 
 type NewValidatorTransactionData struct {
-	Type      OChainPortalInteractionType          `json:"type"`
-	Arguments NewValidatorTransactionDataArguments `json:"arguments"`
+	Type      OChainPortalInteractionType
+	Arguments NewValidatorTransactionDataArguments
 }
 
 type NewValidatorTransaction struct {
-	Hash string                      `json:"hash"`
-	Type TransactionType             `json:"type"`
-	Data NewValidatorTransactionData `json:"data"`
+	Type TransactionType
+	Data NewValidatorTransactionData
 }
 
 type NewValidatorEventData NewValidatorTransactionDataArguments
 
-func (tx *NewValidatorTransaction) Check(ctx TransactionContext) (contracts.OChainPortalOChainNewValidator, error) {
+func (tx NewValidatorTransaction) Check(ctx TransactionContext) (contracts.OChainPortalOChainNewValidator, error) {
 
 	client, err := ethclient.Dial(ctx.Config.EVMRpc)
 	if err != nil {
@@ -155,7 +157,7 @@ func (tx *NewValidatorTransaction) Check(ctx TransactionContext) (contracts.OCha
 
 		event, err := portal.ParseOChainNewValidator(*vLog)
 		if err != nil {
-			return contracts.OChainPortalOChainNewValidator{}, err
+			continue
 		}
 
 		if event.Raw.Address == common.HexToAddress(ctx.Config.EVMPortalAddress) {
@@ -168,7 +170,7 @@ func (tx *NewValidatorTransaction) Check(ctx TransactionContext) (contracts.OCha
 	return contracts.OChainPortalOChainNewValidator{}, errors.New("invalid tx")
 }
 
-func (tx *NewValidatorTransaction) Execute(ctx TransactionContext) error {
+func (tx NewValidatorTransaction) Execute(ctx TransactionContext) error {
 
 	event, err := tx.Check(ctx)
 	if err != nil {
@@ -176,7 +178,7 @@ func (tx *NewValidatorTransaction) Execute(ctx TransactionContext) error {
 	}
 
 	_, err = ctx.Db.Validators.Get(event.ValidatorId.Uint64(), ctx.Txn)
-	if err == nil {
+	if err != nil {
 		return errors.New("validator already activated")
 	}
 
@@ -191,16 +193,36 @@ func (tx *NewValidatorTransaction) Execute(ctx TransactionContext) error {
 	return err
 }
 
+func (tx NewValidatorTransaction) Transaction() (Transaction, error) {
+	txDataArgs, err := cbor.Marshal(tx.Data.Arguments)
+	if err != nil {
+		return Transaction{}, err
+	}
+
+	txData, err := cbor.Marshal(NewValidatorTransactionDataRaw{
+		Type:      tx.Data.Type,
+		Arguments: txDataArgs,
+	})
+	if err != nil {
+		return Transaction{}, err
+	}
+
+	return Transaction{
+		Type: tx.Type,
+		Data: txData,
+	}, nil
+}
+
 func ParseNewValidatorTransaction(tx OChainPortalInteractionTransaction) (NewValidatorTransaction, error) {
+
 	var txDataArgs NewValidatorTransactionDataArguments
-	err := json.Unmarshal([]byte(tx.Data.Arguments), &txDataArgs)
+	err := cbor.Unmarshal([]byte(tx.Data.Arguments), &txDataArgs)
 
 	if err != nil {
 		return NewValidatorTransaction{}, err
 	}
 
 	return NewValidatorTransaction{
-		Hash: tx.Hash,
 		Type: tx.Type,
 		Data: NewValidatorTransactionData{
 			Type:      tx.Data.Type,
@@ -211,24 +233,29 @@ func ParseNewValidatorTransaction(tx OChainPortalInteractionTransaction) (NewVal
 
 // Remove validator
 type RemoveValidatorTransactionDataArguments struct {
-	ValidatorId           uint64 `json:"validatorId"`
-	RemoteTransactionHash string `json:"remoteTransactionHash"`
+	ValidatorId           uint64 `cbor:"1,keyasint"`
+	RemoteTransactionHash string `cbor:"2,keyasint"`
+}
+
+type RemoveValidatorTransactionDataRaw struct {
+	Type      OChainPortalInteractionType `cbor:"1,keyasint"`
+	Arguments []byte                      `cbor:"2,keyasint"`
 }
 
 type RemoveValidatorTransactionData struct {
-	Type      OChainPortalInteractionType             `json:"type"`
-	Arguments RemoveValidatorTransactionDataArguments `json:"arguments"`
+	Type      OChainPortalInteractionType
+	Arguments RemoveValidatorTransactionDataArguments
 }
 
 type RemoveValidatorTransaction struct {
-	Hash string                         `json:"hash"`
-	Type TransactionType                `json:"type"`
-	Data RemoveValidatorTransactionData `json:"data"`
+	Hash string
+	Type TransactionType
+	Data RemoveValidatorTransactionData
 }
 
 type RemoveValidatorEventData RemoveValidatorTransactionDataArguments
 
-func (tx *RemoveValidatorTransaction) Check(ctx TransactionContext) (contracts.OChainPortalOChainRemoveValidator, error) {
+func (tx RemoveValidatorTransaction) Check(ctx TransactionContext) (contracts.OChainPortalOChainRemoveValidator, error) {
 
 	client, err := ethclient.Dial(ctx.Config.EVMRpc)
 	if err != nil {
@@ -298,17 +325,36 @@ func (tx *RemoveValidatorTransaction) Execute(ctx TransactionContext) error {
 	return err
 }
 
+func (tx RemoveValidatorTransaction) Transaction() (Transaction, error) {
+	txDataArgs, err := cbor.Marshal(tx.Data.Arguments)
+	if err != nil {
+		return Transaction{}, err
+	}
+
+	txData, err := cbor.Marshal(RemoveValidatorTransactionDataRaw{
+		Type:      tx.Data.Type,
+		Arguments: txDataArgs,
+	})
+	if err != nil {
+		return Transaction{}, err
+	}
+
+	return Transaction{
+		Type: tx.Type,
+		Data: txData,
+	}, nil
+}
+
 func ParseRemoveValidatorTransaction(tx OChainPortalInteractionTransaction) (RemoveValidatorTransaction, error) {
 
 	var txDataArgs RemoveValidatorTransactionDataArguments
-	err := json.Unmarshal([]byte(tx.Data.Arguments), &txDataArgs)
+	err := cbor.Unmarshal([]byte(tx.Data.Arguments), &txDataArgs)
 
 	if err != nil {
 		return RemoveValidatorTransaction{}, err
 	}
 
 	return RemoveValidatorTransaction{
-		Hash: tx.Hash,
 		Type: tx.Type,
 		Data: RemoveValidatorTransactionData{
 			Type:      tx.Data.Type,

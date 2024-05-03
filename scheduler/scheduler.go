@@ -24,7 +24,7 @@ func NewScheduler(cfg config.OChainConfig, db *database.OChainDatabase) (OChainS
 	// add a job to the scheduler
 	_, err = s.NewJob(
 		gocron.DurationJob(
-			time.Minute,
+			15*time.Second,
 		),
 		gocron.NewTask(
 			func(db *database.OChainDatabase) {

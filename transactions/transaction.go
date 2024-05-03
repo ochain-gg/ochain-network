@@ -1,18 +1,16 @@
 package transactions
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
-	"strconv"
 	"time"
 
 	"github.com/dgraph-io/badger/v4"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/common/math"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/signer/core/apitypes"
+	"github.com/fxamacker/cbor/v2"
 	"github.com/ochain.gg/ochain-network-validator/config"
 	"github.com/ochain.gg/ochain-network-validator/database"
 )
@@ -73,69 +71,73 @@ type TransactionContext struct {
 }
 
 type Transaction struct {
-	Hash string          `json:"hash"`
-	Type TransactionType `json:"type"`
-	Data string          `json:"data"`
+	Type      TransactionType `cbor:"1,keyasint"`
+	From      string          `cbor:"2,keyasint,omitempty"`
+	Nonce     uint64          `cbor:"3,keyasint,omitempty"`
+	Data      []byte          `cbor:"4,keyasint"`
+	Signature []byte          `cbor:"5,keyasint,omitempty"`
 }
 
-type UnauthenticatedTransaction struct {
-	Hash string          `json:"hash"`
-	Type TransactionType `json:"type"`
-	Data string          `json:"data"`
-}
+func (tx *Transaction) UniqueID() ([]byte, error) {
 
-type AuthenticatedTransaction struct {
-	Hash      string          `json:"hash"`
-	Type      TransactionType `json:"type"`
-	From      string          `json:"from"`
-	Nonce     uint64          `json:"nonce"`
-	Data      string          `json:"data"`
-	Signature string          `json:"signature"`
+	payload, err := cbor.Marshal(tx)
+	if err != nil {
+		return []byte(""), err
+	}
+
+	txhash := crypto.Keccak256Hash(payload)
+
+	if uint64(tx.Type) > MaxTransactionType {
+		return []byte(""), errors.New("bad transaction type")
+	}
+
+	return txhash.Bytes(), nil
 }
 
 func (tx *Transaction) IsValid() error {
-
-	txhash := crypto.Keccak256Hash([]byte(strconv.Itoa(int(tx.Type)) + ":" + tx.Data))
-	if tx.Hash != txhash.Hex() {
-		return errors.New("bad hash")
-	}
 
 	if uint64(tx.Type) > MaxTransactionType {
 		return errors.New("bad transaction type")
 	}
 
-	return nil
-}
-
-func (tx *UnauthenticatedTransaction) IsValid() error {
-
-	txhash := crypto.Keccak256Hash([]byte(strconv.Itoa(int(tx.Type)) + ":" + tx.Data))
-	if tx.Hash != txhash.Hex() {
-		return errors.New("bad hash")
-	}
-
 	switch tx.Type {
 	case OChainPortalInteraction:
-		_, err := ParseNewOChainPortalInteraction(Transaction(*tx))
+		_, err := ParseNewOChainPortalInteraction(*tx)
 		return err
 
 	case ExecutePendingUpdate:
 		return nil
 	}
+
 	return errors.New("unknown tx type")
 }
 
-func (tx *AuthenticatedTransaction) RecoverSignerAddress() (common.Address, error) {
-
-	txhash := crypto.Keccak256Hash([]byte(strconv.Itoa(int(tx.Type)) + ":" + tx.Data))
-	if tx.Hash != txhash.Hex() {
-		return common.Address{}, errors.New("bad hash")
-	}
-
-	signature, err := hexutil.Decode(tx.Signature)
+func (tx *Transaction) VerifySignature() error {
+	signer, err := tx.RecoverSignerAddress()
 	if err != nil {
-		return common.Address{}, fmt.Errorf("decode signature: %w", err)
+		return err
 	}
+
+	from := common.HexToAddress(tx.From)
+
+	if signer.Hex() == from.Hex() {
+		return nil
+	} else {
+		return errors.New("signer and from don't match")
+	}
+}
+
+func (tx *Transaction) Bytes() ([]byte, error) {
+	txByte, err := cbor.Marshal(tx)
+
+	if err != nil {
+		return []byte(""), err
+	}
+
+	return txByte, nil
+}
+
+func (tx *Transaction) RecoverSignerAddress() (common.Address, error) {
 
 	typedData := apitypes.TypedData{
 		Types: apitypes.Types{
@@ -146,7 +148,6 @@ func (tx *AuthenticatedTransaction) RecoverSignerAddress() (common.Address, erro
 				{Name: "verifyingContract", Type: "address"},
 			},
 			"Transaction": []apitypes.Type{
-				{Name: "hash", Type: "string"},
 				{Name: "type", Type: "uint16"},
 				{Name: "from", Type: "address"},
 				{Name: "nonce", Type: "uint256"},
@@ -161,7 +162,6 @@ func (tx *AuthenticatedTransaction) RecoverSignerAddress() (common.Address, erro
 			VerifyingContract: "0x0000000000000000000000000000000000000000",
 		},
 		Message: map[string]interface{}{
-			"hash":  tx.Hash,
 			"type":  tx.Type,
 			"from":  tx.From,
 			"nonce": tx.Nonce,
@@ -185,10 +185,10 @@ func (tx *AuthenticatedTransaction) RecoverSignerAddress() (common.Address, erro
 
 	// update the recovery id
 	// https://github.com/ethereum/go-ethereum/blob/55599ee95d4151a2502465e0afc7c47bd1acba77/internal/ethapi/api.go#L442
-	signature[64] -= 27
+	tx.Signature[64] -= 27
 
 	// get the pubkey used to sign this signature
-	sigPubkey, err := crypto.Ecrecover(sighash, signature)
+	sigPubkey, err := crypto.Ecrecover(sighash, tx.Signature)
 	if err != nil {
 		return common.Address{}, fmt.Errorf("ecrecover: %w", err)
 	}
@@ -203,7 +203,7 @@ func (tx *AuthenticatedTransaction) RecoverSignerAddress() (common.Address, erro
 	// fmt.Println("ADDRESS:", address.Hex())
 
 	// verify the signature (not sure if this is actually required after ecrecover)
-	signatureNoRecoverID := signature[:len(signature)-1]
+	signatureNoRecoverID := tx.Signature[:len(tx.Signature)-1]
 	verified := crypto.VerifySignature(sigPubkey, sighash, signatureNoRecoverID)
 	if !verified {
 		return common.Address{}, errors.New("verification failed")
@@ -214,24 +214,11 @@ func (tx *AuthenticatedTransaction) RecoverSignerAddress() (common.Address, erro
 }
 
 func ParseTransaction(data []byte) (Transaction, error) {
-
 	var tx Transaction
-	err := json.Unmarshal(data, &tx)
+	err := cbor.Unmarshal(data, &tx)
 
 	if err != nil {
 		return Transaction{}, err
-	}
-
-	return tx, nil
-}
-
-func ParseAuthenticatedTransaction(data []byte) (AuthenticatedTransaction, error) {
-
-	var tx AuthenticatedTransaction
-	err := json.Unmarshal(data, &tx)
-
-	if err != nil {
-		return AuthenticatedTransaction{}, err
 	}
 
 	return tx, nil

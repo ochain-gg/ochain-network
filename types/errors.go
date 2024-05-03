@@ -1,13 +1,15 @@
 package types
 
-type OChainErrorCode uint64
-
 const (
-	NoError OChainErrorCode = 0
+	NoError uint32 = 0
 
-	InvalidTransactionNonce     OChainErrorCode = 1
-	InvalidTransactionSignature OChainErrorCode = 2
-	InvalidTransactionType      OChainErrorCode = 4
+	ParsingTransactionError     uint32 = 1
+	ParsingTransactionDataError uint32 = 2
+	InvalidTransactionError     uint32 = 3
+	InvalidTransactionSignature uint32 = 4
+	CheckTransactionFailure     uint32 = 5
+	ExecuteTransactionFailure   uint32 = 6
+	NotImplemented              uint32 = 7
 )
 
 type OChainError struct {

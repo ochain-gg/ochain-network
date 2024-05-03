@@ -9,10 +9,10 @@ import (
 	"path/filepath"
 	"strconv"
 	"syscall"
+	"time"
 
 	"github.com/ethereum/go-ethereum/crypto"
 
-	cometSecp256k1 "github.com/cometbft/cometbft/crypto/secp256k1"
 	"github.com/cometbft/cometbft/p2p"
 	"github.com/cometbft/cometbft/privval"
 	"github.com/cometbft/cometbft/proxy"
@@ -58,6 +58,10 @@ func main() {
 	if err := config.ValidateBasic(); err != nil {
 		log.Fatalf("Invalid configuration data: %v", err)
 	}
+
+	config.Consensus.CreateEmptyBlocks = false
+	config.Consensus.CreateEmptyBlocksInterval = time.Hour
+
 	dbPath := filepath.Join(homeDir, "badger")
 	options := badgerhold.DefaultOptions
 	options.Dir = dbPath
@@ -84,16 +88,25 @@ func main() {
 		log.Fatalf("failed to load node's key: %v", err)
 	}
 
-	privateKey, err := crypto.HexToECDSA(string(nodeKey.PrivKey.Bytes()))
+	privateKey, err := crypto.HexToECDSA("ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80")
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	privateKeyBytes := crypto.FromECDSA(privateKey)
-	nodeKey.PrivKey = cometSecp256k1.PrivKey(privateKeyBytes)
-	formatedPv := privval.NewFilePV(nodeKey.PrivKey, config.PrivValidatorKeyFile(), config.PrivValidatorStateFile())
+	// privateKeyBytes := crypto.FromECDSA(privateKey)
+	//nodeKey.PrivKey = cometSecp256k1.PrivKey(privateKeyBytes)
+	//formatedPv := privval.NewFilePV(nodeKey.PrivKey, config.PrivValidatorKeyFile(), config.PrivValidatorStateFile())
 
-	app := NewOChainValidatorApplication(*ochainConfig, db, privateKeyBytes)
+	pv := privval.LoadFilePV(
+		config.PrivValidatorKeyFile(),
+		config.PrivValidatorStateFile(),
+	)
+
+	app, err := NewOChainValidatorApplication(*ochainConfig, db, privateKeyBytes)
+	if err != nil {
+		log.Fatalln(err)
+	}
 
 	logger := cmtlog.NewTMLogger(cmtlog.NewSyncWriter(os.Stdout))
 	logger, err = cmtflags.ParseLogLevel(config.LogLevel, logger, cfg.DefaultLogLevel)
@@ -102,9 +115,16 @@ func main() {
 		log.Fatalf("failed to parse log level: %v", err)
 	}
 
+	scheduler, err := scheduler.NewScheduler(app.config, app.db)
+	if err != nil {
+		log.Fatalf("Creating scheduler: %v", err)
+	}
+
+	scheduler.Scheduler.Start()
+
 	node, err := nm.NewNode(
 		config,
-		formatedPv,
+		pv,
 		nodeKey,
 		proxy.NewLocalClientCreator(app),
 		nm.DefaultGenesisDocProviderFunc(config),
@@ -118,15 +138,11 @@ func main() {
 	}
 
 	node.Start()
-	scheduler, err := scheduler.NewScheduler(app.config, app.db)
-	if err != nil {
-		log.Fatalf("Creating scheduler: %v", err)
-	}
 
-	scheduler.Scheduler.Start()
 	defer func() {
 		node.Stop()
 		node.Wait()
+		db.Close()
 		scheduler.Scheduler.Shutdown()
 	}()
 
