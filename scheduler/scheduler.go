@@ -4,8 +4,8 @@ import (
 	"time"
 
 	"github.com/go-co-op/gocron/v2"
-	"github.com/ochain.gg/ochain-network-validator/config"
-	"github.com/ochain.gg/ochain-network-validator/database"
+	"github.com/ochain.gg/ochain-network/config"
+	"github.com/ochain.gg/ochain-network/database"
 )
 
 type OChainScheduler struct {
@@ -33,10 +33,6 @@ func NewScheduler(cfg config.OChainConfig, db *database.OChainDatabase) (OChainS
 			db,
 		),
 	)
-
-	if err != nil {
-		return OChainScheduler{}, err
-	}
 
 	if err != nil {
 		return OChainScheduler{}, err

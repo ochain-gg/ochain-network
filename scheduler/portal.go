@@ -9,10 +9,10 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/ochain.gg/ochain-network-validator/config"
-	"github.com/ochain.gg/ochain-network-validator/contracts"
-	"github.com/ochain.gg/ochain-network-validator/database"
-	"github.com/ochain.gg/ochain-network-validator/transactions"
+	"github.com/ochain.gg/ochain-network/config"
+	"github.com/ochain.gg/ochain-network/contracts"
+	"github.com/ochain.gg/ochain-network/database"
+	"github.com/ochain.gg/ochain-network/transactions"
 
 	rpchttp "github.com/cometbft/cometbft/rpc/client/http"
 )
@@ -64,7 +64,12 @@ func CheckAndHandlePortalUpdate(cfg config.OChainConfig, db *database.OChainData
 	log.Printf("Last portal update on chain: %d", res.Uint64())
 
 	//get last smart contract update on app
-	state, err := db.State.Get()
+	state, err := db.BridgeState.Get()
+	if err != nil {
+		log.Println("error on db state load")
+		log.Println(err)
+		return
+	}
 
 	if err != nil {
 		log.Println("error on state load")
@@ -128,7 +133,7 @@ func CheckAndHandlePortalUpdate(cfg config.OChainConfig, db *database.OChainData
 
 		newValidatorLog, err := portal.ParseOChainNewValidator(l)
 		if err == nil {
-			log.Print("new validator evm logs detected")
+			log.Print("new validator evm log detected")
 
 			tx := transactions.NewValidatorTransaction{
 				Type: transactions.OChainPortalInteraction,
@@ -181,6 +186,8 @@ func CheckAndHandlePortalUpdate(cfg config.OChainConfig, db *database.OChainData
 
 		removeValidatorLog, err := portal.ParseOChainRemoveValidator(l)
 		if err == nil {
+			log.Print("remove validator evm log detected")
+
 			tx := transactions.RemoveValidatorTransaction{
 				Type: transactions.OChainPortalInteraction,
 				Data: transactions.RemoveValidatorTransactionData{
@@ -209,16 +216,42 @@ func CheckAndHandlePortalUpdate(cfg config.OChainConfig, db *database.OChainData
 				log.Println(err)
 			}
 
-			log.Printf("CheckTx code: %d", res.CheckTx.Code)
-			log.Printf("Transaction Hash: %b", res.Hash)
-			log.Printf("Block height: %d", res.Height)
-
+			log.Printf("New validator transaction result: code=%d hash=%s height=%d", res.CheckTx.Code, res.Hash, res.Height)
 		}
 
-		// tokenDepositLog, err := portal.ParseOChainTokenDeposit(log)
-		// if err == nil {
+		_, err = portal.ParseOChainTokenDeposit(l)
+		if err == nil {
+			log.Print("token deposit evm log detected")
 
-		// }
+			tx := transactions.TokenDepositTransaction{
+				Type: transactions.OChainPortalInteraction,
+				Data: transactions.TokenDepositTransactionData{
+					Type: transactions.OChainTokenDepositPortalInteractionType,
+					Arguments: transactions.TokenDepositTransactionDataArguments{
+						RemoteTransactionHash: l.TxHash.Hex(),
+					},
+				},
+			}
+
+			baseTx, err := tx.Transaction()
+			if err != nil {
+				log.Println(err)
+				return
+			}
+
+			bytesTx, err := baseTx.Bytes()
+			if err != nil {
+				log.Println(err)
+				return
+			}
+
+			res, err := client.BroadcastTxCommit(context.Background(), bytesTx)
+			if err != nil {
+				log.Println(err)
+			}
+
+			log.Printf("Token deposit transaction result: code=%d hash=%s height=%d", res.CheckTx.Code, res.Hash, res.Height)
+		}
 
 		// tokenWithdrawalRequestedLog, err := portal.ParseOChainTokenWithdrawalRequested(log)
 		// if err == nil {
@@ -226,11 +259,6 @@ func CheckAndHandlePortalUpdate(cfg config.OChainConfig, db *database.OChainData
 		// }
 
 		// tokenWithdrawalRequestContestedLog, err := portal.ParseOChainTokenWithdrawalRequestContested(log)
-		// if err == nil {
-
-		// }
-
-		// unstackSucceedLog, err := portal.ParseOChainUnstackSucceed(log)
 		// if err == nil {
 
 		// }

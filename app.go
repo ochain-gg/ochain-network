@@ -17,11 +17,11 @@ import (
 	"github.com/dgraph-io/badger/v4"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/ochain.gg/ochain-network-validator/config"
-	"github.com/ochain.gg/ochain-network-validator/contracts"
-	"github.com/ochain.gg/ochain-network-validator/database"
-	"github.com/ochain.gg/ochain-network-validator/transactions"
-	"github.com/ochain.gg/ochain-network-validator/types"
+	"github.com/ochain.gg/ochain-network/config"
+	"github.com/ochain.gg/ochain-network/contracts"
+	"github.com/ochain.gg/ochain-network/database"
+	"github.com/ochain.gg/ochain-network/transactions"
+	"github.com/ochain.gg/ochain-network/types"
 	"github.com/timshannon/badgerhold/v4"
 )
 
@@ -39,8 +39,9 @@ type OChainValidatorApplication struct {
 
 	remotePrivateKey []byte
 
-	state      *database.OChainState
-	ValUpdates []abcitypes.ValidatorUpdate
+	state        *database.OChainState
+	RetainBlocks int64
+	ValUpdates   []abcitypes.ValidatorUpdate
 }
 
 var _ abcitypes.Application = (*OChainValidatorApplication)(nil)
@@ -62,7 +63,8 @@ func NewOChainValidatorApplication(config config.OChainConfig, store *badgerhold
 }
 
 func (app *OChainValidatorApplication) Info(_ context.Context, info *abcitypes.RequestInfo) (*abcitypes.ResponseInfo, error) {
-
+	log.Printf("Info call last block heigh: %d", app.state.Height)
+	log.Printf("Info call last block hash: %s", app.state.Hash())
 	return &abcitypes.ResponseInfo{
 		Data:             fmt.Sprintf("{\"size\":%v}", app.state.Size),
 		Version:          version.ABCIVersion,
@@ -212,12 +214,11 @@ func (app *OChainValidatorApplication) FinalizeBlock(_ context.Context, req *abc
 
 	var txs = make([]*abcitypes.ExecTxResult, len(req.Txs))
 	for i, tx := range req.Txs {
-		app.state.IncSize()
-		log.Printf("Finalize tx: %s", hex.EncodeToString(tx))
 
 		tx, err := transactions.ParseTransaction(tx)
 		if err != nil {
 			txs[i] = &abcitypes.ExecTxResult{Code: types.ParsingTransactionError}
+			log.Printf("Finalize tx %d: ParsingTransactionError", i)
 			continue
 		}
 
@@ -233,18 +234,21 @@ func (app *OChainValidatorApplication) FinalizeBlock(_ context.Context, req *abc
 			transaction, err := transactions.ParseNewOChainPortalInteraction(tx)
 			if err != nil {
 				txs[i] = &abcitypes.ExecTxResult{Code: types.ParsingTransactionDataError}
+				log.Printf("Finalize tx %d: ParsingTransactionDataError", i)
 				continue
 			}
 
 			err = transaction.Check(txCtx)
 			if err != nil {
 				txs[i] = &abcitypes.ExecTxResult{Code: types.CheckTransactionFailure}
+				log.Printf("Finalize tx %d: CheckTransactionFailure", i)
 				continue
 			}
 
 			err = transaction.Execute(txCtx)
 			if err != nil {
 				txs[i] = &abcitypes.ExecTxResult{Code: types.ExecuteTransactionFailure}
+				log.Printf("Finalize tx %d: ExecuteTransactionFailure", i)
 				continue
 			}
 
@@ -252,36 +256,41 @@ func (app *OChainValidatorApplication) FinalizeBlock(_ context.Context, req *abc
 				formatedTx, err := transactions.ParseNewValidatorTransaction(transaction)
 				if err != nil {
 					txs[i] = &abcitypes.ExecTxResult{Code: types.ParsingTransactionDataError}
+					log.Printf("Finalize tx %d: ParsingTransactionDataError", i)
 					continue
 				}
 
 				pubkeyBytes, err := hex.DecodeString(formatedTx.Data.Arguments.PublicKey)
 				if err != nil {
 					txs[i] = &abcitypes.ExecTxResult{Code: types.ParsingTransactionDataError}
+					log.Printf("Finalize tx %d: ParsingTransactionDataError", i)
 					continue
 				}
 
-				app.ValUpdates = append(app.ValUpdates, abcitypes.UpdateValidator(pubkeyBytes, 10000, "secp256k1"))
+				app.ValUpdates = append(app.ValUpdates, abcitypes.UpdateValidator(pubkeyBytes, 10000, "ed25519"))
 			} else if transaction.Data.Type == transactions.RemoveValidatorPortalInteractionType {
 				formatedTx, err := transactions.ParseRemoveValidatorTransaction(transaction)
 				if err != nil {
 					txs[i] = &abcitypes.ExecTxResult{Code: types.ParsingTransactionDataError}
+					log.Printf("Finalize tx %d: ParsingTransactionDataError", i)
 					continue
 				}
 
 				validator, err := app.db.Validators.Get(formatedTx.Data.Arguments.ValidatorId, app.ongoingBlockTx)
 				if err != nil {
 					txs[i] = &abcitypes.ExecTxResult{Code: types.ExecuteTransactionFailure}
+					log.Printf("Finalize tx %d: ExecuteTransactionFailure", i)
 					continue
 				}
 
 				pubkeyBytes, err := hex.DecodeString(validator.PublicKey)
 				if err != nil {
 					txs[i] = &abcitypes.ExecTxResult{Code: types.ParsingTransactionDataError}
+					log.Printf("Finalize tx %d: ParsingTransactionDataError", i)
 					continue
 				}
 
-				app.ValUpdates = append(app.ValUpdates, abcitypes.UpdateValidator(pubkeyBytes, 0, "secp256k1"))
+				app.ValUpdates = append(app.ValUpdates, abcitypes.UpdateValidator(pubkeyBytes, 0, "ed25519"))
 			}
 
 			txs[i] = &abcitypes.ExecTxResult{Code: types.NoError}
@@ -320,6 +329,7 @@ func (app *OChainValidatorApplication) FinalizeBlock(_ context.Context, req *abc
 			}
 		}
 
+		app.state.IncSize()
 	}
 
 	app.state.SetHeight(req.Height)

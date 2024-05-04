@@ -15,7 +15,7 @@ type OChainStateTable struct {
 }
 
 type OChainState struct {
-	Id     uint64 `badgerhold:"key"`
+	Id     int `badgerhold:"key"`
 	Size   int64
 	Height int64
 
@@ -33,25 +33,21 @@ func (state *OChainState) SetHeight(height int64) {
 }
 
 func (state *OChainState) IncSize() {
-	log.Printf("IncSize called: before %d", state.Size)
 	state.Size = state.Size + 1
-	log.Printf("IncSize called: after %d", state.Size)
 }
 
 func (table *OChainStateTable) Get() (OChainState, error) {
 	var result []OChainState
-	err := table.db.Find(&result, badgerhold.Where("Id").Eq(uint64(1)))
+	err := table.db.Find(&result, badgerhold.Where("Id").Eq(1))
 	if err != nil {
 		return OChainState{}, err
 	}
-
-	log.Println("Loading state: ")
-	log.Println(result)
 
 	if len(result) > 0 {
 		return result[0], nil
 	} else {
 		return OChainState{
+			Id:                 1,
 			Size:               0,
 			Height:             0,
 			LatestPortalUpdate: 0,

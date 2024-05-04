@@ -22,8 +22,8 @@ import (
 	cmtflags "github.com/cometbft/cometbft/libs/cli/flags"
 	cmtlog "github.com/cometbft/cometbft/libs/log"
 	nm "github.com/cometbft/cometbft/node"
-	ochainCfg "github.com/ochain.gg/ochain-network-validator/config"
-	"github.com/ochain.gg/ochain-network-validator/scheduler"
+	ochainCfg "github.com/ochain.gg/ochain-network/config"
+	"github.com/ochain.gg/ochain-network/scheduler"
 	"github.com/spf13/viper"
 )
 

@@ -6,7 +6,7 @@ import (
 	abcitypes "github.com/cometbft/cometbft/abci/types"
 	"github.com/fxamacker/cbor/v2"
 
-	"github.com/ochain.gg/ochain-network-validator/types"
+	"github.com/ochain.gg/ochain-network/types"
 )
 
 type RegisterAccountTransactionData struct {

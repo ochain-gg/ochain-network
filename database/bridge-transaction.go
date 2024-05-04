@@ -24,7 +24,10 @@ type OChainBridgeTransaction struct {
 	Id              string `badgerhold:"key"`
 	Type            OChainBridgeTransactionType
 	TransactionHash string
+	Account         string
+	Amount          uint64
 	Executed        bool
+	Canceled        bool
 }
 
 func (table *OChainBridgeTransactionTable) Get(id uint) (OChainBridgeTransaction, error) {
@@ -36,15 +39,15 @@ func (table *OChainBridgeTransactionTable) Get(id uint) (OChainBridgeTransaction
 	}
 
 	if len(result) == 0 {
-		return OChainBridgeTransaction{}, errors.New("account not found")
+		return OChainBridgeTransaction{}, errors.New("tx not found")
 	}
 
 	return result[0], nil
 }
 
-func (table *OChainBridgeTransactionTable) GetByOwnerAddress(address string) (OChainBridgeTransaction, error) {
+func (table *OChainBridgeTransactionTable) GetByAccount(address string) (OChainBridgeTransaction, error) {
 	var result []OChainBridgeTransaction
-	err := table.db.Find(&result, badgerhold.Where("IAM.OwnerAddress").Eq(address))
+	err := table.db.Find(&result, badgerhold.Where("Account").Eq(address))
 
 	if err != nil {
 		return OChainBridgeTransaction{}, err

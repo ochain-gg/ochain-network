@@ -8,8 +8,8 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/fxamacker/cbor/v2"
-	"github.com/ochain.gg/ochain-network-validator/contracts"
-	"github.com/ochain.gg/ochain-network-validator/database"
+	"github.com/ochain.gg/ochain-network/contracts"
+	"github.com/ochain.gg/ochain-network/database"
 )
 
 type OChainPortalInteractionType uint64
@@ -40,8 +40,7 @@ func (tx OChainPortalInteractionTransaction) Check(ctx TransactionContext) error
 			return err
 		}
 
-		_, err = newValidatorTx.Check(ctx)
-		return err
+		return newValidatorTx.Check(ctx)
 
 	case RemoveValidatorPortalInteractionType:
 		removeValidatorTx, err := ParseRemoveValidatorTransaction(tx)
@@ -50,6 +49,15 @@ func (tx OChainPortalInteractionTransaction) Check(ctx TransactionContext) error
 		}
 
 		_, err = removeValidatorTx.Check(ctx)
+		return err
+
+	case OChainTokenDepositPortalInteractionType:
+		tokenDepositTx, err := ParseTokenDepositTransaction(tx)
+		if err != nil {
+			return err
+		}
+
+		_, err = tokenDepositTx.Check(ctx)
 		return err
 	}
 
@@ -74,6 +82,15 @@ func (tx OChainPortalInteractionTransaction) Execute(ctx TransactionContext) err
 		}
 
 		err = removeValidatorTx.Execute(ctx)
+		return err
+
+	case OChainTokenDepositPortalInteractionType:
+		tokenDepositTx, err := ParseTokenDepositTransaction(tx)
+		if err != nil {
+			return err
+		}
+
+		err = tokenDepositTx.Execute(ctx)
 		return err
 	}
 
@@ -118,7 +135,30 @@ type NewValidatorTransaction struct {
 
 type NewValidatorEventData NewValidatorTransactionDataArguments
 
-func (tx NewValidatorTransaction) Check(ctx TransactionContext) (contracts.OChainPortalOChainNewValidator, error) {
+func (tx NewValidatorTransaction) Check(ctx TransactionContext) error {
+
+	client, err := ethclient.Dial(ctx.Config.EVMRpc)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	remoteTx, _, err := client.TransactionByHash(context.Background(), common.HexToHash(tx.Data.Arguments.RemoteTransactionHash))
+	if err != nil {
+		return err
+	}
+
+	if remoteTx.ChainId().Uint64() != ctx.Config.EVMChainId {
+		log.Fatal(errors.New("rpc chainId don't match"))
+	}
+
+	if *remoteTx.To() != common.HexToAddress(ctx.Config.EVMPortalAddress) {
+		return errors.New("wrong to address")
+	}
+
+	return nil
+}
+
+func (tx NewValidatorTransaction) FetchData(ctx TransactionContext) (contracts.OChainPortalOChainNewValidator, error) {
 
 	client, err := ethclient.Dial(ctx.Config.EVMRpc)
 	if err != nil {
@@ -162,6 +202,11 @@ func (tx NewValidatorTransaction) Check(ctx TransactionContext) (contracts.OChai
 
 		if event.Raw.Address == common.HexToAddress(ctx.Config.EVMPortalAddress) {
 			if event.PublicKey == tx.Data.Arguments.PublicKey {
+				_, err = ctx.Db.Validators.Get(event.ValidatorId.Uint64(), ctx.Txn)
+				if err == nil {
+					return contracts.OChainPortalOChainNewValidator{}, errors.New("validator already created")
+				}
+
 				return *event, nil
 			}
 		}
@@ -172,14 +217,14 @@ func (tx NewValidatorTransaction) Check(ctx TransactionContext) (contracts.OChai
 
 func (tx NewValidatorTransaction) Execute(ctx TransactionContext) error {
 
-	event, err := tx.Check(ctx)
+	event, err := tx.FetchData(ctx)
 	if err != nil {
 		return err
 	}
 
 	_, err = ctx.Db.Validators.Get(event.ValidatorId.Uint64(), ctx.Txn)
-	if err != nil {
-		return errors.New("validator already activated")
+	if err == nil {
+		return errors.New("validator already created")
 	}
 
 	err = ctx.Db.Validators.Insert(database.OChainValidator{
@@ -189,6 +234,20 @@ func (tx NewValidatorTransaction) Execute(ctx TransactionContext) error {
 		PublicKey: event.PublicKey,
 		Enabled:   true,
 	}, ctx.Txn)
+
+	if err != nil {
+		return err
+	}
+
+	state, err := ctx.Db.BridgeState.Get()
+	if err != nil {
+		return err
+	}
+
+	if event.Raw.BlockNumber > state.LatestPortalUpdate {
+		state.SetLatestPortalUpdate(event.Raw.BlockNumber)
+		err = ctx.Db.BridgeState.Save(state, ctx.Txn)
+	}
 
 	return err
 }
@@ -248,7 +307,6 @@ type RemoveValidatorTransactionData struct {
 }
 
 type RemoveValidatorTransaction struct {
-	Hash string
 	Type TransactionType
 	Data RemoveValidatorTransactionData
 }
@@ -321,6 +379,19 @@ func (tx *RemoveValidatorTransaction) Execute(ctx TransactionContext) error {
 
 	validator.Enabled = false
 	err = ctx.Db.Validators.Save(validator, ctx.Txn)
+	if err != nil {
+		return err
+	}
+
+	state, err := ctx.Db.BridgeState.Get()
+	if err != nil {
+		return err
+	}
+
+	if event.Raw.BlockNumber > state.LatestPortalUpdate {
+		state.SetLatestPortalUpdate(event.Raw.BlockNumber)
+		err = ctx.Db.BridgeState.Save(state, ctx.Txn)
+	}
 
 	return err
 }
@@ -357,6 +428,149 @@ func ParseRemoveValidatorTransaction(tx OChainPortalInteractionTransaction) (Rem
 	return RemoveValidatorTransaction{
 		Type: tx.Type,
 		Data: RemoveValidatorTransactionData{
+			Type:      tx.Data.Type,
+			Arguments: txDataArgs,
+		},
+	}, nil
+}
+
+// Token deposit
+type TokenDepositTransactionDataArguments struct {
+	RemoteTransactionHash string `cbor:"1,keyasint"`
+}
+
+type TokenDepositTransactionDataRaw struct {
+	Type      OChainPortalInteractionType `cbor:"1,keyasint"`
+	Arguments []byte                      `cbor:"2,keyasint"`
+}
+
+type TokenDepositTransactionData struct {
+	Type      OChainPortalInteractionType
+	Arguments TokenDepositTransactionDataArguments
+}
+
+type TokenDepositTransaction struct {
+	Hash string
+	Type TransactionType
+	Data TokenDepositTransactionData
+}
+
+type TokenDepositEventData TokenDepositTransactionDataArguments
+
+func (tx TokenDepositTransaction) Check(ctx TransactionContext) (contracts.OChainPortalOChainTokenDeposit, error) {
+
+	client, err := ethclient.Dial(ctx.Config.EVMRpc)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	remoteTx, _, err := client.TransactionByHash(context.Background(), common.HexToHash(tx.Data.Arguments.RemoteTransactionHash))
+	if err != nil {
+		return contracts.OChainPortalOChainTokenDeposit{}, err
+	}
+
+	if remoteTx.ChainId().Uint64() != ctx.Config.EVMChainId {
+		log.Fatal(errors.New("rpc chainId don't match"))
+	}
+
+	if *remoteTx.To() != common.HexToAddress(ctx.Config.EVMPortalAddress) {
+		return contracts.OChainPortalOChainTokenDeposit{}, errors.New("wrong to address")
+	}
+
+	remoteTxReceipt, err := client.TransactionReceipt(context.Background(), common.HexToHash(tx.Data.Arguments.RemoteTransactionHash))
+	if err != nil {
+		return contracts.OChainPortalOChainTokenDeposit{}, err
+	}
+
+	if remoteTxReceipt.Status != 1 {
+		return contracts.OChainPortalOChainTokenDeposit{}, errors.New("non valid transaction")
+	}
+
+	address := common.HexToAddress(ctx.Config.EVMPortalAddress)
+	portal, err := contracts.NewOChainPortal(address, client)
+	if err != nil {
+		return contracts.OChainPortalOChainTokenDeposit{}, err
+	}
+
+	for _, vLog := range remoteTxReceipt.Logs {
+
+		event, err := portal.ParseOChainTokenDeposit(*vLog)
+		if err != nil {
+			continue
+		}
+
+		return *event, nil
+	}
+
+	return contracts.OChainPortalOChainTokenDeposit{}, errors.New("invalid tx")
+}
+
+func (tx *TokenDepositTransaction) Execute(ctx TransactionContext) error {
+
+	event, err := tx.Check(ctx)
+	if err != nil {
+		return err
+	}
+
+	acc := database.OChainBridgeTransaction{
+		Type:            database.OChainBridgeDepositTransaction,
+		TransactionHash: event.Raw.TxHash.Hex(),
+		Account:         event.Receiver.Hex(),
+		Amount:          event.Amount.Uint64(),
+		Executed:        false,
+		Canceled:        false,
+	}
+
+	err = ctx.Db.BridgeTransactions.Insert(acc, ctx.Txn)
+	if err != nil {
+		return err
+	}
+
+	state, err := ctx.Db.BridgeState.Get()
+	if err != nil {
+		return err
+	}
+
+	if event.Raw.BlockNumber > state.LatestPortalUpdate {
+		state.SetLatestPortalUpdate(event.Raw.BlockNumber)
+		err = ctx.Db.BridgeState.Save(state, ctx.Txn)
+	}
+
+	return err
+}
+
+func (tx TokenDepositTransaction) Transaction() (Transaction, error) {
+	txDataArgs, err := cbor.Marshal(tx.Data.Arguments)
+	if err != nil {
+		return Transaction{}, err
+	}
+
+	txData, err := cbor.Marshal(TokenDepositTransactionDataRaw{
+		Type:      tx.Data.Type,
+		Arguments: txDataArgs,
+	})
+	if err != nil {
+		return Transaction{}, err
+	}
+
+	return Transaction{
+		Type: tx.Type,
+		Data: txData,
+	}, nil
+}
+
+func ParseTokenDepositTransaction(tx OChainPortalInteractionTransaction) (TokenDepositTransaction, error) {
+
+	var txDataArgs TokenDepositTransactionDataArguments
+	err := cbor.Unmarshal([]byte(tx.Data.Arguments), &txDataArgs)
+
+	if err != nil {
+		return TokenDepositTransaction{}, err
+	}
+
+	return TokenDepositTransaction{
+		Type: tx.Type,
+		Data: TokenDepositTransactionData{
 			Type:      tx.Data.Type,
 			Arguments: txDataArgs,
 		},
