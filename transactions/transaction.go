@@ -11,8 +11,8 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/signer/core/apitypes"
 	"github.com/fxamacker/cbor/v2"
-	"github.com/ochain.gg/ochain-network/config"
-	"github.com/ochain.gg/ochain-network/database"
+	"github.com/ochain-gg/ochain-network/config"
+	"github.com/ochain-gg/ochain-network/database"
 )
 
 type TransactionType uint64

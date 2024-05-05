@@ -17,11 +17,12 @@ import (
 	"github.com/dgraph-io/badger/v4"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/ochain.gg/ochain-network/config"
-	"github.com/ochain.gg/ochain-network/contracts"
-	"github.com/ochain.gg/ochain-network/database"
-	"github.com/ochain.gg/ochain-network/transactions"
-	"github.com/ochain.gg/ochain-network/types"
+	"github.com/ochain-gg/ochain-network/config"
+	"github.com/ochain-gg/ochain-network/contracts"
+	"github.com/ochain-gg/ochain-network/database"
+	"github.com/ochain-gg/ochain-network/queries"
+	"github.com/ochain-gg/ochain-network/transactions"
+	"github.com/ochain-gg/ochain-network/types"
 	"github.com/timshannon/badgerhold/v4"
 )
 
@@ -348,30 +349,25 @@ func (app *OChainValidatorApplication) Commit(_ context.Context, commit *abcityp
 }
 
 func (app *OChainValidatorApplication) Query(_ context.Context, req *abcitypes.RequestQuery) (*abcitypes.ResponseQuery, error) {
-	// res := abcitypes.ResponseQuery{}
+	res := &abcitypes.ResponseQuery{}
 
-	// queries.ResolveQuery(req.Data)
-	// resQuery.Key = reqQuery.Data
-	// err := app.db.View(func(txn *badger.Txn) error {
-	// 	item, err := txn.Get(reqQuery.Data)
-	// 	if err != nil && err != badger.ErrKeyNotFound {
-	// 		return err
-	// 	}
-	// 	if err == badger.ErrKeyNotFound {
-	// 		resQuery.Log = "does not exist"
-	// 	} else {
-	// 		return item.Value(func(val []byte) error {
-	// 			resQuery.Log = "exists"
-	// 			resQuery.Value = val
-	// 			return nil
-	// 		})
-	// 	}
-	// 	return nil
-	// })
-	// if err != nil {
-	// 	panic(err)
-	// }
-	return &abcitypes.ResponseQuery{}, nil
+	switch req.Path {
+	case queries.GetUniversesPath:
+		value, err := queries.ResolveGetUniversesQuery(req.Data, app.db)
+		if err != nil {
+			return &abcitypes.ResponseQuery{}, err
+		}
+		res.Value = value
+
+	case queries.GetUniversePath:
+		value, err := queries.ResolveGetUniverseQuery(req.Data, app.db)
+		if err != nil {
+			return &abcitypes.ResponseQuery{}, err
+		}
+		res.Value = value
+	}
+
+	return res, nil
 }
 
 func (app *OChainValidatorApplication) PrepareProposal(ctx context.Context, proposal *abcitypes.RequestPrepareProposal) (*abcitypes.ResponsePrepareProposal, error) {

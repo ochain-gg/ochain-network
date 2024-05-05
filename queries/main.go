@@ -1,19 +1,10 @@
 package queries
 
-type QueryType string
-
 const (
-	GetUniverses QueryType = "GetUniverses"
-	GetUniverse  QueryType = "GetUniverse"
+	GetUniversesPath = "ochain_getUniverses"
+	GetUniversePath  = "ochain_getUniverse"
 
-	GetAccounts    QueryType = "GetAccounts"
-	GetAccount     QueryType = "GetAccount"
-	GetLeaderboard QueryType = "GetLeaderboard"
+	GetAccountsPath    = "ochain_getAccounts"
+	GetAccountPath     = "ochain_getAccount"
+	GetLeaderboardPath = "ochain_getLeaderboard"
 )
-
-type OChainQuery struct {
-}
-
-func ResolveQuery(query []byte) ([]byte, error) {
-	return []byte(""), nil
-}

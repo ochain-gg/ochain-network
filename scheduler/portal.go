@@ -9,10 +9,10 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/ochain.gg/ochain-network/config"
-	"github.com/ochain.gg/ochain-network/contracts"
-	"github.com/ochain.gg/ochain-network/database"
-	"github.com/ochain.gg/ochain-network/transactions"
+	"github.com/ochain-gg/ochain-network/config"
+	"github.com/ochain-gg/ochain-network/contracts"
+	"github.com/ochain-gg/ochain-network/database"
+	"github.com/ochain-gg/ochain-network/transactions"
 
 	rpchttp "github.com/cometbft/cometbft/rpc/client/http"
 )

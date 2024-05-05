@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/ochain.gg/ochain-network/database"
-	"github.com/ochain.gg/ochain-network/types"
+	"github.com/ochain-gg/ochain-network/database"
+	"github.com/ochain-gg/ochain-network/types"
 )
 
 var DefaultUniverse database.OChainUniverse = database.OChainUniverse{

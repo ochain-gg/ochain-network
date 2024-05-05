@@ -4,7 +4,7 @@ import (
 	"errors"
 
 	"github.com/dgraph-io/badger/v4"
-	"github.com/ochain.gg/ochain-network/types"
+	"github.com/ochain-gg/ochain-network/types"
 	"github.com/timshannon/badgerhold/v4"
 )
 
@@ -14,20 +14,20 @@ type OChainUniverseTable struct {
 
 type OChainUniverseConfiguration struct {
 	//Global configuration
-	Speed                   uint
-	MaxGalaxy               uint
-	MaxSolarSystemPerGalaxy uint
-	MaxPlanetPerSolarSystem uint
+	Speed                   uint `cbor:"speed"`
+	MaxGalaxy               uint `cbor:"maxGalaxy"`
+	MaxSolarSystemPerGalaxy uint `cbor:"maxSolarSystemPerGalaxy"`
+	MaxPlanetPerSolarSystem uint `cbor:"maxPlanetPerSolarSystem"`
 
-	Spaceships []types.OChainSpaceship
-	Defenses   []types.OChainDefense
+	Spaceships []types.OChainSpaceship `cbor:"spaceships"`
+	Defenses   []types.OChainDefense   `cbor:"defenses"`
 }
 
 type OChainUniverse struct {
-	Id            uint `badgerhold:"key"`
-	Name          string
-	Configuration OChainUniverseConfiguration
-	CreatedAt     uint
+	Id            uint                        `badgerhold:"key" cbor:"id"`
+	Name          string                      `cbor:"name"`
+	Configuration OChainUniverseConfiguration `cbor:"configuration"`
+	CreatedAt     uint                        `cbor:"createdAt"`
 }
 
 func (table *OChainUniverseTable) Get(id uint) (OChainUniverse, error) {
@@ -45,10 +45,11 @@ func (table *OChainUniverseTable) Get(id uint) (OChainUniverse, error) {
 	return result[0], nil
 }
 
-func (table *OChainUniverseTable) GetAll(id uint) []OChainUniverse {
+func (table *OChainUniverseTable) GetAll() []OChainUniverse {
 	var result []OChainUniverse
-	table.db.Find(&result, badgerhold.Where("Id").Eq(id))
+	q := &badgerhold.Query{}
 
+	table.db.Find(&result, q)
 	return result
 }
 

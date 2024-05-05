@@ -1,4 +1,4 @@
-module github.com/ochain.gg/ochain-network
+module github.com/ochain-gg/ochain-network
 
 go 1.22.2
 

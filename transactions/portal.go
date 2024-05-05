@@ -8,8 +8,8 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/fxamacker/cbor/v2"
-	"github.com/ochain.gg/ochain-network/contracts"
-	"github.com/ochain.gg/ochain-network/database"
+	"github.com/ochain-gg/ochain-network/contracts"
+	"github.com/ochain-gg/ochain-network/database"
 )
 
 type OChainPortalInteractionType uint64

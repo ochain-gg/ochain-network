@@ -4,7 +4,7 @@ import (
 	"errors"
 
 	"github.com/dgraph-io/badger/v4"
-	"github.com/ochain.gg/ochain-network/types"
+	"github.com/ochain-gg/ochain-network/types"
 	"github.com/timshannon/badgerhold/v4"
 )
 
