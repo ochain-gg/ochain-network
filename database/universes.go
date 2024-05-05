@@ -12,58 +12,40 @@ type OChainUniverseTable struct {
 	db *badgerhold.Store
 }
 
-type OChainUniverseConfiguration struct {
-	//Global configuration
-	Speed                   uint `cbor:"speed"`
-	MaxGalaxy               uint `cbor:"maxGalaxy"`
-	MaxSolarSystemPerGalaxy uint `cbor:"maxSolarSystemPerGalaxy"`
-	MaxPlanetPerSolarSystem uint `cbor:"maxPlanetPerSolarSystem"`
-
-	Spaceships []types.OChainSpaceship `cbor:"spaceships"`
-	Defenses   []types.OChainDefense   `cbor:"defenses"`
-}
-
-type OChainUniverse struct {
-	Id            uint                        `badgerhold:"key" cbor:"id"`
-	Name          string                      `cbor:"name"`
-	Configuration OChainUniverseConfiguration `cbor:"configuration"`
-	CreatedAt     uint                        `cbor:"createdAt"`
-}
-
-func (table *OChainUniverseTable) Get(id uint) (OChainUniverse, error) {
-	var result []OChainUniverse
+func (table *OChainUniverseTable) Get(id uint) (types.OChainUniverse, error) {
+	var result []types.OChainUniverse
 	err := table.db.Find(&result, badgerhold.Where("Id").Eq(id))
 
 	if err != nil {
-		return OChainUniverse{}, err
+		return types.OChainUniverse{}, err
 	}
 
 	if len(result) == 0 {
-		return OChainUniverse{}, errors.New("universe not found")
+		return types.OChainUniverse{}, errors.New("universe not found")
 	}
 
 	return result[0], nil
 }
 
-func (table *OChainUniverseTable) GetAll() []OChainUniverse {
-	var result []OChainUniverse
+func (table *OChainUniverseTable) GetAll() []types.OChainUniverse {
+	var result []types.OChainUniverse
 	q := &badgerhold.Query{}
 
 	table.db.Find(&result, q)
 	return result
 }
 
-func (table *OChainUniverseTable) Insert(universe OChainUniverse, tx *badger.Txn) error {
+func (table *OChainUniverseTable) Insert(universe types.OChainUniverse, tx *badger.Txn) error {
 	err := table.db.TxInsert(tx, badgerhold.NextSequence(), &universe)
 	return err
 }
 
-func (table *OChainUniverseTable) Save(universe OChainUniverse, tx *badger.Txn) error {
+func (table *OChainUniverseTable) Save(universe types.OChainUniverse, tx *badger.Txn) error {
 	err := table.db.TxUpdate(tx, universe.Id, universe)
 	return err
 }
 
-func (table *OChainUniverseTable) Delete(universe OChainUniverse, tx *badger.Txn) error {
+func (table *OChainUniverseTable) Delete(universe types.OChainUniverse, tx *badger.Txn) error {
 	err := table.db.TxDelete(tx, universe.Id, universe)
 	return err
 }

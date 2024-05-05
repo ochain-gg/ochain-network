@@ -1,15 +1,14 @@
 package main
 
 import (
-	"github.com/ochain-gg/ochain-network/database"
 	"github.com/ochain-gg/ochain-network/types"
 )
 
-var DefaultUniverse database.OChainUniverse = database.OChainUniverse{
+var DefaultUniverse types.OChainUniverse = types.OChainUniverse{
 	Id:        1,
 	Name:      "OChain main universe",
 	CreatedAt: 0,
-	Configuration: database.OChainUniverseConfiguration{
+	Configuration: types.OChainUniverseConfiguration{
 		Speed:                   2,
 		MaxGalaxy:               255,
 		MaxSolarSystemPerGalaxy: 255,
