@@ -6,16 +6,14 @@ require (
 	github.com/cometbft/cometbft v0.38.7
 	github.com/dgraph-io/badger/v4 v4.2.0
 	github.com/ethereum/go-ethereum v1.11.6
+	github.com/fxamacker/cbor/v2 v2.6.0
 	github.com/go-co-op/gocron/v2 v2.2.10
 	github.com/spf13/cobra v1.8.0
 	github.com/spf13/viper v1.18.1
 	github.com/timshannon/badgerhold/v4 v4.0.3
 )
 
-require (
-	github.com/fxamacker/cbor/v2 v2.6.0 // indirect
-	github.com/x448/float16 v0.8.4 // indirect
-)
+require github.com/x448/float16 v0.8.4 // indirect
 
 require (
 	github.com/StackExchange/wmi v1.2.1 // indirect

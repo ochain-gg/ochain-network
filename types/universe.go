@@ -13,7 +13,8 @@ type OChainCost struct {
 }
 
 type OChainUniverseConfiguration struct {
-	//Global configuration
+	Id uint `badgerhold:"key" cbor:"id"`
+
 	Speed                   uint `cbor:"speed"`
 	MaxGalaxy               uint `cbor:"maxGalaxy"`
 	MaxSolarSystemPerGalaxy uint `cbor:"maxSolarSystemPerGalaxy"`
@@ -24,10 +25,9 @@ type OChainUniverseConfiguration struct {
 }
 
 type OChainUniverse struct {
-	Id            uint                        `badgerhold:"key" cbor:"id"`
-	Name          string                      `cbor:"name"`
-	Configuration OChainUniverseConfiguration `cbor:"configuration"`
-	CreatedAt     uint                        `cbor:"createdAt"`
+	Id        uint   `badgerhold:"key" cbor:"id"`
+	Name      string `cbor:"name"`
+	CreatedAt uint   `cbor:"createdAt"`
 }
 
 type OChainFighterStats struct {

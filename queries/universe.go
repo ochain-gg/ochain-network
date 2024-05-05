@@ -1,8 +1,6 @@
 package queries
 
 import (
-	"encoding/json"
-
 	"github.com/fxamacker/cbor/v2"
 	"github.com/ochain-gg/ochain-network/database"
 )
@@ -24,14 +22,14 @@ func ResolveGetUniversesQuery(q []byte, db *database.OChainDatabase) ([]byte, er
 
 func ResolveGetUniverseQuery(q []byte, db *database.OChainDatabase) ([]byte, error) {
 	var parameters GetUniverseQueryParameters
-	json.Unmarshal(q, &parameters)
+	cbor.Unmarshal(q, &parameters)
 
 	universes, err := db.Universes.Get(parameters.Id)
 	if err != nil {
 		return []byte(""), err
 	}
 
-	result, err := json.Marshal(universes)
+	result, err := cbor.Marshal(universes)
 	if err != nil {
 		return []byte(""), err
 	}
