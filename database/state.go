@@ -1,67 +1,88 @@
 package database
 
 import (
-	"encoding/hex"
-	"log"
-	"strconv"
+	"errors"
+	"math"
 
 	"github.com/dgraph-io/badger/v4"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/timshannon/badgerhold/v4"
+	"github.com/fxamacker/cbor/v2"
+	"github.com/ochain-gg/ochain-network/types"
+)
+
+const (
+	OChainStateKey string = "ochain_network_state"
 )
 
 type OChainStateTable struct {
-	db *badgerhold.Store
+	bdb        *badger.DB
+	currentTxn *badger.Txn
 }
 
-type OChainState struct {
-	Id     int `badgerhold:"key"`
-	Size   int64
-	Height int64
-
-	LatestPortalUpdate uint64
+func (db *OChainStateTable) SetCurrentTxn(tx *badger.Txn) {
+	db.currentTxn = tx
 }
 
-func (state *OChainState) Hash() []byte {
-	hash := crypto.Keccak256Hash([]byte(strconv.FormatInt(state.Size, 16))).Bytes()
-	log.Printf("State hash processed at size %d: %s", state.Size, hex.EncodeToString(hash))
-	return hash
+func (db *OChainStateTable) Exists(address string) (bool, error) {
+	var at uint64
+	at = math.MaxUint64
+	return db.ExistsAt(address, at)
 }
 
-func (state *OChainState) SetHeight(height int64) {
-	state.Height = height
-}
-
-func (state *OChainState) IncSize() {
-	state.Size = state.Size + 1
-}
-
-func (table *OChainStateTable) Get() (OChainState, error) {
-	var result []OChainState
-	err := table.db.Find(&result, badgerhold.Where("Id").Eq(1))
-	if err != nil {
-		return OChainState{}, err
-	}
-
-	if len(result) > 0 {
-		return result[0], nil
+func (db *OChainStateTable) ExistsAt(address string, at uint64) (bool, error) {
+	key := []byte(OChainUniverseAccountPrefix + address)
+	txn := db.bdb.NewTransactionAt(at, false)
+	if _, err := txn.Get([]byte(key)); err != nil {
+		if errors.Is(err, badger.ErrKeyNotFound) {
+			return false, nil
+		} else {
+			return false, err
+		}
 	} else {
-		return OChainState{
-			Id:                 1,
-			Size:               0,
-			Height:             0,
-			LatestPortalUpdate: 0,
-		}, nil
+		return true, nil
 	}
 }
 
-func (table *OChainStateTable) Save(state *OChainState, txn *badger.Txn) error {
-	err := table.db.TxUpsert(txn, 1, state)
-	return err
+func (db *OChainStateTable) Get(address string) (types.OChainUniverseAccount, error) {
+	var at uint64
+	at = math.MaxUint64
+	return db.GetAt(address, at)
 }
 
-func NewOChainStateTable(db *badgerhold.Store) *OChainStateTable {
+func (db *OChainStateTable) GetAt(address string, at uint64) (types.OChainUniverseAccount, error) {
+	var account types.OChainUniverseAccount
+	key := []byte(OChainUniverseAccountPrefix + address)
+	txn := db.bdb.NewTransactionAt(at, false)
+
+	item, err := txn.Get([]byte(key))
+	if err != nil {
+		return types.OChainUniverseAccount{}, err
+	}
+
+	value, err := item.ValueCopy(nil)
+	if err != nil {
+		return types.OChainUniverseAccount{}, err
+	}
+
+	err = cbor.Unmarshal(value, &account)
+	if err != nil {
+		return types.OChainUniverseAccount{}, err
+	}
+
+	return account, nil
+}
+
+func (db *OChainStateTable) Upsert(account types.OChainUniverseAccount) error {
+	key := []byte(OChainUniverseAccountPrefix + account.Address)
+	value, err := cbor.Marshal(account)
+	if err != nil {
+		return err
+	}
+
+	return db.currentTxn.Set(key, value)
+}
+
+func NewOChainStateTable(db *badger.DB) *OChainStateTable {
 	return &OChainStateTable{
-		db: db,
+		bdb: db,
 	}
 }

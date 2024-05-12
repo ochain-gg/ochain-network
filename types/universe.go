@@ -1,10 +1,12 @@
 package types
 
+import "fmt"
+
 type OChainResources struct {
-	OCT       uint
-	Metal     uint
-	Crystal   uint
-	Deutereum uint
+	OCT       uint `cbor:"1,keyasint"`
+	Metal     uint `cbor:"2,keyasint"`
+	Crystal   uint `cbor:"3,keyasint"`
+	Deutereum uint `cbor:"4,keyasint"`
 }
 
 type OChainCost struct {
@@ -13,7 +15,7 @@ type OChainCost struct {
 }
 
 type OChainUniverseConfiguration struct {
-	Id uint `badgerhold:"key" cbor:"id"`
+	Id string `cbor:"id"`
 
 	Speed                   uint `cbor:"speed"`
 	MaxGalaxy               uint `cbor:"maxGalaxy"`
@@ -25,7 +27,7 @@ type OChainUniverseConfiguration struct {
 }
 
 type OChainUniverse struct {
-	Id        uint   `badgerhold:"key" cbor:"id"`
+	Id        string `cbor:"id"`
 	Name      string `cbor:"name"`
 	CreatedAt uint   `cbor:"createdAt"`
 }
@@ -131,4 +133,23 @@ type OChainPlanetDefences struct {
 	GaussCannon     uint
 	PlasmaTurret    uint
 	DarkMatterCanon uint
+}
+
+type OChainPlanet struct {
+	Owner       uint64 `cbor:"1,keyasint"`
+	Universe    uint64 `cbor:"2,keyasint"`
+	Galaxy      uint64 `cbor:"3,keyasint"`
+	SolarSystem uint64 `cbor:"4,keyasint"`
+	Planet      uint64 `cbor:"5,keyasint"`
+
+	Buildings  OChainPlanetBuildings `cbor:"6,keyasint"`
+	Spaceships OChainFleetSpaceships `cbor:"7,keyasint"`
+	Defenses   OChainPlanetDefences  `cbor:"8,keyasint"`
+	Resources  OChainResources       `cbor:"9,keyasint"`
+
+	LastResourceUpdate uint `cbor:"10,keyasint"`
+}
+
+func (planet *OChainPlanet) CoordinateId() string {
+	return fmt.Sprint(planet.Galaxy) + "_" + fmt.Sprint(planet.SolarSystem) + fmt.Sprint(planet.Planet)
 }

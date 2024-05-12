@@ -2,64 +2,167 @@ package database
 
 import (
 	"errors"
+	"math"
 
 	"github.com/dgraph-io/badger/v4"
-	"github.com/timshannon/badgerhold/v4"
+	"github.com/fxamacker/cbor/v2"
+	"github.com/ochain-gg/ochain-network/types"
+)
+
+const (
+	OChainValidatorPrefix string = "validator_"
 )
 
 type OChainValidatorTable struct {
-	db *badgerhold.Store
+	bdb        *badger.DB
+	currentTxn *badger.Txn
 }
 
-type OChainValidator struct {
-	Id                        uint64
-	Stacker                   string
-	Validator                 string
-	PublicKey                 string
-	Enabled                   bool
-	StackingTreansactionHash  string
-	UnstackingTransactionHash string
+func (db *OChainValidatorTable) SetCurrentTxn(tx *badger.Txn) {
+	db.currentTxn = tx
 }
 
-func (table *OChainValidatorTable) Get(id uint64, tx *badger.Txn) (OChainValidator, error) {
-	var result []OChainValidator
-	err := table.db.TxFind(tx, &result, badgerhold.Where("Id").Eq(id))
+func (db *OChainValidatorTable) Exists(address string) (bool, error) {
+	var at uint64
+	at = math.MaxUint64
+	return db.ExistsAt(address, at)
+}
 
+func (db *OChainValidatorTable) ExistsAt(address string, at uint64) (bool, error) {
+	key := []byte(OChainValidatorPrefix + address)
+	txn := db.bdb.NewTransactionAt(at, false)
+	if _, err := txn.Get([]byte(key)); err != nil {
+		if errors.Is(err, badger.ErrKeyNotFound) {
+			return false, nil
+		} else {
+			return false, err
+		}
+	} else {
+		return true, nil
+	}
+}
+
+func (db *OChainValidatorTable) Get(address string) (types.OChainValidator, error) {
+	var at uint64
+	at = math.MaxUint64
+	return db.GetAt(address, at)
+}
+
+func (db *OChainValidatorTable) GetAt(address string, at uint64) (types.OChainValidator, error) {
+	var account types.OChainValidator
+	key := []byte(OChainValidatorPrefix + address)
+	txn := db.bdb.NewTransactionAt(at, false)
+
+	item, err := txn.Get([]byte(key))
 	if err != nil {
-		return OChainValidator{}, err
+		return types.OChainValidator{}, err
 	}
 
-	if len(result) == 0 {
-		return OChainValidator{}, errors.New("account not found")
+	value, err := item.ValueCopy(nil)
+	if err != nil {
+		return types.OChainValidator{}, err
 	}
 
-	return result[0], nil
+	err = cbor.Unmarshal(value, &account)
+	if err != nil {
+		return types.OChainValidator{}, err
+	}
+
+	return account, nil
 }
 
-func (table *OChainValidatorTable) GetAll(tx *badger.Txn) []OChainValidator {
-	var result []OChainValidator
-	table.db.TxFind(tx, &result, badgerhold.Where("Id").Ge(0))
+func (db *OChainValidatorTable) Insert(validator types.OChainValidator) error {
+	key := []byte(OChainValidatorPrefix + validator.PublicKey)
 
-	return result
+	exists, err := db.ExistsAt(validator.PublicKey, db.currentTxn.ReadTs())
+	if err != nil {
+		return err
+	}
+
+	if exists {
+		return errors.New("validator already exists")
+	}
+
+	value, err := cbor.Marshal(validator)
+	if err != nil {
+		return err
+	}
+
+	return db.currentTxn.Set(key, value)
 }
 
-func (table *OChainValidatorTable) Insert(validator OChainValidator, tx *badger.Txn) error {
-	err := table.db.TxInsert(tx, badgerhold.NextSequence(), &validator)
-	return err
+func (db *OChainValidatorTable) Update(validator types.OChainValidator) error {
+	key := []byte(OChainValidatorPrefix + validator.PublicKey)
+
+	exists, err := db.ExistsAt(validator.PublicKey, db.currentTxn.ReadTs())
+	if err != nil {
+		return err
+	}
+
+	if !exists {
+		return errors.New("validator doesn't exists")
+	}
+
+	value, err := cbor.Marshal(validator)
+	if err != nil {
+		return err
+	}
+
+	return db.currentTxn.Set(key, value)
 }
 
-func (table *OChainValidatorTable) Save(validator OChainValidator, tx *badger.Txn) error {
-	err := table.db.TxUpdate(tx, validator.Id, validator)
-	return err
+func (db *OChainValidatorTable) Upsert(validator types.OChainValidator) error {
+	key := []byte(OChainValidatorPrefix + validator.PublicKey)
+	value, err := cbor.Marshal(validator)
+	if err != nil {
+		return err
+	}
+
+	return db.currentTxn.Set(key, value)
 }
 
-func (table *OChainValidatorTable) Delete(validator OChainValidator, tx *badger.Txn) error {
-	err := table.db.TxDelete(tx, validator.Id, validator)
-	return err
+func (db *OChainValidatorTable) Delete(address string) error {
+	key := []byte(OChainValidatorPrefix + address)
+	return db.currentTxn.Delete(key)
 }
 
-func NewOChainValidatorTable(db *badgerhold.Store) *OChainValidatorTable {
+func (db *OChainValidatorTable) GetAll() ([]types.OChainValidator, error) {
+	var at uint64
+	at = math.MaxUint64
+	return db.GetAllAt(at)
+}
+
+func (db *OChainValidatorTable) GetAllAt(at uint64) ([]types.OChainValidator, error) {
+	var validators []types.OChainValidator
+
+	txn := db.bdb.NewTransactionAt(at, false)
+	it := txn.NewIterator(badger.DefaultIteratorOptions)
+	defer it.Close()
+
+	prefix := []byte(OChainValidatorPrefix)
+
+	for it.Seek(prefix); it.ValidForPrefix(prefix); it.Next() {
+		item := it.Item()
+
+		var validator types.OChainValidator
+		value, err := item.ValueCopy(nil)
+		if err != nil {
+			return []types.OChainValidator{}, err
+		}
+
+		err = cbor.Unmarshal(value, &validator)
+		if err != nil {
+			return []types.OChainValidator{}, err
+		}
+
+		validators = append(validators, validator)
+	}
+
+	return validators, nil
+}
+
+func NewOChainValidatorTable(db *badger.DB) *OChainValidatorTable {
 	return &OChainValidatorTable{
-		db: db,
+		bdb: db,
 	}
 }

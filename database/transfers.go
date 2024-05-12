@@ -10,26 +10,26 @@ import (
 )
 
 const (
-	OChainUniversePrefix string = "universe_"
+	OChainTokenTransferPrefix string = "oct_transfer_"
 )
 
-type OChainUniverseTable struct {
+type OChainTokenTransferTable struct {
 	bdb        *badger.DB
 	currentTxn *badger.Txn
 }
 
-func (db *OChainUniverseTable) SetCurrentTxn(tx *badger.Txn) {
+func (db *OChainTokenTransferTable) SetCurrentTxn(tx *badger.Txn) {
 	db.currentTxn = tx
 }
 
-func (db *OChainUniverseTable) Exists(address string) (bool, error) {
+func (db *OChainTokenTransferTable) Exists(address string) (bool, error) {
 	var at uint64
 	at = math.MaxUint64
 	return db.ExistsAt(address, at)
 }
 
-func (db *OChainUniverseTable) ExistsAt(address string, at uint64) (bool, error) {
-	key := []byte(OChainUniversePrefix + address)
+func (db *OChainTokenTransferTable) ExistsAt(address string, at uint64) (bool, error) {
+	key := []byte(OChainTokenTransferPrefix + address)
 	txn := db.bdb.NewTransactionAt(at, false)
 	if _, err := txn.Get([]byte(key)); err != nil {
 		if errors.Is(err, badger.ErrKeyNotFound) {
@@ -42,37 +42,37 @@ func (db *OChainUniverseTable) ExistsAt(address string, at uint64) (bool, error)
 	}
 }
 
-func (db *OChainUniverseTable) Get(address string) (types.OChainUniverse, error) {
+func (db *OChainTokenTransferTable) Get(address string) (types.OChainTokenTransfer, error) {
 	var at uint64
 	at = math.MaxUint64
 	return db.GetAt(address, at)
 }
 
-func (db *OChainUniverseTable) GetAt(address string, at uint64) (types.OChainUniverse, error) {
-	var universe types.OChainUniverse
-	key := []byte(OChainUniversePrefix + address)
+func (db *OChainTokenTransferTable) GetAt(address string, at uint64) (types.OChainTokenTransfer, error) {
+	var universe types.OChainTokenTransfer
+	key := []byte(OChainTokenTransferPrefix + address)
 	txn := db.bdb.NewTransactionAt(at, false)
 
 	item, err := txn.Get([]byte(key))
 	if err != nil {
-		return types.OChainUniverse{}, err
+		return types.OChainTokenTransfer{}, err
 	}
 
 	value, err := item.ValueCopy(nil)
 	if err != nil {
-		return types.OChainUniverse{}, err
+		return types.OChainTokenTransfer{}, err
 	}
 
 	err = cbor.Unmarshal(value, &universe)
 	if err != nil {
-		return types.OChainUniverse{}, err
+		return types.OChainTokenTransfer{}, err
 	}
 
 	return universe, nil
 }
 
-func (db *OChainUniverseTable) Insert(universe types.OChainUniverse) error {
-	key := []byte(OChainUniversePrefix + universe.Id)
+func (db *OChainTokenTransferTable) Insert(universe types.OChainTokenTransfer) error {
+	key := []byte(OChainTokenTransferPrefix + universe.Id)
 
 	exists, err := db.ExistsAt(universe.Id, db.currentTxn.ReadTs())
 	if err != nil {
@@ -91,8 +91,8 @@ func (db *OChainUniverseTable) Insert(universe types.OChainUniverse) error {
 	return db.currentTxn.Set(key, value)
 }
 
-func (db *OChainUniverseTable) Update(universe types.OChainUniverse) error {
-	key := []byte(OChainUniversePrefix + universe.Id)
+func (db *OChainTokenTransferTable) Update(universe types.OChainTokenTransfer) error {
+	key := []byte(OChainTokenTransferPrefix + universe.Id)
 
 	exists, err := db.ExistsAt(universe.Id, db.currentTxn.ReadTs())
 	if err != nil {
@@ -111,8 +111,8 @@ func (db *OChainUniverseTable) Update(universe types.OChainUniverse) error {
 	return db.currentTxn.Set(key, value)
 }
 
-func (db *OChainUniverseTable) Upsert(universe types.OChainUniverse) error {
-	key := []byte(OChainUniversePrefix + universe.Id)
+func (db *OChainTokenTransferTable) Upsert(universe types.OChainTokenTransfer) error {
+	key := []byte(OChainTokenTransferPrefix + universe.Id)
 	value, err := cbor.Marshal(universe)
 	if err != nil {
 		return err
@@ -121,38 +121,38 @@ func (db *OChainUniverseTable) Upsert(universe types.OChainUniverse) error {
 	return db.currentTxn.Set(key, value)
 }
 
-func (db *OChainUniverseTable) Delete(id string) error {
-	key := []byte(OChainUniversePrefix + id)
+func (db *OChainTokenTransferTable) Delete(id string) error {
+	key := []byte(OChainTokenTransferPrefix + id)
 	return db.currentTxn.Delete(key)
 }
 
-func (db *OChainUniverseTable) GetAll() ([]types.OChainUniverse, error) {
+func (db *OChainTokenTransferTable) GetAll() ([]types.OChainTokenTransfer, error) {
 	var at uint64
 	at = math.MaxUint64
 	return db.GetAllAt(at)
 }
 
-func (db *OChainUniverseTable) GetAllAt(at uint64) ([]types.OChainUniverse, error) {
-	var universes []types.OChainUniverse
+func (db *OChainTokenTransferTable) GetAllAt(at uint64) ([]types.OChainTokenTransfer, error) {
+	var universes []types.OChainTokenTransfer
 
 	txn := db.bdb.NewTransactionAt(at, false)
 	it := txn.NewIterator(badger.DefaultIteratorOptions)
 	defer it.Close()
 
-	prefix := []byte(OChainUniversePrefix)
+	prefix := []byte(OChainTokenTransferPrefix)
 
 	for it.Seek(prefix); it.ValidForPrefix(prefix); it.Next() {
 		item := it.Item()
 
-		var universe types.OChainUniverse
+		var universe types.OChainTokenTransfer
 		value, err := item.ValueCopy(nil)
 		if err != nil {
-			return []types.OChainUniverse{}, err
+			return []types.OChainTokenTransfer{}, err
 		}
 
 		err = cbor.Unmarshal(value, &universe)
 		if err != nil {
-			return []types.OChainUniverse{}, err
+			return []types.OChainTokenTransfer{}, err
 		}
 
 		universes = append(universes, universe)
@@ -161,8 +161,8 @@ func (db *OChainUniverseTable) GetAllAt(at uint64) ([]types.OChainUniverse, erro
 	return universes, nil
 }
 
-func NewOChainUniverseTable(db *badger.DB) *OChainUniverseTable {
-	return &OChainUniverseTable{
+func NewOChainTokenTransferTable(db *badger.DB) *OChainTokenTransferTable {
+	return &OChainTokenTransferTable{
 		bdb: db,
 	}
 }
