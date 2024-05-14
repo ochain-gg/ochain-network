@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"encoding/hex"
-	"errors"
 	"fmt"
 	"log"
 	"math/big"
@@ -14,8 +13,8 @@ import (
 	"github.com/cometbft/cometbft/crypto/ed25519"
 	"github.com/cometbft/cometbft/proto/tendermint/crypto"
 	"github.com/cometbft/cometbft/version"
-	"github.com/dgraph-io/badger/v4"
 	"github.com/ethereum/go-ethereum/common"
+	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ochain-gg/ochain-network/config"
 	"github.com/ochain-gg/ochain-network/contracts"
@@ -23,7 +22,6 @@ import (
 	"github.com/ochain-gg/ochain-network/queries"
 	"github.com/ochain-gg/ochain-network/transactions"
 	"github.com/ochain-gg/ochain-network/types"
-	"github.com/timshannon/badgerhold/v4"
 )
 
 const (
@@ -33,52 +31,56 @@ const (
 type OChainValidatorApplication struct {
 	abcitypes.BaseApplication
 
-	config         config.OChainConfig
-	store          *badgerhold.Store
-	db             *database.OChainDatabase
-	ongoingBlockTx *badger.Txn
+	config config.OChainConfig
+	db     *database.OChainDatabase
 
 	remotePrivateKey []byte
 
-	state        *database.OChainState
+	state        *types.OChainState
 	RetainBlocks int64
 	ValUpdates   []abcitypes.ValidatorUpdate
 }
 
 var _ abcitypes.Application = (*OChainValidatorApplication)(nil)
 
-func NewOChainValidatorApplication(config config.OChainConfig, store *badgerhold.Store, remotePrivateKey []byte) (*OChainValidatorApplication, error) {
-	db := database.NewOChainDatabase(store)
+func NewOChainValidatorApplication(config config.OChainConfig, dbpath string, remotePrivateKey []byte) (*OChainValidatorApplication, error) {
+	db := database.NewOChainDatabase(dbpath)
 	state, err := db.State.Get()
 	if err != nil {
-		return &OChainValidatorApplication{}, errors.New("state unaivalable")
+
+		return &OChainValidatorApplication{}, err
 	}
 
 	return &OChainValidatorApplication{
 		config:           config,
-		store:            store,
 		state:            &state,
 		db:               db,
 		remotePrivateKey: remotePrivateKey,
 	}, nil
 }
 
+func (app *OChainValidatorApplication) Hash() []byte {
+	hash := ethcrypto.Keccak256Hash([]byte(strconv.FormatInt(app.state.Size, 16))).Bytes()
+	log.Printf("State hash processed at size %d: %s", app.state.Size, hex.EncodeToString(hash))
+	return hash
+}
+
 func (app *OChainValidatorApplication) Info(_ context.Context, info *abcitypes.RequestInfo) (*abcitypes.ResponseInfo, error) {
 	log.Printf("Info call last block heigh: %d", app.state.Height)
-	log.Printf("Info call last block hash: %s", app.state.Hash())
+	log.Printf("Info call last block hash: %s", app.state.Hash)
 	return &abcitypes.ResponseInfo{
 		Data:             fmt.Sprintf("{\"size\":%v}", app.state.Size),
 		Version:          version.ABCIVersion,
 		AppVersion:       AppVersion,
 		LastBlockHeight:  app.state.Height,
-		LastBlockAppHash: app.state.Hash(),
+		LastBlockAppHash: app.Hash(),
 	}, nil
 
 }
 
 func (app *OChainValidatorApplication) InitChain(_ context.Context, chain *abcitypes.RequestInitChain) (*abcitypes.ResponseInitChain, error) {
 
-	tx := app.store.Badger().NewTransaction(true)
+	app.db.NewTransaction(uint64(chain.GetTime().Unix()))
 
 	client, err := ethclient.Dial(app.config.EVMRpc)
 	if err != nil {
@@ -130,16 +132,19 @@ func (app *OChainValidatorApplication) InitChain(_ context.Context, chain *abcit
 		}
 	}
 
-	_, err = app.db.Universes.Get(1)
+	_, err = app.db.Universes.Get("main")
 	if err != nil {
-		app.db.Universes.Insert(DefaultUniverse, tx)
+		app.db.Universes.Insert(DefaultUniverse)
 	}
 
-	tx.Commit()
+	err = app.db.CommitTransaction()
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	return &abcitypes.ResponseInitChain{
 		Validators: validators,
-		AppHash:    app.state.Hash(),
+		AppHash:    app.Hash(),
 	}, nil
 }
 
@@ -148,7 +153,7 @@ func (app *OChainValidatorApplication) CheckTx(ctx context.Context, req *abcityp
 	txCtx := transactions.TransactionContext{
 		Config: app.config,
 		Db:     app.db,
-		Txn:    app.store.Badger().NewTransaction(true),
+		State:  app.state,
 		Date:   time.Now(),
 	}
 	log.Printf("Check tx: %s", hex.EncodeToString(req.Tx))
@@ -204,12 +209,13 @@ func (app *OChainValidatorApplication) CheckTx(ctx context.Context, req *abcityp
 func (app *OChainValidatorApplication) FinalizeBlock(_ context.Context, req *abcitypes.RequestFinalizeBlock) (*abcitypes.ResponseFinalizeBlock, error) {
 	log.Printf("Finalize block: %d", req.Height)
 	app.ValUpdates = make([]abcitypes.ValidatorUpdate, 0)
-	app.ongoingBlockTx = app.store.Badger().NewTransaction(true)
+
+	app.db.NewTransaction(uint64(req.Time.Unix()))
 
 	txCtx := transactions.TransactionContext{
 		Config: app.config,
 		Db:     app.db,
-		Txn:    app.ongoingBlockTx,
+		State:  app.state,
 		Date:   req.Time,
 	}
 
@@ -277,7 +283,7 @@ func (app *OChainValidatorApplication) FinalizeBlock(_ context.Context, req *abc
 					continue
 				}
 
-				validator, err := app.db.Validators.Get(formatedTx.Data.Arguments.ValidatorId, app.ongoingBlockTx)
+				validator, err := app.db.Validators.GetById(formatedTx.Data.Arguments.ValidatorId)
 				if err != nil {
 					txs[i] = &abcitypes.ExecTxResult{Code: types.ExecuteTransactionFailure}
 					log.Printf("Finalize tx %d: ExecuteTransactionFailure", i)
@@ -338,13 +344,13 @@ func (app *OChainValidatorApplication) FinalizeBlock(_ context.Context, req *abc
 	return &abcitypes.ResponseFinalizeBlock{
 		TxResults:        txs,
 		ValidatorUpdates: app.ValUpdates,
-		AppHash:          app.state.Hash(),
+		AppHash:          app.Hash(),
 	}, nil
 }
 
 func (app *OChainValidatorApplication) Commit(_ context.Context, commit *abcitypes.RequestCommit) (*abcitypes.ResponseCommit, error) {
-	app.db.State.Save(app.state, app.ongoingBlockTx)
-	err := app.ongoingBlockTx.Commit()
+	app.db.State.Upsert(*app.state)
+	err := app.db.CommitTransaction()
 	return &abcitypes.ResponseCommit{}, err
 }
 

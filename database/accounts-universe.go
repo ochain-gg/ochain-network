@@ -22,14 +22,13 @@ func (db *OChainUniverseAccountTable) SetCurrentTxn(tx *badger.Txn) {
 	db.currentTxn = tx
 }
 
-func (db *OChainUniverseAccountTable) Exists(address string) (bool, error) {
-	var at uint64
-	at = math.MaxUint64
-	return db.ExistsAt(address, at)
+func (db *OChainUniverseAccountTable) Exists(universeId string, address string) (bool, error) {
+	var at uint64 = math.MaxUint64
+	return db.ExistsAt(universeId, address, at)
 }
 
-func (db *OChainUniverseAccountTable) ExistsAt(address string, at uint64) (bool, error) {
-	key := []byte(OChainUniverseAccountPrefix + address)
+func (db *OChainUniverseAccountTable) ExistsAt(universeId string, address string, at uint64) (bool, error) {
+	key := []byte(OChainUniverseAccountPrefix + universeId + "_" + address)
 	txn := db.bdb.NewTransactionAt(at, false)
 	if _, err := txn.Get([]byte(key)); err != nil {
 		if errors.Is(err, badger.ErrKeyNotFound) {
@@ -42,15 +41,14 @@ func (db *OChainUniverseAccountTable) ExistsAt(address string, at uint64) (bool,
 	}
 }
 
-func (db *OChainUniverseAccountTable) Get(address string) (types.OChainUniverseAccount, error) {
-	var at uint64
-	at = math.MaxUint64
-	return db.GetAt(address, at)
+func (db *OChainUniverseAccountTable) Get(universeId string, address string) (types.OChainUniverseAccount, error) {
+	var at uint64 = math.MaxUint64
+	return db.GetAt(universeId, address, at)
 }
 
-func (db *OChainUniverseAccountTable) GetAt(address string, at uint64) (types.OChainUniverseAccount, error) {
+func (db *OChainUniverseAccountTable) GetAt(universeId string, address string, at uint64) (types.OChainUniverseAccount, error) {
 	var account types.OChainUniverseAccount
-	key := []byte(OChainUniverseAccountPrefix + address)
+	key := []byte(OChainUniverseAccountPrefix + universeId + "_" + address)
 	txn := db.bdb.NewTransactionAt(at, false)
 
 	item, err := txn.Get([]byte(key))
@@ -72,9 +70,9 @@ func (db *OChainUniverseAccountTable) GetAt(address string, at uint64) (types.OC
 }
 
 func (db *OChainUniverseAccountTable) Insert(account types.OChainUniverseAccount) error {
-	key := []byte(OChainUniverseAccountPrefix + account.Address)
+	key := []byte(OChainUniverseAccountPrefix + account.UniverseId + "_" + account.Address)
 
-	exists, err := db.ExistsAt(account.Address, db.currentTxn.ReadTs())
+	exists, err := db.ExistsAt(account.UniverseId, account.Address, db.currentTxn.ReadTs())
 	if err != nil {
 		return err
 	}
@@ -92,9 +90,9 @@ func (db *OChainUniverseAccountTable) Insert(account types.OChainUniverseAccount
 }
 
 func (db *OChainUniverseAccountTable) Update(account types.OChainUniverseAccount) error {
-	key := []byte(OChainUniverseAccountPrefix + account.Address)
+	key := []byte(OChainUniverseAccountPrefix + account.UniverseId + "_" + account.Address)
 
-	exists, err := db.ExistsAt(account.Address, db.currentTxn.ReadTs())
+	exists, err := db.ExistsAt(account.UniverseId, account.Address, db.currentTxn.ReadTs())
 	if err != nil {
 		return err
 	}
@@ -112,7 +110,7 @@ func (db *OChainUniverseAccountTable) Update(account types.OChainUniverseAccount
 }
 
 func (db *OChainUniverseAccountTable) Upsert(account types.OChainUniverseAccount) error {
-	key := []byte(OChainUniverseAccountPrefix + account.Address)
+	key := []byte(OChainUniverseAccountPrefix + account.UniverseId + "_" + account.Address)
 	value, err := cbor.Marshal(account)
 	if err != nil {
 		return err
@@ -121,14 +119,13 @@ func (db *OChainUniverseAccountTable) Upsert(account types.OChainUniverseAccount
 	return db.currentTxn.Set(key, value)
 }
 
-func (db *OChainUniverseAccountTable) Delete(address string) error {
+func (db *OChainUniverseAccountTable) Delete(universeId string, address string) error {
 	key := []byte(OChainUniverseAccountPrefix + address)
 	return db.currentTxn.Delete(key)
 }
 
 func (db *OChainUniverseAccountTable) GetAll() ([]types.OChainUniverseAccount, error) {
-	var at uint64
-	at = math.MaxUint64
+	var at uint64 = math.MaxUint64
 	return db.GetAllAt(at)
 }
 

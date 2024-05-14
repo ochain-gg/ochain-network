@@ -22,14 +22,13 @@ func (db *OChainStateTable) SetCurrentTxn(tx *badger.Txn) {
 	db.currentTxn = tx
 }
 
-func (db *OChainStateTable) Exists(address string) (bool, error) {
-	var at uint64
-	at = math.MaxUint64
-	return db.ExistsAt(address, at)
+func (db *OChainStateTable) Exists() (bool, error) {
+	var at uint64 = math.MaxUint64
+	return db.ExistsAt(at)
 }
 
-func (db *OChainStateTable) ExistsAt(address string, at uint64) (bool, error) {
-	key := []byte(OChainUniverseAccountPrefix + address)
+func (db *OChainStateTable) ExistsAt(at uint64) (bool, error) {
+	key := []byte(OChainStateKey)
 	txn := db.bdb.NewTransactionAt(at, false)
 	if _, err := txn.Get([]byte(key)); err != nil {
 		if errors.Is(err, badger.ErrKeyNotFound) {
@@ -42,38 +41,47 @@ func (db *OChainStateTable) ExistsAt(address string, at uint64) (bool, error) {
 	}
 }
 
-func (db *OChainStateTable) Get(address string) (types.OChainUniverseAccount, error) {
-	var at uint64
-	at = math.MaxUint64
-	return db.GetAt(address, at)
+func (db *OChainStateTable) Get() (types.OChainState, error) {
+	var at uint64 = math.MaxUint64
+	return db.GetAt(at)
 }
 
-func (db *OChainStateTable) GetAt(address string, at uint64) (types.OChainUniverseAccount, error) {
-	var account types.OChainUniverseAccount
-	key := []byte(OChainUniverseAccountPrefix + address)
+func (db *OChainStateTable) GetAt(at uint64) (types.OChainState, error) {
+	var state types.OChainState
+	key := []byte(OChainStateKey)
 	txn := db.bdb.NewTransactionAt(at, false)
 
 	item, err := txn.Get([]byte(key))
 	if err != nil {
-		return types.OChainUniverseAccount{}, err
+
+		if err == badger.ErrKeyNotFound {
+			return types.OChainState{
+				Size:               0,
+				Height:             0,
+				Hash:               []byte(""),
+				LatestPortalUpdate: 0,
+			}, nil
+		} else {
+			return types.OChainState{}, err
+		}
 	}
 
 	value, err := item.ValueCopy(nil)
 	if err != nil {
-		return types.OChainUniverseAccount{}, err
+		return types.OChainState{}, err
 	}
 
-	err = cbor.Unmarshal(value, &account)
+	err = cbor.Unmarshal(value, &state)
 	if err != nil {
-		return types.OChainUniverseAccount{}, err
+		return types.OChainState{}, err
 	}
 
-	return account, nil
+	return state, nil
 }
 
-func (db *OChainStateTable) Upsert(account types.OChainUniverseAccount) error {
-	key := []byte(OChainUniverseAccountPrefix + account.Address)
-	value, err := cbor.Marshal(account)
+func (db *OChainStateTable) Upsert(state types.OChainState) error {
+	key := []byte(OChainStateKey)
+	value, err := cbor.Marshal(state)
 	if err != nil {
 		return err
 	}

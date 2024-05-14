@@ -23,8 +23,7 @@ func (db *OChainGlobalAccountTable) SetCurrentTxn(tx *badger.Txn) {
 }
 
 func (db *OChainGlobalAccountTable) Exists(address string) (bool, error) {
-	var at uint64
-	at = math.MaxUint64
+	var at uint64 = math.MaxUint64
 	return db.ExistsAt(address, at)
 }
 
@@ -43,8 +42,7 @@ func (db *OChainGlobalAccountTable) ExistsAt(address string, at uint64) (bool, e
 }
 
 func (db *OChainGlobalAccountTable) Get(address string) (types.OChainGlobalAccount, error) {
-	var at uint64
-	at = math.MaxUint64
+	var at uint64 = math.MaxUint64
 	return db.GetAt(address, at)
 }
 
@@ -127,8 +125,7 @@ func (db *OChainGlobalAccountTable) Delete(address string) error {
 }
 
 func (db *OChainGlobalAccountTable) GetAll() ([]types.OChainGlobalAccount, error) {
-	var at uint64
-	at = math.MaxUint64
+	var at uint64 = math.MaxUint64
 	return db.GetAllAt(at)
 }
 

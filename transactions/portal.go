@@ -9,7 +9,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/fxamacker/cbor/v2"
 	"github.com/ochain-gg/ochain-network/contracts"
-	"github.com/ochain-gg/ochain-network/database"
+	"github.com/ochain-gg/ochain-network/types"
 )
 
 type OChainPortalInteractionType uint64
@@ -135,7 +135,7 @@ type NewValidatorTransaction struct {
 
 type NewValidatorEventData NewValidatorTransactionDataArguments
 
-func (tx NewValidatorTransaction) Check(ctx TransactionContext) error {
+func (tx *NewValidatorTransaction) Check(ctx TransactionContext) error {
 
 	client, err := ethclient.Dial(ctx.Config.EVMRpc)
 	if err != nil {
@@ -155,10 +155,28 @@ func (tx NewValidatorTransaction) Check(ctx TransactionContext) error {
 		return errors.New("wrong to address")
 	}
 
+	remoteParsedTx, err := tx.FetchData(ctx)
+	if err != nil {
+		return err
+	}
+
+	if remoteParsedTx.PublicKey != tx.Data.Arguments.PublicKey {
+		return errors.New("public keys mismatch")
+	}
+
+	validatorIsEnabled, err := ctx.Db.Validators.IsEnabled(remoteParsedTx.PublicKey)
+	if err != nil {
+		return err
+	}
+
+	if validatorIsEnabled {
+		return errors.New("validator already registered")
+	}
+
 	return nil
 }
 
-func (tx NewValidatorTransaction) FetchData(ctx TransactionContext) (contracts.OChainPortalOChainNewValidator, error) {
+func (tx *NewValidatorTransaction) FetchData(ctx TransactionContext) (contracts.OChainPortalOChainNewValidator, error) {
 
 	client, err := ethclient.Dial(ctx.Config.EVMRpc)
 	if err != nil {
@@ -202,7 +220,7 @@ func (tx NewValidatorTransaction) FetchData(ctx TransactionContext) (contracts.O
 
 		if event.Raw.Address == common.HexToAddress(ctx.Config.EVMPortalAddress) {
 			if event.PublicKey == tx.Data.Arguments.PublicKey {
-				_, err = ctx.Db.Validators.Get(event.ValidatorId.Uint64(), ctx.Txn)
+				_, err = ctx.Db.Validators.GetByIdAt(event.ValidatorId.Uint64(), uint64(ctx.Date.Unix()))
 				if err == nil {
 					return contracts.OChainPortalOChainNewValidator{}, errors.New("validator already created")
 				}
@@ -215,44 +233,38 @@ func (tx NewValidatorTransaction) FetchData(ctx TransactionContext) (contracts.O
 	return contracts.OChainPortalOChainNewValidator{}, errors.New("invalid tx")
 }
 
-func (tx NewValidatorTransaction) Execute(ctx TransactionContext) error {
+func (tx *NewValidatorTransaction) Execute(ctx TransactionContext) error {
 
 	event, err := tx.FetchData(ctx)
 	if err != nil {
 		return err
 	}
 
-	_, err = ctx.Db.Validators.Get(event.ValidatorId.Uint64(), ctx.Txn)
+	_, err = ctx.Db.Validators.GetByAddressAt(event.PublicKey, uint64(ctx.Date.Unix()))
 	if err == nil {
 		return errors.New("validator already created")
 	}
 
-	err = ctx.Db.Validators.Insert(database.OChainValidator{
+	err = ctx.Db.Validators.Insert(types.OChainValidator{
 		Id:        event.ValidatorId.Uint64(),
 		Stacker:   event.Stacker.Hex(),
 		Validator: event.Validator.Hex(),
 		PublicKey: event.PublicKey,
 		Enabled:   true,
-	}, ctx.Txn)
+	})
 
 	if err != nil {
 		return err
 	}
 
-	state, err := ctx.Db.BridgeState.Get()
-	if err != nil {
-		return err
-	}
-
-	if event.Raw.BlockNumber > state.LatestPortalUpdate {
-		state.SetLatestPortalUpdate(event.Raw.BlockNumber)
-		err = ctx.Db.BridgeState.Save(state, ctx.Txn)
+	if event.Raw.BlockNumber > ctx.State.LatestPortalUpdate {
+		ctx.State.LatestPortalUpdate = event.Raw.BlockNumber
 	}
 
 	return err
 }
 
-func (tx NewValidatorTransaction) Transaction() (Transaction, error) {
+func (tx *NewValidatorTransaction) Transaction() (Transaction, error) {
 	txDataArgs, err := cbor.Marshal(tx.Data.Arguments)
 	if err != nil {
 		return Transaction{}, err
@@ -313,7 +325,26 @@ type RemoveValidatorTransaction struct {
 
 type RemoveValidatorEventData RemoveValidatorTransactionDataArguments
 
-func (tx RemoveValidatorTransaction) Check(ctx TransactionContext) (contracts.OChainPortalOChainRemoveValidator, error) {
+func (tx *RemoveValidatorTransaction) Check(ctx TransactionContext) (contracts.OChainPortalOChainRemoveValidator, error) {
+
+	data, err := tx.FetchData(ctx)
+	if err != nil {
+		return contracts.OChainPortalOChainRemoveValidator{}, err
+	}
+
+	validator, err := ctx.Db.Validators.GetById(data.ValidatorId.Uint64())
+	if err == nil {
+		return contracts.OChainPortalOChainRemoveValidator{}, err
+	}
+
+	if !validator.Enabled {
+		return contracts.OChainPortalOChainRemoveValidator{}, errors.New("validator already disabled")
+	}
+
+	return contracts.OChainPortalOChainRemoveValidator{}, errors.New("invalid tx")
+}
+
+func (tx *RemoveValidatorTransaction) FetchData(ctx TransactionContext) (contracts.OChainPortalOChainRemoveValidator, error) {
 
 	client, err := ethclient.Dial(ctx.Config.EVMRpc)
 	if err != nil {
@@ -352,7 +383,7 @@ func (tx RemoveValidatorTransaction) Check(ctx TransactionContext) (contracts.OC
 
 		event, err := portal.ParseOChainRemoveValidator(*vLog)
 		if err != nil {
-			return contracts.OChainPortalOChainRemoveValidator{}, err
+			continue
 		}
 
 		if event.Raw.Address == common.HexToAddress(ctx.Config.EVMPortalAddress) {
@@ -372,25 +403,19 @@ func (tx *RemoveValidatorTransaction) Execute(ctx TransactionContext) error {
 		return err
 	}
 
-	validator, err := ctx.Db.Validators.Get(event.ValidatorId.Uint64(), ctx.Txn)
+	validator, err := ctx.Db.Validators.GetByIdAt(event.ValidatorId.Uint64(), uint64(ctx.Date.Unix()))
 	if err != nil {
 		return err
 	}
 
 	validator.Enabled = false
-	err = ctx.Db.Validators.Save(validator, ctx.Txn)
+	err = ctx.Db.Validators.Update(validator)
 	if err != nil {
 		return err
 	}
 
-	state, err := ctx.Db.BridgeState.Get()
-	if err != nil {
-		return err
-	}
-
-	if event.Raw.BlockNumber > state.LatestPortalUpdate {
-		state.SetLatestPortalUpdate(event.Raw.BlockNumber)
-		err = ctx.Db.BridgeState.Save(state, ctx.Txn)
+	if event.Raw.BlockNumber > ctx.State.LatestPortalUpdate {
+		ctx.State.SetLatestPortalUpdate(event.Raw.BlockNumber)
 	}
 
 	return err
@@ -512,28 +537,27 @@ func (tx *TokenDepositTransaction) Execute(ctx TransactionContext) error {
 		return err
 	}
 
-	acc := database.OChainBridgeTransaction{
-		Type:            database.OChainBridgeDepositTransaction,
-		TransactionHash: event.Raw.TxHash.Hex(),
-		Account:         event.Receiver.Hex(),
-		Amount:          event.Amount.Uint64(),
-		Executed:        false,
-		Canceled:        false,
+	acc := types.OChainBridgeTransaction{
+		Type:     types.OChainBridgeDepositTransaction,
+		Hash:     event.Raw.TxHash.Hex(),
+		Account:  event.Receiver.Hex(),
+		Amount:   event.Amount.Uint64(),
+		Executed: false,
+		Canceled: false,
 	}
 
-	err = ctx.Db.BridgeTransactions.Insert(acc, ctx.Txn)
+	err = ctx.Db.BridgeTransactions.Insert(acc)
 	if err != nil {
 		return err
 	}
 
-	state, err := ctx.Db.BridgeState.Get()
+	state, err := ctx.Db.State.Get()
 	if err != nil {
 		return err
 	}
 
 	if event.Raw.BlockNumber > state.LatestPortalUpdate {
-		state.SetLatestPortalUpdate(event.Raw.BlockNumber)
-		err = ctx.Db.BridgeState.Save(state, ctx.Txn)
+		ctx.State.SetLatestPortalUpdate(event.Raw.BlockNumber)
 	}
 
 	return err

@@ -64,20 +64,14 @@ func CheckAndHandlePortalUpdate(cfg config.OChainConfig, db *database.OChainData
 	log.Printf("Last portal update on chain: %d", res.Uint64())
 
 	//get last smart contract update on app
-	state, err := db.BridgeState.Get()
+	state, err := db.State.Get()
 	if err != nil {
 		log.Println("error on db state load")
 		log.Println(err)
 		return
 	}
 
-	if err != nil {
-		log.Println("error on state load")
-		log.Println(err)
-		return
-	}
-
-	log.Printf("Last portal update on state: %d", res.Uint64())
+	log.Printf("Last portal update on state: %d", state.LatestPortalUpdate)
 	lastAppUpdateBlockNumber := state.LatestPortalUpdate
 
 	//compare and skip if sc and app last update are the same
@@ -248,6 +242,7 @@ func CheckAndHandlePortalUpdate(cfg config.OChainConfig, db *database.OChainData
 			res, err := client.BroadcastTxCommit(context.Background(), bytesTx)
 			if err != nil {
 				log.Println(err)
+				return
 			}
 
 			log.Printf("Token deposit transaction result: code=%d hash=%s height=%d", res.CheckTx.Code, res.Hash, res.Height)

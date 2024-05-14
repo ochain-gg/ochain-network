@@ -5,18 +5,16 @@ import (
 )
 
 type OChainDatabase struct {
-	bdb                    *badger.DB
-	currentTxn             *badger.Txn
-	Validators             *OChainValidatorTable
-	BridgeTransactions     *OChainBridgeTransactionTable
-	Universes              *OChainUniverseTable
-	UniverseConfigurations *OChainUniverseConfigurationTable
-	GlobalsAccounts        *OChainGlobalAccountTable
-	UniverseAccounts       *OChainUniverseAccountTable
-	Planets                *OChainPlanetTable
-	Fleets                 *OChainFleetTable
-	State                  *OChainStateTable
-	BridgeState            *OChainBridgeStateTable
+	DB                 *badger.DB
+	CurrentTxn         *badger.Txn
+	Validators         *OChainValidatorTable
+	BridgeTransactions *OChainBridgeTransactionTable
+	Universes          *OChainUniverseTable
+	GlobalsAccounts    *OChainGlobalAccountTable
+	UniverseAccounts   *OChainUniverseAccountTable
+	Planets            *OChainPlanetTable
+	// Fleets                 *OChainFleetTable
+	State *OChainStateTable
 }
 
 func (db *OChainDatabase) Open(path string) error {
@@ -27,24 +25,40 @@ func (db *OChainDatabase) Open(path string) error {
 		return err
 	}
 
-	db.bdb = bdb
+	db.DB = bdb
 	return nil
 }
 
 func (db *OChainDatabase) Close() error {
-	return db.bdb.Close()
+	return db.DB.Close()
 }
 
-func (db *OChainDatabase) LoadTables() error {
-	return db.bdb.Close()
+func (db *OChainDatabase) LoadTables() {
+	db.Validators = NewOChainValidatorTable(db.DB)
+	db.BridgeTransactions = NewOChainBridgeTransactionTable(db.DB)
+	db.Universes = NewOChainUniverseTable(db.DB)
+	db.GlobalsAccounts = NewOChainGlobalAccountTable(db.DB)
+	db.UniverseAccounts = NewOChainUniverseAccountTable(db.DB)
+	db.Planets = NewOChainPlanetTable(db.DB)
+	// db.Fleets = NewFleetsTable(db.DB)
+	db.State = NewOChainStateTable(db.DB)
 }
 
 func (db *OChainDatabase) NewTransaction(ts uint64) {
-	db.currentTxn = db.bdb.NewTransactionAt(ts, true)
+	db.CurrentTxn = db.DB.NewTransactionAt(ts, true)
+
+	db.Validators.SetCurrentTxn(db.CurrentTxn)
+	db.BridgeTransactions.SetCurrentTxn(db.CurrentTxn)
+	db.Universes.SetCurrentTxn(db.CurrentTxn)
+	db.GlobalsAccounts.SetCurrentTxn(db.CurrentTxn)
+	db.UniverseAccounts.SetCurrentTxn(db.CurrentTxn)
+	db.Planets.SetCurrentTxn(db.CurrentTxn)
+	// db.Fleets.SetCurrentTxn(db.CurrentTxn)
+	db.State.SetCurrentTxn(db.CurrentTxn)
 }
 
-func (db *OChainDatabase) CommitTransaction(ts uint64) error {
-	if err := db.currentTxn.CommitAt(ts, nil); err != nil {
+func (db *OChainDatabase) CommitTransaction() error {
+	if err := db.CurrentTxn.CommitAt(db.CurrentTxn.ReadTs(), nil); err != nil {
 		return err
 	}
 	return nil
@@ -56,5 +70,5 @@ func NewOChainDatabase(path string) *OChainDatabase {
 	db.Open(path)
 	db.LoadTables()
 
-	return OChainDatabase
+	return db
 }

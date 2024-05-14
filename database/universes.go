@@ -23,8 +23,7 @@ func (db *OChainUniverseTable) SetCurrentTxn(tx *badger.Txn) {
 }
 
 func (db *OChainUniverseTable) Exists(address string) (bool, error) {
-	var at uint64
-	at = math.MaxUint64
+	var at uint64 = math.MaxUint64
 	return db.ExistsAt(address, at)
 }
 
@@ -43,8 +42,7 @@ func (db *OChainUniverseTable) ExistsAt(address string, at uint64) (bool, error)
 }
 
 func (db *OChainUniverseTable) Get(address string) (types.OChainUniverse, error) {
-	var at uint64
-	at = math.MaxUint64
+	var at uint64 = math.MaxUint64
 	return db.GetAt(address, at)
 }
 
@@ -127,8 +125,7 @@ func (db *OChainUniverseTable) Delete(id string) error {
 }
 
 func (db *OChainUniverseTable) GetAll() ([]types.OChainUniverse, error) {
-	var at uint64
-	at = math.MaxUint64
+	var at uint64 = math.MaxUint64
 	return db.GetAllAt(at)
 }
 

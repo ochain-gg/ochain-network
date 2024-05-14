@@ -16,7 +16,7 @@ type OChainGlobalAccount struct {
 
 type OChainUniverseAccount struct {
 	Address      string `cbor:"1,keyasint"`
-	UniverseId   uint64 `cbor:"2,keyasint"`
+	UniverseId   string `cbor:"2,keyasint"`
 	OwnerAddress string `cbor:"3,keyasint"`
 	Points       uint64 `cbor:"4,keyasint"`
 	CreatedAt    int64  `cbor:"5,keyasint"`

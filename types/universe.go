@@ -15,41 +15,40 @@ type OChainCost struct {
 }
 
 type OChainUniverseConfiguration struct {
-	Id string `cbor:"id"`
+	Speed                   uint `cbor:"1,keyasint"`
+	MaxGalaxy               uint `cbor:"2,keyasint"`
+	MaxSolarSystemPerGalaxy uint `cbor:"3,keyasint"`
+	MaxPlanetPerSolarSystem uint `cbor:"4,keyasint"`
 
-	Speed                   uint `cbor:"speed"`
-	MaxGalaxy               uint `cbor:"maxGalaxy"`
-	MaxSolarSystemPerGalaxy uint `cbor:"maxSolarSystemPerGalaxy"`
-	MaxPlanetPerSolarSystem uint `cbor:"maxPlanetPerSolarSystem"`
-
-	Spaceships []OChainSpaceship `cbor:"spaceships"`
-	Defenses   []OChainDefense   `cbor:"defenses"`
+	Spaceships []OChainSpaceship `cbor:"5,keyasint"`
+	Defenses   []OChainDefense   `cbor:"6,keyasint"`
 }
 
 type OChainUniverse struct {
-	Id        string `cbor:"id"`
-	Name      string `cbor:"name"`
-	CreatedAt uint   `cbor:"createdAt"`
+	Id            string                      `cbor:"1,keyasint"`
+	Name          string                      `cbor:"2,keyasint"`
+	Configuration OChainUniverseConfiguration `cbor:"3,keyasint"`
+	CreatedAt     uint                        `cbor:"4,keyasint"`
 }
 
 type OChainFighterStats struct {
-	Armor  uint
-	Shield uint
-	Attack uint
+	Armor  uint `cbor:"1,keyasint"`
+	Shield uint `cbor:"2,keyasint"`
+	Attack uint `cbor:"3,keyasint"`
 }
 
 type OChainSpaceshipStats struct {
-	Capacity   uint
-	Speed      uint
-	Consumtion uint
+	Capacity   uint `cbor:"1,keyasint"`
+	Speed      uint `cbor:"2,keyasint"`
+	Consumtion uint `cbor:"3,keyasint"`
 }
 
 type OChainSpaceship struct {
-	Id           uint `badgerhold:"key"`
-	Name         string
-	FighterStats OChainFighterStats
-	Stats        OChainSpaceshipStats
-	Cost         OChainResources
+	Id           uint                 `cbor:"1,keyasint"`
+	Name         string               `cbor:"2,keyasint"`
+	FighterStats OChainFighterStats   `cbor:"3,keyasint"`
+	Stats        OChainSpaceshipStats `cbor:"4,keyasint"`
+	Cost         OChainResources      `cbor:"5,keyasint"`
 }
 
 type OChainDependencyType uint
@@ -60,79 +59,79 @@ const (
 )
 
 type OChainDependency struct {
-	DependencyType OChainDependencyType
-	DependencyId   uint
-	Level          uint
+	DependencyType OChainDependencyType `cbor:"1,keyasint"`
+	DependencyId   uint                 `cbor:"2,keyasint"`
+	Level          uint                 `cbor:"3,keyasint"`
 }
 
 type OChainDefense struct {
-	Id           uint `badgerhold:"key"`
-	Name         string
-	FighterStats OChainFighterStats
-	Cost         OChainResources
+	Id           uint               `cbor:"1,keyasint"`
+	Name         string             `cbor:"2,keyasint"`
+	FighterStats OChainFighterStats `cbor:"3,keyasint"`
+	Cost         OChainResources    `cbor:"4,keyasint"`
 }
 
 type OChainAccountTechnologies struct {
-	Computer  uint
-	Weapon    uint
-	Shielding uint
-	Armor     uint
-	Energy    uint
+	Computer  uint `cbor:"1,keyasint"`
+	Weapon    uint `cbor:"2,keyasint"`
+	Shielding uint `cbor:"3,keyasint"`
+	Armor     uint `cbor:"4,keyasint"`
+	Energy    uint `cbor:"5,keyasint"`
 
-	CombustionDrive uint
-	ImpulseDrive    uint
-	HyperspaceDrive uint
+	CombustionDrive uint `cbor:"6,keyasint"`
+	ImpulseDrive    uint `cbor:"7,keyasint"`
+	HyperspaceDrive uint `cbor:"8,keyasint"`
 
-	Hyperspace uint
-	Laser      uint
-	Ion        uint
-	Plasma     uint
+	Hyperspace uint `cbor:"9,keyasint"`
+	Laser      uint `cbor:"10,keyasint"`
+	Ion        uint `cbor:"11,keyasint"`
+	Plasma     uint `cbor:"12,keyasint"`
 
-	IntergalacticResearchNetwork uint
-	Astrophysics                 uint
-	Graviton                     uint
+	IntergalacticResearchNetwork uint `cbor:"13,keyasint"`
+	Astrophysics                 uint `cbor:"14,keyasint"`
+	Graviton                     uint `cbor:"15,keyasint"`
 }
 
 type OChainPlanetBuildings struct {
-	MetalMine       uint
-	CrystalMine     uint
-	DeutereumMine   uint
-	SolarPowerPlant uint
+	MetalMine       uint `cbor:"1,keyasint"`
+	CrystalMine     uint `cbor:"2,keyasint"`
+	DeutereumMine   uint `cbor:"3,keyasint"`
+	SolarPowerPlant uint `cbor:"4,keyasint"`
 
-	RoboticFactory   uint
-	NaniteFactory    uint
-	SpaceshipFactory uint
+	RoboticFactory   uint `cbor:"5,keyasint"`
+	NaniteFactory    uint `cbor:"6,keyasint"`
+	SpaceshipFactory uint `cbor:"7,keyasint"`
 
-	IntergalacticPortal uint
-	ResearchLaboratory  uint
-	ShieldDome          uint
+	IntergalacticPortal uint `cbor:"8,keyasint"`
+	ResearchLaboratory  uint `cbor:"9,keyasint"`
+	ShieldDome          uint `cbor:"10,keyasint"`
 }
 
 type OChainFleetSpaceships struct {
-	SmallCargo   uint
-	LargeCargo   uint
-	LightFighter uint
-	HeavyFighter uint
+	SmallCargo   uint `cbor:"1,keyasint"`
+	LargeCargo   uint `cbor:"2,keyasint"`
+	LightFighter uint `cbor:"3,keyasint"`
+	HeavyFighter uint `cbor:"4,keyasint"`
 
-	Cruiser       uint
-	Battleship    uint
-	Battlecruiser uint
+	Cruiser       uint `cbor:"5,keyasint"`
+	Battleship    uint `cbor:"6,keyasint"`
+	Battlecruiser uint `cbor:"7,keyasint"`
 
-	Bomber    uint
-	Destroyer uint
-	Deathstar uint
-	Reaper    uint
-	Recycler  uint
+	Bomber    uint `cbor:"8,keyasint"`
+	Destroyer uint `cbor:"9,keyasint"`
+	Deathstar uint `cbor:"10,keyasint"`
+	Reaper    uint `cbor:"11,keyasint"`
+	Recycler  uint `cbor:"12,keyasint"`
 }
 
 type OChainPlanetDefences struct {
-	RocketLauncher  uint
-	LightLaser      uint
-	HeavyLaser      uint
-	IonCannon       uint
-	GaussCannon     uint
-	PlasmaTurret    uint
-	DarkMatterCanon uint
+	RocketLauncher  uint `cbor:"1,keyasint"`
+	LightLaser      uint `cbor:"2,keyasint"`
+	HeavyLaser      uint `cbor:"3,keyasint"`
+	IonCannon       uint `cbor:"4,keyasint"`
+	GaussCannon     uint `cbor:"5,keyasint"`
+	PlasmaTurret    uint `cbor:"6,keyasint"`
+	DarkMatterCanon uint `cbor:"7,keyasint"`
 }
 
 type OChainPlanet struct {

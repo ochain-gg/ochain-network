@@ -4,12 +4,6 @@ import (
 	"github.com/ochain-gg/ochain-network/types"
 )
 
-var DefaultUniverse types.OChainUniverse = types.OChainUniverse{
-	Id:        1,
-	Name:      "OChain main universe",
-	CreatedAt: 0,
-}
-
 var DefaultUniverseConfiguration types.OChainUniverseConfiguration = types.OChainUniverseConfiguration{
 	Speed:                   2,
 	MaxGalaxy:               255,
@@ -386,4 +380,11 @@ var DefaultUniverseConfiguration types.OChainUniverseConfiguration = types.OChai
 			},
 		},
 	},
+}
+
+var DefaultUniverse types.OChainUniverse = types.OChainUniverse{
+	Id:            "main",
+	Name:          "OChain main universe",
+	Configuration: DefaultUniverseConfiguration,
+	CreatedAt:     0,
 }

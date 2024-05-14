@@ -23,8 +23,7 @@ func (db *OChainTokenTransferTable) SetCurrentTxn(tx *badger.Txn) {
 }
 
 func (db *OChainTokenTransferTable) Exists(address string) (bool, error) {
-	var at uint64
-	at = math.MaxUint64
+	var at uint64 = math.MaxUint64
 	return db.ExistsAt(address, at)
 }
 
@@ -43,8 +42,7 @@ func (db *OChainTokenTransferTable) ExistsAt(address string, at uint64) (bool, e
 }
 
 func (db *OChainTokenTransferTable) Get(address string) (types.OChainTokenTransfer, error) {
-	var at uint64
-	at = math.MaxUint64
+	var at uint64 = math.MaxUint64
 	return db.GetAt(address, at)
 }
 
@@ -80,7 +78,7 @@ func (db *OChainTokenTransferTable) Insert(universe types.OChainTokenTransfer) e
 	}
 
 	if exists {
-		return errors.New("global universe already exists")
+		return errors.New("transfer already exists")
 	}
 
 	value, err := cbor.Marshal(universe)
@@ -100,7 +98,7 @@ func (db *OChainTokenTransferTable) Update(universe types.OChainTokenTransfer) e
 	}
 
 	if !exists {
-		return errors.New("universe doesn't exists")
+		return errors.New("transfer doesn't exists")
 	}
 
 	value, err := cbor.Marshal(universe)
@@ -127,8 +125,7 @@ func (db *OChainTokenTransferTable) Delete(id string) error {
 }
 
 func (db *OChainTokenTransferTable) GetAll() ([]types.OChainTokenTransfer, error) {
-	var at uint64
-	at = math.MaxUint64
+	var at uint64 = math.MaxUint64
 	return db.GetAllAt(at)
 }
 

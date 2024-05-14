@@ -27,8 +27,7 @@ func (db *OChainPlanetTable) SetCurrentTxn(tx *badger.Txn) {
 }
 
 func (db *OChainPlanetTable) Exists(universeId string, coordinateId string) (bool, error) {
-	var at uint64
-	at = math.MaxUint64
+	var at uint64 = math.MaxUint64
 	return db.ExistsAt(universeId, coordinateId, at)
 }
 
@@ -48,8 +47,7 @@ func (db *OChainPlanetTable) ExistsAt(universeId string, coordinateId string, at
 }
 
 func (db *OChainPlanetTable) Get(universeId string, coordinateId string) (types.OChainPlanet, error) {
-	var at uint64
-	at = math.MaxUint64
+	var at uint64 = math.MaxUint64
 	return db.GetAt(universeId, coordinateId, at)
 }
 
@@ -132,8 +130,7 @@ func (db *OChainPlanetTable) Delete(universeId string, coordinateId string) erro
 }
 
 func (db *OChainPlanetTable) GetAll(universeId string) ([]types.OChainPlanet, error) {
-	var at uint64
-	at = math.MaxUint64
+	var at uint64 = math.MaxUint64
 	return db.GetAllAt(universeId, at)
 }
 
@@ -167,8 +164,7 @@ func (db *OChainPlanetTable) GetAllAt(universeId string, at uint64) ([]types.OCh
 }
 
 func (db *OChainPlanetTable) GetAllInGalaxy(universeId string, galaxy string) ([]types.OChainPlanet, error) {
-	var at uint64
-	at = math.MaxUint64
+	var at uint64 = math.MaxUint64
 	return db.GetAllInGalaxyAt(universeId, galaxy, at)
 }
 
@@ -202,8 +198,7 @@ func (db *OChainPlanetTable) GetAllInGalaxyAt(universeId string, galaxy string, 
 }
 
 func (db *OChainPlanetTable) GetAllInSolarSystem(universeId string, galaxy string, solarSystem string) ([]types.OChainPlanet, error) {
-	var at uint64
-	at = math.MaxUint64
+	var at uint64 = math.MaxUint64
 	return db.GetAllInSolarSystemAt(universeId, galaxy, solarSystem, at)
 }
 

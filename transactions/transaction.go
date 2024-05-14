@@ -13,6 +13,7 @@ import (
 	"github.com/fxamacker/cbor/v2"
 	"github.com/ochain-gg/ochain-network/config"
 	"github.com/ochain-gg/ochain-network/database"
+	"github.com/ochain-gg/ochain-network/types"
 )
 
 type TransactionType uint64
@@ -67,6 +68,7 @@ type TransactionContext struct {
 	Config config.OChainConfig
 	Db     *database.OChainDatabase
 	Txn    *badger.Txn
+	State  *types.OChainState
 	Date   time.Time
 }
 

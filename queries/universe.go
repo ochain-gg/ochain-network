@@ -6,11 +6,14 @@ import (
 )
 
 type GetUniverseQueryParameters struct {
-	Id uint `cbor:"id"`
+	Id string `cbor:"id"`
 }
 
 func ResolveGetUniversesQuery(q []byte, db *database.OChainDatabase) ([]byte, error) {
-	universes := db.Universes.GetAll()
+	universes, err := db.Universes.GetAll()
+	if err != nil {
+		return []byte(""), err
+	}
 
 	result, err := cbor.Marshal(universes)
 	if err != nil {

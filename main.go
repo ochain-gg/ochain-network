@@ -16,7 +16,6 @@ import (
 	"github.com/cometbft/cometbft/p2p"
 	"github.com/cometbft/cometbft/privval"
 	"github.com/cometbft/cometbft/proxy"
-	"github.com/timshannon/badgerhold/v4"
 
 	cfg "github.com/cometbft/cometbft/config"
 	cmtflags "github.com/cometbft/cometbft/libs/cli/flags"
@@ -62,20 +61,7 @@ func main() {
 	config.Consensus.CreateEmptyBlocks = false
 	config.Consensus.CreateEmptyBlocksInterval = time.Hour
 
-	dbPath := filepath.Join(homeDir, "badger")
-	options := badgerhold.DefaultOptions
-	options.Dir = dbPath
-	options.ValueDir = "ochain-data"
-	db, err := badgerhold.Open(options)
-
-	if err != nil {
-		log.Fatalf("Opening database: %v", err)
-	}
-	defer func() {
-		if err := db.Close(); err != nil {
-			log.Printf("Closing database: %v", err)
-		}
-	}()
+	dbPath := filepath.Join(homeDir, "ochain-database")
 
 	ochainConfig := ochainCfg.DefaultConfig()
 	parsedChainId, _ := strconv.ParseUint(evmChainId, 10, 64)
@@ -103,7 +89,7 @@ func main() {
 		config.PrivValidatorStateFile(),
 	)
 
-	app, err := NewOChainValidatorApplication(*ochainConfig, db, privateKeyBytes)
+	app, err := NewOChainValidatorApplication(*ochainConfig, dbPath, privateKeyBytes)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -142,7 +128,6 @@ func main() {
 	defer func() {
 		node.Stop()
 		node.Wait()
-		db.Close()
 		scheduler.Scheduler.Shutdown()
 	}()
 
