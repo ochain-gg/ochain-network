@@ -10,7 +10,7 @@ import (
 )
 
 type RegisterAccountTransactionData struct {
-	OwnerAddress        string   `cbor:"1,keyasint"`
+	Address             string   `cbor:"1,keyasint"`
 	GuardianQuorum      uint64   `cbor:"2,keyasint"`
 	Guardians           []string `cbor:"3,keyasint"`
 	DeleguatedTo        []string `cbor:"4,keyasint"`
@@ -41,7 +41,7 @@ func (tx *RegisterAccountTransaction) Transaction() (Transaction, error) {
 }
 
 func (tx *RegisterAccountTransaction) Check(ctx TransactionContext) error {
-	_, err := ctx.Db.GlobalsAccounts.Get(tx.Data.OwnerAddress)
+	_, err := ctx.Db.GlobalsAccounts.Get(tx.Data.Address)
 	if err == nil {
 		return errors.New("account aleady exists")
 	}

@@ -158,6 +158,50 @@ func (db *OChainGlobalAccountTable) GetAllAt(at uint64) ([]types.OChainGlobalAcc
 	return accounts, nil
 }
 
+func (db *OChainGlobalAccountTable) GetRelatedToAddress(address string) ([]types.OChainGlobalAccount, error) {
+	var accounts []types.OChainGlobalAccount
+
+	txn := db.bdb.NewTransactionAt(math.MaxUint64, false)
+	it := txn.NewIterator(badger.DefaultIteratorOptions)
+	defer it.Close()
+
+	prefix := []byte(OChainGlobalAccountPrefix)
+
+	for it.Seek(prefix); it.ValidForPrefix(prefix); it.Next() {
+		item := it.Item()
+
+		var account types.OChainGlobalAccount
+		value, err := item.ValueCopy(nil)
+		if err != nil {
+			return []types.OChainGlobalAccount{}, err
+		}
+
+		err = cbor.Unmarshal(value, &account)
+		if err != nil {
+			return []types.OChainGlobalAccount{}, err
+		}
+
+		if account.Address == address {
+			accounts = append(accounts, account)
+			break
+		}
+
+		found := false
+		for j := 0; j < len(account.IAM.DeleguatedTo); j++ {
+			if account.IAM.DeleguatedTo[j] == address {
+				accounts = append(accounts, account)
+				break
+			}
+		}
+
+		if found {
+			break
+		}
+	}
+
+	return accounts, nil
+}
+
 func NewOChainGlobalAccountTable(db *badger.DB) *OChainGlobalAccountTable {
 	return &OChainGlobalAccountTable{
 		bdb: db,

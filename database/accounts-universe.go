@@ -1,10 +1,13 @@
 package database
 
 import (
+	"context"
 	"errors"
 	"math"
 
+	"github.com/dgraph-io/badger/pb"
 	"github.com/dgraph-io/badger/v4"
+	"github.com/dgraph-io/ristretto/z"
 	"github.com/fxamacker/cbor/v2"
 	"github.com/ochain-gg/ochain-network/types"
 )
@@ -67,6 +70,48 @@ func (db *OChainUniverseAccountTable) GetAt(universeId string, address string, a
 	}
 
 	return account, nil
+}
+
+func (db *OChainUniverseAccountTable) GetByAddress(address string) ([]types.OChainUniverseAccount, error) {
+	var at uint64 = math.MaxUint64
+	return db.GetByAddressAt(address, at)
+}
+
+func (db *OChainUniverseAccountTable) GetByAddressAt(address string, at uint64) ([]types.OChainUniverseAccount, error) {
+	var accounts []types.OChainUniverseAccount
+
+	stream := db.bdb.NewStreamAt(at)
+
+	stream.NumGo = 16                               // Set number of goroutines to use for iteration.
+	stream.Prefix = []byte(OChainValidatorPrefix)   // Leave nil for iteration over the whole DB.
+	stream.LogPrefix = "Badger.Validator.Streaming" // For identifying stream logs. Outputs to Logger.
+	stream.Send = func(buf *z.Buffer) error {
+		err := buf.SliceIterate(func(s []byte) error {
+			var kv pb.KV
+			var acc types.OChainUniverseAccount
+			if err := kv.Unmarshal(s); err != nil {
+				return err
+			}
+
+			if err := cbor.Unmarshal(kv.Value, acc); err != nil {
+				return err
+			}
+
+			if acc.Address == address {
+				accounts = append(accounts, acc)
+			}
+
+			return nil
+		})
+
+		return err
+	}
+
+	if err := stream.Orchestrate(context.Background()); err != nil {
+		return []types.OChainUniverseAccount{}, err
+	}
+
+	return accounts, nil
 }
 
 func (db *OChainUniverseAccountTable) Insert(account types.OChainUniverseAccount) error {

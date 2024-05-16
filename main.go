@@ -61,7 +61,7 @@ func main() {
 	config.Consensus.CreateEmptyBlocks = false
 	config.Consensus.CreateEmptyBlocksInterval = time.Hour
 
-	dbPath := filepath.Join(homeDir, "ochain-database")
+	dbPath := filepath.Join(homeDir, "database")
 
 	ochainConfig := ochainCfg.DefaultConfig()
 	parsedChainId, _ := strconv.ParseUint(evmChainId, 10, 64)

@@ -45,9 +45,9 @@ var _ abcitypes.Application = (*OChainValidatorApplication)(nil)
 
 func NewOChainValidatorApplication(config config.OChainConfig, dbpath string, remotePrivateKey []byte) (*OChainValidatorApplication, error) {
 	db := database.NewOChainDatabase(dbpath)
+
 	state, err := db.State.Get()
 	if err != nil {
-
 		return &OChainValidatorApplication{}, err
 	}
 
