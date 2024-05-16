@@ -129,6 +129,22 @@ func (tx *Transaction) VerifySignature() error {
 	}
 }
 
+func (tx *Transaction) Sign(key []byte) error {
+	txHash, err := tx.GetTypedDataHash()
+	if err != nil {
+		return err
+	}
+
+	signer := crypto.ToECDSAUnsafe(key)
+	signature, err := crypto.Sign(txHash, signer)
+	if err != nil {
+		return err
+	}
+
+	tx.Signature = signature
+	return nil
+}
+
 func (tx *Transaction) Bytes() ([]byte, error) {
 	txByte, err := cbor.Marshal(tx)
 
@@ -139,8 +155,7 @@ func (tx *Transaction) Bytes() ([]byte, error) {
 	return txByte, nil
 }
 
-func (tx *Transaction) RecoverSignerAddress() (common.Address, error) {
-
+func (tx *Transaction) GetTypedDataHash() ([]byte, error) {
 	typedData := apitypes.TypedData{
 		Types: apitypes.Types{
 			"EIP712Domain": []apitypes.Type{
@@ -173,16 +188,26 @@ func (tx *Transaction) RecoverSignerAddress() (common.Address, error) {
 	// EIP-712 typed data marshalling
 	domainSeparator, err := typedData.HashStruct("EIP712Domain", typedData.Domain.Map())
 	if err != nil {
-		return common.Address{}, fmt.Errorf("eip712domain hash struct: %w", err)
+		return []byte(""), fmt.Errorf("eip712domain hash struct: %w", err)
 	}
 	typedDataHash, err := typedData.HashStruct(typedData.PrimaryType, typedData.Message)
 	if err != nil {
-		return common.Address{}, fmt.Errorf("primary type hash struct: %w", err)
+		return []byte(""), fmt.Errorf("primary type hash struct: %w", err)
 	}
 
-	// add magic string prefix
 	rawData := []byte(fmt.Sprintf("\x19\x01%s%s", string(domainSeparator), string(typedDataHash)))
 	sighash := crypto.Keccak256(rawData)
+
+	return sighash, nil
+}
+
+func (tx *Transaction) RecoverSignerAddress() (common.Address, error) {
+
+	sighash, err := tx.GetTypedDataHash()
+	if err != nil {
+		return common.Address{}, fmt.Errorf("GetTypedDataHash: %w", err)
+	}
+
 	// fmt.Println("SIG HASH:", hexutil.Encode(sighash))
 
 	// update the recovery id
