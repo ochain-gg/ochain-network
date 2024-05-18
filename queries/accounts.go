@@ -6,48 +6,42 @@ import (
 	"github.com/ochain-gg/ochain-network/types"
 )
 
-type GetAccountsQueryParameters struct {
-	Wallet string `cbor:"wallet"`
+type GetAccountQueryParameters struct {
+	Address string `cbor:"address"`
 }
 
-type GetAccountsQueryResponseEntity struct {
+type GetAccountQueryResponse struct {
 	Account          types.OChainGlobalAccount     `cbor:"account"`
-	Deleguated       bool                          `cbor:"deleguated"`
 	UniverseAccounts []types.OChainUniverseAccount `cbor:"universeAccounts"`
 }
 
-func ResolveGetAccountsQuery(q []byte, db *database.OChainDatabase) ([]byte, error) {
+func ResolveGetAccountQuery(q []byte, db *database.OChainDatabase) ([]byte, error) {
 
-	var queryParams GetAccountsQueryParameters
+	var queryParams GetAccountQueryParameters
 	err := cbor.Unmarshal(q, &queryParams)
 	if err != nil {
 		return []byte(""), err
 	}
 
-	var results []GetAccountsQueryResponseEntity
+	var result GetAccountQueryResponse
 
-	relatedGlobalAccounts, err := db.GlobalsAccounts.GetRelatedToAddress(queryParams.Wallet)
+	relatedGlobalAccount, err := db.GlobalsAccounts.Get(queryParams.Address)
 	if err != nil {
 		return []byte(""), err
 	}
 
-	for i := 0; i < len(relatedGlobalAccounts); i++ {
+	result.Account = relatedGlobalAccount
 
-		accounts, err := db.UniverseAccounts.GetByAddress(relatedGlobalAccounts[i].Address)
-		if err != nil {
-			return []byte(""), err
-		}
-
-		result := GetAccountsQueryResponseEntity{
-			Account:          relatedGlobalAccounts[i],
-			Deleguated:       relatedGlobalAccounts[i].Address == queryParams.Wallet,
-			UniverseAccounts: accounts,
-		}
-
-		results = append(results, result)
+	universeAccounts, err := db.UniverseAccounts.GetByAddress(result.Account.Address)
+	if err != nil {
+		return []byte(""), err
 	}
 
-	response, err := cbor.Marshal(results)
+	for i := 0; i < len(universeAccounts); i++ {
+		result.UniverseAccounts = append(result.UniverseAccounts, universeAccounts[i])
+	}
+
+	response, err := cbor.Marshal(result)
 	if err != nil {
 		return []byte(""), err
 	}

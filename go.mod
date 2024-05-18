@@ -5,7 +5,7 @@ go 1.22.2
 require (
 	github.com/cometbft/cometbft v0.38.7
 	github.com/dgraph-io/badger/v4 v4.2.0
-	github.com/ethereum/go-ethereum v1.14.3
+	github.com/ethereum/go-ethereum v1.12.2
 	github.com/fxamacker/cbor/v2 v2.6.0
 	github.com/go-co-op/gocron/v2 v2.5.0
 	github.com/spf13/cobra v1.8.0
