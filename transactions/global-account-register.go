@@ -26,7 +26,7 @@ type RegisterAccountTransaction struct {
 }
 
 func (tx *RegisterAccountTransaction) Transaction() (Transaction, error) {
-	txData, err := cbor.Marshal(tx)
+	txData, err := cbor.Marshal(tx.Data)
 	if err != nil {
 		return Transaction{}, err
 	}
