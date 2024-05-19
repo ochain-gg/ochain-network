@@ -187,7 +187,7 @@ func (tx *Transaction) GetTypedDataHash() ([]byte, error) {
 			"type":  strconv.FormatUint(uint64(tx.Type), 10),
 			"from":  tx.From,
 			"nonce": strconv.FormatUint(tx.Nonce, 10),
-			"data":  tx.Data,
+			"data":  string(tx.Data),
 		},
 	}
 	// EIP-712 typed data marshalling
