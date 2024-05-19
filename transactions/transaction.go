@@ -3,6 +3,7 @@ package transactions
 import (
 	"errors"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/dgraph-io/badger/v4"
@@ -183,7 +184,7 @@ func (tx *Transaction) GetTypedDataHash() ([]byte, error) {
 			VerifyingContract: "0x0000000000000000000000000000000000000000",
 		},
 		Message: map[string]interface{}{
-			"type":  uint16(tx.Type),
+			"type":  strconv.FormatUint(uint64(tx.Type), 10),
 			"from":  tx.From,
 			"nonce": tx.Nonce,
 			"data":  tx.Data,
