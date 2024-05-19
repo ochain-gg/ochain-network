@@ -183,7 +183,7 @@ func (tx *Transaction) GetTypedDataHash() ([]byte, error) {
 			VerifyingContract: "0x0000000000000000000000000000000000000000",
 		},
 		Message: map[string]interface{}{
-			"type":  tx.Type,
+			"type":  uint16(tx.Type),
 			"from":  tx.From,
 			"nonce": tx.Nonce,
 			"data":  tx.Data,
