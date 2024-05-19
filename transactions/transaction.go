@@ -16,7 +16,7 @@ import (
 	"github.com/ochain-gg/ochain-network/types"
 )
 
-type TransactionType uint64
+type TransactionType uint16
 
 const (
 	MaxTransactionType uint64 = 28
@@ -109,6 +109,10 @@ func (tx *Transaction) IsValid() error {
 
 	case ExecutePendingUpdate:
 		return nil
+
+	case RegisterAccount:
+		_, err := ParseRegisterAccountTransaction(*tx)
+		return err
 	}
 
 	return errors.New("unknown tx type")
