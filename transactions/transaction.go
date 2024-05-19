@@ -186,7 +186,7 @@ func (tx *Transaction) GetTypedDataHash() ([]byte, error) {
 		Message: map[string]interface{}{
 			"type":  strconv.FormatUint(uint64(tx.Type), 10),
 			"from":  tx.From,
-			"nonce": tx.Nonce,
+			"nonce": strconv.FormatUint(tx.Nonce, 10),
 			"data":  tx.Data,
 		},
 	}
