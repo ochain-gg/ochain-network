@@ -3,6 +3,7 @@ package transactions
 import (
 	"errors"
 	"fmt"
+	"log"
 	"strconv"
 	"time"
 
@@ -135,13 +136,13 @@ func (tx *Transaction) VerifySignature() error {
 }
 
 func (tx *Transaction) Sign(key []byte) error {
-	txHash, err := tx.GetTypedDataHash()
+	sighash, err := tx.GetTypedDataHash()
 	if err != nil {
 		return err
 	}
 
 	signer := crypto.ToECDSAUnsafe(key)
-	signature, err := crypto.Sign(txHash, signer)
+	signature, err := crypto.Sign(sighash, signer)
 	if err != nil {
 		return err
 	}
@@ -152,7 +153,6 @@ func (tx *Transaction) Sign(key []byte) error {
 
 func (tx *Transaction) Bytes() ([]byte, error) {
 	txByte, err := cbor.Marshal(tx)
-
 	if err != nil {
 		return []byte(""), err
 	}
@@ -161,6 +161,18 @@ func (tx *Transaction) Bytes() ([]byte, error) {
 }
 
 func (tx *Transaction) GetTypedDataHash() ([]byte, error) {
+
+	typedData, err := tx.GetTypedData()
+	if err != nil {
+		return []byte(""), err
+	}
+
+	sighash := crypto.Keccak256(typedData)
+
+	return sighash, nil
+}
+
+func (tx *Transaction) GetTypedData() ([]byte, error) {
 	typedData := apitypes.TypedData{
 		Types: apitypes.Types{
 			"EIP712Domain": []apitypes.Type{
@@ -200,10 +212,7 @@ func (tx *Transaction) GetTypedDataHash() ([]byte, error) {
 		return []byte(""), fmt.Errorf("primary type hash struct: %w", err)
 	}
 
-	rawData := []byte(fmt.Sprintf("\x19\x01%s%s", string(domainSeparator), string(typedDataHash)))
-	sighash := crypto.Keccak256(rawData)
-
-	return sighash, nil
+	return []byte(fmt.Sprintf("\x19\x01%s%s", string(domainSeparator), string(typedDataHash))), nil
 }
 
 func (tx *Transaction) RecoverSignerAddress() (common.Address, error) {
@@ -213,33 +222,12 @@ func (tx *Transaction) RecoverSignerAddress() (common.Address, error) {
 		return common.Address{}, fmt.Errorf("GetTypedDataHash: %w", err)
 	}
 
-	// fmt.Println("SIG HASH:", hexutil.Encode(sighash))
-
-	// update the recovery id
-	// https://github.com/ethereum/go-ethereum/blob/55599ee95d4151a2502465e0afc7c47bd1acba77/internal/ethapi/api.go#L442
-	tx.Signature[64] -= 27
-
-	// get the pubkey used to sign this signature
-	sigPubkey, err := crypto.Ecrecover(sighash, tx.Signature)
+	sigPubkey, err := crypto.SigToPub(sighash, tx.Signature)
 	if err != nil {
-		return common.Address{}, fmt.Errorf("ecrecover: %w", err)
+		log.Fatal(err)
 	}
-	// fmt.Println("SIG PUBKEY:", hexutil.Encode(sigPubkey))
 
-	// get the address to confirm it's the same one in the auth token
-	pubkey, err := crypto.UnmarshalPubkey(sigPubkey)
-	if err != nil {
-		return common.Address{}, err
-	}
-	address := crypto.PubkeyToAddress(*pubkey)
-	// fmt.Println("ADDRESS:", address.Hex())
-
-	// verify the signature (not sure if this is actually required after ecrecover)
-	signatureNoRecoverID := tx.Signature[:len(tx.Signature)-1]
-	verified := crypto.VerifySignature(sigPubkey, sighash, signatureNoRecoverID)
-	if !verified {
-		return common.Address{}, errors.New("verification failed")
-	}
+	address := crypto.PubkeyToAddress(*sigPubkey)
 
 	return address, nil
 	// fmt.Println("VERIFIED:", verified)

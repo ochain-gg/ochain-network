@@ -1,6 +1,9 @@
 package queries
 
 import (
+	"errors"
+
+	"github.com/dgraph-io/badger/v4"
 	"github.com/fxamacker/cbor/v2"
 	"github.com/ochain-gg/ochain-network/database"
 	"github.com/ochain-gg/ochain-network/types"
@@ -27,7 +30,9 @@ func ResolveGetAccountQuery(q []byte, db *database.OChainDatabase) ([]byte, erro
 
 	relatedGlobalAccount, err := db.GlobalsAccounts.Get(queryParams.Address)
 	if err != nil {
-		return []byte(""), err
+		if err == badger.ErrKeyNotFound {
+			return []byte(""), errors.New("global account doesn't exists")
+		}
 	}
 
 	result.Account = relatedGlobalAccount
