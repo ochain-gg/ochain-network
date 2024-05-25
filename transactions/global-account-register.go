@@ -2,8 +2,14 @@ package transactions
 
 import (
 	"errors"
+	"fmt"
+	"log"
 
 	abcitypes "github.com/cometbft/cometbft/abci/types"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/math"
+	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/signer/core/apitypes"
 	"github.com/fxamacker/cbor/v2"
 
 	"github.com/ochain-gg/ochain-network/types"
@@ -14,7 +20,7 @@ type RegisterAccountTransactionData struct {
 	GuardianQuorum      uint64   `cbor:"2,keyasint"`
 	Guardians           []string `cbor:"3,keyasint"`
 	DeleguatedTo        []string `cbor:"4,keyasint"`
-	AuthorizerSignature string   `cbor:"5,keyasint"`
+	AuthorizerSignature []byte   `cbor:"5,keyasint"`
 }
 
 type RegisterAccountTransaction struct {
@@ -45,6 +51,57 @@ func (tx *RegisterAccountTransaction) Check(ctx TransactionContext) error {
 	if err == nil {
 		return errors.New("account aleady exists")
 	}
+
+	typedData := apitypes.TypedData{
+		Types: apitypes.Types{
+			"EIP712Domain": []apitypes.Type{
+				{Name: "name", Type: "string"},
+				{Name: "version", Type: "string"},
+				{Name: "chainId", Type: "uint256"},
+				{Name: "verifyingContract", Type: "address"},
+			},
+			"RegisterRequest": []apitypes.Type{
+				{Name: "address", Type: "address"},
+			},
+		},
+		PrimaryType: "RegisterRequest",
+		Domain: apitypes.TypedDataDomain{
+			Name:              "OChainNetwork",
+			Version:           "1",
+			ChainId:           math.NewHexOrDecimal256(20291),
+			VerifyingContract: "0x0000000000000000000000000000000000000000",
+		},
+		Message: map[string]interface{}{
+			"address": tx.From,
+		},
+	}
+	// EIP-712 typed data marshalling
+	domainSeparator, err := typedData.HashStruct("EIP712Domain", typedData.Domain.Map())
+	if err != nil {
+		return err
+	}
+	typedDataHash, err := typedData.HashStruct(typedData.PrimaryType, typedData.Message)
+	if err != nil {
+		return err
+	}
+
+	typedDataHashSigned := []byte(fmt.Sprintf("\x19\x01%s%s", string(domainSeparator), string(typedDataHash)))
+	sighash := crypto.Keccak256(typedDataHashSigned)
+
+	signature := tx.Data.AuthorizerSignature
+	signature[64] -= 27
+
+	sigPubkey, err := crypto.SigToPub(sighash, signature)
+	if err != nil {
+		log.Println("SigToPub: " + err.Error())
+		return err
+	}
+
+	address := crypto.PubkeyToAddress(*sigPubkey)
+	if address != common.HexToAddress("0x190144001306820e9BdF6eB2dB8d747B4fCE7980") {
+		return errors.New("bad registration signature")
+	}
+
 	return nil
 }
 

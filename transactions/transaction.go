@@ -1,6 +1,7 @@
 package transactions
 
 import (
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"log"
@@ -217,20 +218,31 @@ func (tx *Transaction) GetTypedData() ([]byte, error) {
 
 func (tx *Transaction) RecoverSignerAddress() (common.Address, error) {
 
-	sighash, err := tx.GetTypedDataHash()
+	typedData, err := tx.GetTypedData()
 	if err != nil {
+		log.Println("GetTypedDataHash: " + err.Error())
 		return common.Address{}, fmt.Errorf("GetTypedDataHash: %w", err)
 	}
 
-	sigPubkey, err := crypto.SigToPub(sighash, tx.Signature)
+	sighash := crypto.Keccak256(typedData)
+
+	// update the recovery id
+	// https://github.com/ethereum/go-ethereum/blob/55599ee95d4151a2502465e0afc7c47bd1acba77/internal/ethapi/api.go#L442
+	signature := tx.Signature
+	signature[64] -= 27
+
+	log.Println("typedData: " + hex.EncodeToString(sighash))
+	log.Println("signature: " + hex.EncodeToString(signature))
+
+	sigPubkey, err := crypto.SigToPub(sighash, signature)
 	if err != nil {
-		log.Fatal(err)
+		log.Println("SigToPub: " + err.Error())
+		return common.Address{}, err
 	}
 
 	address := crypto.PubkeyToAddress(*sigPubkey)
 
 	return address, nil
-	// fmt.Println("VERIFIED:", verified)
 }
 
 func ParseTransaction(data []byte) (Transaction, error) {
