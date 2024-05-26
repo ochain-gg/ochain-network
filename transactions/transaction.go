@@ -116,6 +116,9 @@ func (tx *Transaction) IsValid() error {
 	case RegisterAccount:
 		_, err := ParseRegisterAccountTransaction(*tx)
 		return err
+	case RegisterUniverseAccount:
+		_, err := ParseRegisterUniverseAccountTransaction(*tx)
+		return err
 	}
 
 	return errors.New("unknown tx type")

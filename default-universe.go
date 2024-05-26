@@ -5,7 +5,7 @@ import (
 )
 
 var DefaultUniverseConfiguration types.OChainUniverseConfiguration = types.OChainUniverseConfiguration{
-	Speed:                   2,
+	Speed:                   1,
 	MaxGalaxy:               255,
 	MaxSolarSystemPerGalaxy: 255,
 	MaxPlanetPerSolarSystem: 16,

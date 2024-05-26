@@ -132,9 +132,12 @@ func (app *OChainValidatorApplication) InitChain(_ context.Context, chain *abcit
 		}
 	}
 
+	mainUniverse := DefaultUniverse
+	mainUniverse.CreatedAt = uint64(time.Now().Unix())
+
 	_, err = app.db.Universes.Get("main")
 	if err != nil {
-		app.db.Universes.Insert(DefaultUniverse)
+		app.db.Universes.Insert(mainUniverse)
 	}
 
 	err = app.db.CommitTransaction()
@@ -191,6 +194,24 @@ func (app *OChainValidatorApplication) CheckTx(ctx context.Context, req *abcityp
 		}
 
 		transaction, err := transactions.ParseRegisterAccountTransaction(tx)
+		if err != nil {
+			return &abcitypes.ResponseCheckTx{Code: types.ParsingTransactionDataError}, nil
+		}
+
+		err = transaction.Check(txCtx)
+		if err != nil {
+			return &abcitypes.ResponseCheckTx{Code: types.CheckTransactionFailure}, nil
+		}
+
+		return &abcitypes.ResponseCheckTx{Code: types.NoError}, nil
+	case transactions.RegisterUniverseAccount:
+
+		err := tx.VerifySignature()
+		if err != nil {
+			return &abcitypes.ResponseCheckTx{Code: types.InvalidTransactionSignature}, nil
+		}
+
+		transaction, err := transactions.ParseRegisterUniverseAccountTransaction(tx)
 		if err != nil {
 			return &abcitypes.ResponseCheckTx{Code: types.ParsingTransactionDataError}, nil
 		}
@@ -334,6 +355,39 @@ func (app *OChainValidatorApplication) FinalizeBlock(_ context.Context, req *abc
 				Events:  events,
 				GasUsed: 0,
 			}
+
+		case transactions.RegisterUniverseAccount:
+
+			err := tx.VerifySignature()
+			if err != nil {
+				txs[i] = &abcitypes.ExecTxResult{Code: types.InvalidTransactionSignature}
+				continue
+			}
+
+			transaction, err := transactions.ParseRegisterUniverseAccountTransaction(tx)
+			if err != nil {
+				txs[i] = &abcitypes.ExecTxResult{Code: types.ParsingTransactionDataError}
+				continue
+			}
+
+			err = transaction.Check(txCtx)
+			if err != nil {
+				txs[i] = &abcitypes.ExecTxResult{Code: types.CheckTransactionFailure}
+				continue
+			}
+
+			events, err := transaction.Execute(txCtx)
+			if err != nil {
+				txs[i] = &abcitypes.ExecTxResult{Code: types.ExecuteTransactionFailure}
+				continue
+			}
+
+			txs[i] = &abcitypes.ExecTxResult{
+				Code:    types.NoError,
+				Log:     "Account registered: " + tx.From,
+				Events:  events,
+				GasUsed: 0,
+			}
 		}
 
 		app.state.IncSize()
@@ -357,21 +411,13 @@ func (app *OChainValidatorApplication) Commit(_ context.Context, commit *abcityp
 func (app *OChainValidatorApplication) Query(_ context.Context, req *abcitypes.RequestQuery) (*abcitypes.ResponseQuery, error) {
 	res := &abcitypes.ResponseQuery{}
 
-	switch req.Path {
-	case queries.GetUniversesPath:
-		value, err := queries.ResolveGetUniversesQuery(req.Data, app.db)
-		if err != nil {
-			return &abcitypes.ResponseQuery{}, err
-		}
-		res.Value = value
-
-	case queries.GetUniversePath:
-		value, err := queries.ResolveGetUniverseQuery(req.Data, app.db)
-		if err != nil {
-			return &abcitypes.ResponseQuery{}, err
-		}
-		res.Value = value
+	value, err := queries.GetQueryResponse(req, app.db)
+	if err != nil {
+		return &abcitypes.ResponseQuery{Code: 1}, err
 	}
+
+	res.Value = value
+	res.Code = 0
 
 	return res, nil
 }

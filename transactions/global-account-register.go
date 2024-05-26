@@ -89,7 +89,9 @@ func (tx *RegisterAccountTransaction) Check(ctx TransactionContext) error {
 	sighash := crypto.Keccak256(typedDataHashSigned)
 
 	signature := tx.Data.AuthorizerSignature
-	signature[64] -= 27
+	if signature[64] == 27 || signature[64] == 28 {
+		signature[64] -= 27
+	}
 
 	sigPubkey, err := crypto.SigToPub(sighash, signature)
 	if err != nil {
@@ -120,6 +122,7 @@ func (tx *RegisterAccountTransaction) Execute(ctx TransactionContext) ([]abcityp
 			Guardians:      tx.Data.Guardians,
 			DeleguatedTo:   tx.Data.DeleguatedTo,
 		},
+		CreatedAt: ctx.Date.Unix(),
 	}
 
 	err = ctx.Db.GlobalsAccounts.Insert(account)

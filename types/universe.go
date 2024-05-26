@@ -28,7 +28,8 @@ type OChainUniverse struct {
 	Id            string                      `cbor:"1,keyasint"`
 	Name          string                      `cbor:"2,keyasint"`
 	Configuration OChainUniverseConfiguration `cbor:"3,keyasint"`
-	CreatedAt     uint                        `cbor:"4,keyasint"`
+	Accounts      uint64                      `cbor:"4,keyasint"`
+	CreatedAt     uint64                      `cbor:"5,keyasint"`
 }
 
 type OChainFighterStats struct {
