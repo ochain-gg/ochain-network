@@ -22,7 +22,7 @@ import (
 type TransactionType uint16
 
 const (
-	MaxTransactionType uint64 = 28
+	MaxTransactionType uint64 = 31
 	//Unauthenticated transactions
 	OChainPortalInteraction TransactionType = 0 // handle NewValidator / RemoveValidator / OChainTokenDeposit / OChainTokenWithdrawal / OChainBonusSubscription
 	ExecutePendingUpdate    TransactionType = 1 // handle BuildingUpgrade / TechnologyUpgrade / DefenseBuild / SpaceshipBuild / FleetMove
@@ -65,6 +65,13 @@ const (
 
 	//Market transations
 	SwapResources TransactionType = 28
+
+	//Global <-> universes transations
+	UniverseOCTDeposit  TransactionType = 29
+	UniverseOCTWithdraw TransactionType = 30
+
+	//EVM <-> Global transations
+	AccountOCTWithdraw TransactionType = 31
 )
 
 type TransactionContext struct {
@@ -124,19 +131,13 @@ func (tx *Transaction) IsValid() error {
 	return errors.New("unknown tx type")
 }
 
-func (tx *Transaction) VerifySignature() error {
+func (tx *Transaction) GetSigner() (string, error) {
 	signer, err := tx.RecoverSignerAddress()
 	if err != nil {
-		return err
+		return "", err
 	}
 
-	from := common.HexToAddress(tx.From)
-
-	if signer.Hex() == from.Hex() {
-		return nil
-	} else {
-		return errors.New("signer and from don't match")
-	}
+	return signer.Hex(), nil
 }
 
 func (tx *Transaction) Sign(key []byte) error {

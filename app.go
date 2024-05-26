@@ -19,6 +19,7 @@ import (
 	"github.com/ochain-gg/ochain-network/config"
 	"github.com/ochain-gg/ochain-network/contracts"
 	"github.com/ochain-gg/ochain-network/database"
+	"github.com/ochain-gg/ochain-network/engine"
 	"github.com/ochain-gg/ochain-network/queries"
 	"github.com/ochain-gg/ochain-network/transactions"
 	"github.com/ochain-gg/ochain-network/types"
@@ -159,72 +160,8 @@ func (app *OChainValidatorApplication) CheckTx(ctx context.Context, req *abcityp
 		State:  app.state,
 		Date:   time.Now(),
 	}
-	log.Printf("Check tx: %s", hex.EncodeToString(req.Tx))
 
-	tx, err := transactions.ParseTransaction(req.Tx)
-	if err != nil {
-		return &abcitypes.ResponseCheckTx{Code: types.ParsingTransactionError}, nil
-	}
-
-	err = tx.IsValid()
-	if err != nil {
-		return &abcitypes.ResponseCheckTx{Code: types.InvalidTransactionError}, nil
-	}
-
-	switch tx.Type {
-	case transactions.OChainPortalInteraction:
-		transaction, err := transactions.ParseNewOChainPortalInteraction(tx)
-		if err != nil {
-			return &abcitypes.ResponseCheckTx{Code: types.ParsingTransactionDataError}, nil
-		}
-
-		err = transaction.Check(txCtx)
-		if err != nil {
-			log.Println(err)
-			return &abcitypes.ResponseCheckTx{Code: types.CheckTransactionFailure}, nil
-		}
-
-		return &abcitypes.ResponseCheckTx{Code: types.NoError}, nil
-
-	case transactions.RegisterAccount:
-
-		err := tx.VerifySignature()
-		if err != nil {
-			return &abcitypes.ResponseCheckTx{Code: types.InvalidTransactionSignature}, nil
-		}
-
-		transaction, err := transactions.ParseRegisterAccountTransaction(tx)
-		if err != nil {
-			return &abcitypes.ResponseCheckTx{Code: types.ParsingTransactionDataError}, nil
-		}
-
-		err = transaction.Check(txCtx)
-		if err != nil {
-			return &abcitypes.ResponseCheckTx{Code: types.CheckTransactionFailure}, nil
-		}
-
-		return &abcitypes.ResponseCheckTx{Code: types.NoError}, nil
-	case transactions.RegisterUniverseAccount:
-
-		err := tx.VerifySignature()
-		if err != nil {
-			return &abcitypes.ResponseCheckTx{Code: types.InvalidTransactionSignature}, nil
-		}
-
-		transaction, err := transactions.ParseRegisterUniverseAccountTransaction(tx)
-		if err != nil {
-			return &abcitypes.ResponseCheckTx{Code: types.ParsingTransactionDataError}, nil
-		}
-
-		err = transaction.Check(txCtx)
-		if err != nil {
-			return &abcitypes.ResponseCheckTx{Code: types.CheckTransactionFailure}, nil
-		}
-
-		return &abcitypes.ResponseCheckTx{Code: types.NoError}, nil
-	}
-
-	return &abcitypes.ResponseCheckTx{Code: types.NotImplemented, GasWanted: 0}, nil
+	return engine.CheckTx(txCtx, req)
 }
 
 func (app *OChainValidatorApplication) FinalizeBlock(_ context.Context, req *abcitypes.RequestFinalizeBlock) (*abcitypes.ResponseFinalizeBlock, error) {
@@ -243,151 +180,11 @@ func (app *OChainValidatorApplication) FinalizeBlock(_ context.Context, req *abc
 	var txs = make([]*abcitypes.ExecTxResult, len(req.Txs))
 	for i, tx := range req.Txs {
 
-		tx, err := transactions.ParseTransaction(tx)
-		if err != nil {
-			txs[i] = &abcitypes.ExecTxResult{Code: types.ParsingTransactionError}
-			log.Printf("Finalize tx %d: ParsingTransactionError", i)
-			continue
-		}
+		execTxResult, valUpdates := engine.FinalizeTx(txCtx, tx)
 
-		err = tx.IsValid()
-		if err != nil {
-			txs[i] = &abcitypes.ExecTxResult{Code: types.InvalidTransactionError}
-			continue
-		}
-
-		switch tx.Type {
-		case transactions.OChainPortalInteraction:
-
-			transaction, err := transactions.ParseNewOChainPortalInteraction(tx)
-			if err != nil {
-				txs[i] = &abcitypes.ExecTxResult{Code: types.ParsingTransactionDataError}
-				log.Printf("Finalize tx %d: ParsingTransactionDataError", i)
-				continue
-			}
-
-			err = transaction.Check(txCtx)
-			if err != nil {
-				txs[i] = &abcitypes.ExecTxResult{Code: types.CheckTransactionFailure}
-				log.Printf("Finalize tx %d: CheckTransactionFailure", i)
-				continue
-			}
-
-			err = transaction.Execute(txCtx)
-			if err != nil {
-				txs[i] = &abcitypes.ExecTxResult{Code: types.ExecuteTransactionFailure}
-				log.Printf("Finalize tx %d: ExecuteTransactionFailure", i)
-				continue
-			}
-
-			if transaction.Data.Type == transactions.NewValidatorPortalInteractionType {
-				formatedTx, err := transactions.ParseNewValidatorTransaction(transaction)
-				if err != nil {
-					txs[i] = &abcitypes.ExecTxResult{Code: types.ParsingTransactionDataError}
-					log.Printf("Finalize tx %d: ParsingTransactionDataError", i)
-					continue
-				}
-
-				pubkeyBytes, err := hex.DecodeString(formatedTx.Data.Arguments.PublicKey)
-				if err != nil {
-					txs[i] = &abcitypes.ExecTxResult{Code: types.ParsingTransactionDataError}
-					log.Printf("Finalize tx %d: ParsingTransactionDataError", i)
-					continue
-				}
-
-				app.ValUpdates = append(app.ValUpdates, abcitypes.UpdateValidator(pubkeyBytes, 10000, "ed25519"))
-			} else if transaction.Data.Type == transactions.RemoveValidatorPortalInteractionType {
-				formatedTx, err := transactions.ParseRemoveValidatorTransaction(transaction)
-				if err != nil {
-					txs[i] = &abcitypes.ExecTxResult{Code: types.ParsingTransactionDataError}
-					log.Printf("Finalize tx %d: ParsingTransactionDataError", i)
-					continue
-				}
-
-				validator, err := app.db.Validators.GetById(formatedTx.Data.Arguments.ValidatorId)
-				if err != nil {
-					txs[i] = &abcitypes.ExecTxResult{Code: types.ExecuteTransactionFailure}
-					log.Printf("Finalize tx %d: ExecuteTransactionFailure", i)
-					continue
-				}
-
-				pubkeyBytes, err := hex.DecodeString(validator.PublicKey)
-				if err != nil {
-					txs[i] = &abcitypes.ExecTxResult{Code: types.ParsingTransactionDataError}
-					log.Printf("Finalize tx %d: ParsingTransactionDataError", i)
-					continue
-				}
-
-				app.ValUpdates = append(app.ValUpdates, abcitypes.UpdateValidator(pubkeyBytes, 0, "ed25519"))
-			}
-
-			txs[i] = &abcitypes.ExecTxResult{Code: types.NoError}
-
-		case transactions.RegisterAccount:
-
-			err := tx.VerifySignature()
-			if err != nil {
-				txs[i] = &abcitypes.ExecTxResult{Code: types.InvalidTransactionSignature}
-				continue
-			}
-
-			transaction, err := transactions.ParseRegisterAccountTransaction(tx)
-			if err != nil {
-				txs[i] = &abcitypes.ExecTxResult{Code: types.ParsingTransactionDataError}
-				continue
-			}
-
-			err = transaction.Check(txCtx)
-			if err != nil {
-				txs[i] = &abcitypes.ExecTxResult{Code: types.CheckTransactionFailure}
-				continue
-			}
-
-			events, err := transaction.Execute(txCtx)
-			if err != nil {
-				txs[i] = &abcitypes.ExecTxResult{Code: types.ExecuteTransactionFailure}
-				continue
-			}
-
-			txs[i] = &abcitypes.ExecTxResult{
-				Code:    types.NoError,
-				Log:     "Account registered: " + tx.From,
-				Events:  events,
-				GasUsed: 0,
-			}
-
-		case transactions.RegisterUniverseAccount:
-
-			err := tx.VerifySignature()
-			if err != nil {
-				txs[i] = &abcitypes.ExecTxResult{Code: types.InvalidTransactionSignature}
-				continue
-			}
-
-			transaction, err := transactions.ParseRegisterUniverseAccountTransaction(tx)
-			if err != nil {
-				txs[i] = &abcitypes.ExecTxResult{Code: types.ParsingTransactionDataError}
-				continue
-			}
-
-			err = transaction.Check(txCtx)
-			if err != nil {
-				txs[i] = &abcitypes.ExecTxResult{Code: types.CheckTransactionFailure}
-				continue
-			}
-
-			events, err := transaction.Execute(txCtx)
-			if err != nil {
-				txs[i] = &abcitypes.ExecTxResult{Code: types.ExecuteTransactionFailure}
-				continue
-			}
-
-			txs[i] = &abcitypes.ExecTxResult{
-				Code:    types.NoError,
-				Log:     "Account registered: " + tx.From,
-				Events:  events,
-				GasUsed: 0,
-			}
+		txs[i] = execTxResult
+		for i := 0; i < len(valUpdates); i++ {
+			app.ValUpdates = append(app.ValUpdates, valUpdates[i])
 		}
 
 		app.state.IncSize()
