@@ -14,13 +14,24 @@ func FinalizeAuthenticatedTx(ctx transactions.TransactionContext, tx transaction
 		return &abcitypes.ExecTxResult{Code: types.InvalidTransactionSignature}, valUpdates
 	}
 
-	account, err := ctx.Db.GlobalsAccounts.Get(tx.From)
-	if err != nil {
-		return &abcitypes.ExecTxResult{Code: types.InvalidTransactionSignature}, valUpdates
-	}
+	if tx.Type != transactions.RegisterAccount {
+		account, err := ctx.Db.GlobalsAccounts.Get(tx.From)
+		if err != nil {
+			return &abcitypes.ExecTxResult{Code: types.InvalidTransactionSignature}, nil
+		}
 
-	if !account.IsAllowedSigner(signer, IsDeleguatedAuthorized(tx.Type)) {
-		return &abcitypes.ExecTxResult{Code: types.InvalidTransactionSignature}, valUpdates
+		if !account.IsAllowedSigner(signer, IsDeleguatedAuthorized(tx.Type)) {
+			return &abcitypes.ExecTxResult{Code: types.InvalidTransactionSignature}, nil
+		}
+
+		//verify nonce
+		if tx.Nonce != account.Nonce {
+			return &abcitypes.ExecTxResult{Code: types.InvalidTransactionSignature}, nil
+		}
+	} else {
+		if signer != tx.From || tx.Nonce != 0 {
+			return &abcitypes.ExecTxResult{Code: types.InvalidTransactionSignature}, nil
+		}
 	}
 
 	switch tx.Type {
@@ -43,7 +54,6 @@ func FinalizeAuthenticatedTx(ctx transactions.TransactionContext, tx transaction
 
 		return &abcitypes.ExecTxResult{
 			Code:    types.NoError,
-			Log:     "Account registered: " + tx.From,
 			Events:  events,
 			GasUsed: 0,
 		}, valUpdates

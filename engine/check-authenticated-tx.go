@@ -35,13 +35,24 @@ func CheckAuthenticatedTx(ctx transactions.TransactionContext, req *abcitypes.Re
 		return &abcitypes.ResponseCheckTx{Code: types.InvalidTransactionSignature}, nil
 	}
 
-	account, err := ctx.Db.GlobalsAccounts.Get(tx.From)
-	if err != nil {
-		return &abcitypes.ResponseCheckTx{Code: types.InvalidTransactionSignature}, nil
-	}
+	if tx.Type != transactions.RegisterAccount {
+		account, err := ctx.Db.GlobalsAccounts.Get(tx.From)
+		if err != nil {
+			return &abcitypes.ResponseCheckTx{Code: types.InvalidTransactionSignature}, nil
+		}
 
-	if !account.IsAllowedSigner(signer, IsDeleguatedAuthorized(tx.Type)) {
-		return &abcitypes.ResponseCheckTx{Code: types.InvalidTransactionSignature}, nil
+		if !account.IsAllowedSigner(signer, IsDeleguatedAuthorized(tx.Type)) {
+			return &abcitypes.ResponseCheckTx{Code: types.InvalidTransactionSignature}, nil
+		}
+
+		//verify nonce
+		if tx.Nonce != account.Nonce {
+			return &abcitypes.ResponseCheckTx{Code: types.InvalidTransactionSignature}, nil
+		}
+	} else {
+		if signer != tx.From || tx.Nonce != 0 {
+			return &abcitypes.ResponseCheckTx{Code: types.InvalidTransactionSignature}, nil
+		}
 	}
 
 	switch tx.Type {

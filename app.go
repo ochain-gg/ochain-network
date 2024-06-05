@@ -133,13 +133,24 @@ func (app *OChainValidatorApplication) InitChain(_ context.Context, chain *abcit
 		}
 	}
 
+	//generate default game entities
+	for i := 0; i < len(DefaultBuildings); i++ {
+		app.db.Buildings.Insert(DefaultBuildings[i])
+	}
+	for i := 0; i < len(DefaultTechnologies); i++ {
+		app.db.Technologies.Insert(DefaultTechnologies[i])
+	}
+	for i := 0; i < len(DefaultDefenses); i++ {
+		app.db.Defenses.Insert(DefaultDefenses[i])
+	}
+	for i := 0; i < len(DefaultSpaceships); i++ {
+		app.db.Spaceships.Insert(DefaultSpaceships[i])
+	}
+
 	mainUniverse := DefaultUniverse
 	mainUniverse.CreatedAt = uint64(time.Now().Unix())
 
-	_, err = app.db.Universes.Get("main")
-	if err != nil {
-		app.db.Universes.Insert(mainUniverse)
-	}
+	app.db.Universes.Insert(mainUniverse)
 
 	err = app.db.CommitTransaction()
 	if err != nil {

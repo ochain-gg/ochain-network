@@ -13,6 +13,10 @@ type OChainDatabase struct {
 	GlobalsAccounts    *OChainGlobalAccountTable
 	UniverseAccounts   *OChainUniverseAccountTable
 	Planets            *OChainPlanetTable
+	Buildings          *OChainBuildingTable
+	Technologies       *OChainTechnologyTable
+	Defenses           *OChainDefenseTable
+	Spaceships         *OChainSpaceshipTable
 	// Fleets                 *OChainFleetTable
 	State *OChainStateTable
 }
@@ -40,6 +44,10 @@ func (db *OChainDatabase) LoadTables() {
 	db.GlobalsAccounts = NewOChainGlobalAccountTable(db.DB)
 	db.UniverseAccounts = NewOChainUniverseAccountTable(db.DB)
 	db.Planets = NewOChainPlanetTable(db.DB)
+	db.Buildings = NewOChainBuildingTable(db.DB)
+	db.Technologies = NewOChainTechnologyTable(db.DB)
+	db.Defenses = NewOChainDefenseTable(db.DB)
+	db.Spaceships = NewOChainSpaceshipTable(db.DB)
 	// db.Fleets = NewFleetsTable(db.DB)
 	db.State = NewOChainStateTable(db.DB)
 }
@@ -53,6 +61,10 @@ func (db *OChainDatabase) NewTransaction(ts uint64) {
 	db.GlobalsAccounts.SetCurrentTxn(db.CurrentTxn)
 	db.UniverseAccounts.SetCurrentTxn(db.CurrentTxn)
 	db.Planets.SetCurrentTxn(db.CurrentTxn)
+	db.Buildings.SetCurrentTxn(db.CurrentTxn)
+	db.Technologies.SetCurrentTxn(db.CurrentTxn)
+	db.Defenses.SetCurrentTxn(db.CurrentTxn)
+	db.Spaceships.SetCurrentTxn(db.CurrentTxn)
 	// db.Fleets.SetCurrentTxn(db.CurrentTxn)
 	db.State.SetCurrentTxn(db.CurrentTxn)
 }

@@ -117,6 +117,7 @@ func (tx *RegisterAccountTransaction) Execute(ctx TransactionContext) ([]abcityp
 		Address:      tx.From,
 		Nonce:        1,
 		TokenBalance: "0",
+		USDBalance:   "0",
 		IAM: types.OChainGlobalAccountIAM{
 			GuardianQuorum: tx.Data.GuardianQuorum,
 			Guardians:      tx.Data.Guardians,
