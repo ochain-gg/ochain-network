@@ -152,6 +152,34 @@ func (app *OChainValidatorApplication) InitChain(_ context.Context, chain *abcit
 
 	app.db.Universes.Insert(mainUniverse)
 
+	//Initalize marketplace
+
+	//Reserve Token Balance / (Continuous Token Supply x Continuous Token Price)
+	// 1 pour 10000= 0.0001
+	//reserve ration = 1 000 000 / 1_000_000_000_000 * 0.0001
+	//reserve ration = 1 000 000 / 100_000_000
+	//reserve ration = 1 / 100
+	//reserve ration = 0.01 = 10
+
+	universeResourceMarket := types.OChainResourcesMarket{
+		UniverseId: mainUniverse.Id,
+		FeesRate:   200,
+
+		MetalReserveRatio: 100_000,
+		MetalPoolBalance:  1_000_000_000,
+		MetalSupplyMinted: 10_000_000_000_000,
+
+		CrystalReserveRatio: 100_000,
+		CrystalPoolBalance:  1_000_000_000,
+		CrystalSupplyMinted: 5_000_000_000_000,
+
+		DeuteriumReserveRatio: 100_000,
+		DeuteriumPoolBalance:  1_000_000_000,
+		DeuteriumSupplyMinted: 2_000_000_000_000,
+	}
+
+	app.db.ResourcesMarket.Insert(universeResourceMarket)
+
 	err = app.db.CommitTransaction()
 	if err != nil {
 		log.Fatal(err)

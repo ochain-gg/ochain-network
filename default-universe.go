@@ -14,7 +14,7 @@ var DefaultBuildings []types.OChainBuilding = []types.OChainBuilding{
 			OCT:       0,
 			Metal:     200,
 			Crystal:   100,
-			Deutereum: 0,
+			Deuterium: 0,
 		},
 		Dependencies: []types.OChainDependency{},
 	},
@@ -25,18 +25,18 @@ var DefaultBuildings []types.OChainBuilding = []types.OChainBuilding{
 			OCT:       0,
 			Metal:     400,
 			Crystal:   200,
-			Deutereum: 0,
+			Deuterium: 0,
 		},
 		Dependencies: []types.OChainDependency{},
 	},
 	{
-		Id:   types.DeutereumMineID,
+		Id:   types.DeuteriumMineID,
 		Name: "Deuterium Synthesizer",
 		BaseCost: types.OChainResources{
 			OCT:       0,
 			Metal:     500,
 			Crystal:   250,
-			Deutereum: 0,
+			Deuterium: 0,
 		},
 		Dependencies: []types.OChainDependency{},
 	},
@@ -47,7 +47,7 @@ var DefaultBuildings []types.OChainBuilding = []types.OChainBuilding{
 			OCT:       0,
 			Metal:     300,
 			Crystal:   200,
-			Deutereum: 0,
+			Deuterium: 0,
 		},
 		Dependencies: []types.OChainDependency{},
 	},
@@ -58,7 +58,7 @@ var DefaultBuildings []types.OChainBuilding = []types.OChainBuilding{
 			OCT:       0,
 			Metal:     1_000,
 			Crystal:   500,
-			Deutereum: 100,
+			Deuterium: 100,
 		},
 		Dependencies: []types.OChainDependency{},
 	},
@@ -69,7 +69,7 @@ var DefaultBuildings []types.OChainBuilding = []types.OChainBuilding{
 			OCT:       0,
 			Metal:     1_000_000,
 			Crystal:   600_000,
-			Deutereum: 500_000,
+			Deuterium: 500_000,
 		},
 		Dependencies: []types.OChainDependency{
 			{
@@ -91,7 +91,7 @@ var DefaultBuildings []types.OChainBuilding = []types.OChainBuilding{
 			OCT:       0,
 			Metal:     1_000,
 			Crystal:   500,
-			Deutereum: 100,
+			Deuterium: 100,
 		},
 		Dependencies: []types.OChainDependency{
 			{
@@ -113,7 +113,7 @@ var DefaultBuildings []types.OChainBuilding = []types.OChainBuilding{
 			OCT:       0,
 			Metal:     5_000_000,
 			Crystal:   3_000_000,
-			Deutereum: 3_000_000,
+			Deuterium: 3_000_000,
 		},
 		Dependencies: []types.OChainDependency{
 			{
@@ -140,7 +140,7 @@ var DefaultBuildings []types.OChainBuilding = []types.OChainBuilding{
 			OCT:       0,
 			Metal:     1_000,
 			Crystal:   100,
-			Deutereum: 600,
+			Deuterium: 600,
 		},
 		Dependencies: []types.OChainDependency{},
 	},
@@ -151,7 +151,7 @@ var DefaultBuildings []types.OChainBuilding = []types.OChainBuilding{
 			OCT:       0,
 			Metal:     1_000,
 			Crystal:   500,
-			Deutereum: 100,
+			Deuterium: 100,
 		},
 		Dependencies: []types.OChainDependency{},
 	},
@@ -165,7 +165,7 @@ var DefaultTechnologies []types.OChainTechnology = []types.OChainTechnology{
 			OCT:       0,
 			Metal:     200,
 			Crystal:   100,
-			Deutereum: 0,
+			Deuterium: 0,
 		},
 		Dependencies: []types.OChainDependency{
 			{
@@ -182,7 +182,7 @@ var DefaultTechnologies []types.OChainTechnology = []types.OChainTechnology{
 			OCT:       0,
 			Metal:     400,
 			Crystal:   200,
-			Deutereum: 0,
+			Deuterium: 0,
 		},
 		Dependencies: []types.OChainDependency{
 			{
@@ -199,7 +199,7 @@ var DefaultTechnologies []types.OChainTechnology = []types.OChainTechnology{
 			OCT:       0,
 			Metal:     500,
 			Crystal:   250,
-			Deutereum: 0,
+			Deuterium: 0,
 		},
 		Dependencies: []types.OChainDependency{
 			{
@@ -221,7 +221,7 @@ var DefaultTechnologies []types.OChainTechnology = []types.OChainTechnology{
 			OCT:       0,
 			Metal:     300,
 			Crystal:   200,
-			Deutereum: 0,
+			Deuterium: 0,
 		},
 		Dependencies: []types.OChainDependency{
 			{
@@ -238,7 +238,7 @@ var DefaultTechnologies []types.OChainTechnology = []types.OChainTechnology{
 			OCT:       0,
 			Metal:     100,
 			Crystal:   50,
-			Deutereum: 10,
+			Deuterium: 10,
 		},
 		Dependencies: []types.OChainDependency{
 			{
@@ -255,7 +255,7 @@ var DefaultTechnologies []types.OChainTechnology = []types.OChainTechnology{
 			OCT:       0,
 			Metal:     500,
 			Crystal:   250,
-			Deutereum: 25,
+			Deuterium: 25,
 		},
 		Dependencies: []types.OChainDependency{
 			{
@@ -277,7 +277,7 @@ var DefaultTechnologies []types.OChainTechnology = []types.OChainTechnology{
 			OCT:       0,
 			Metal:     1_00,
 			Crystal:   500,
-			Deutereum: 100,
+			Deuterium: 100,
 		},
 		Dependencies: []types.OChainDependency{
 			{
@@ -299,7 +299,7 @@ var DefaultTechnologies []types.OChainTechnology = []types.OChainTechnology{
 			OCT:       0,
 			Metal:     10_000,
 			Crystal:   20_000,
-			Deutereum: 6_000,
+			Deuterium: 6_000,
 		},
 		Dependencies: []types.OChainDependency{
 			{
@@ -321,7 +321,7 @@ var DefaultTechnologies []types.OChainTechnology = []types.OChainTechnology{
 			OCT:       0,
 			Metal:     0,
 			Crystal:   4_000,
-			Deutereum: 2_000,
+			Deuterium: 2_000,
 		},
 		Dependencies: []types.OChainDependency{
 			{
@@ -348,7 +348,7 @@ var DefaultTechnologies []types.OChainTechnology = []types.OChainTechnology{
 			OCT:       0,
 			Metal:     200,
 			Crystal:   100,
-			Deutereum: 0,
+			Deuterium: 0,
 		},
 		Dependencies: []types.OChainDependency{
 			{
@@ -370,7 +370,7 @@ var DefaultTechnologies []types.OChainTechnology = []types.OChainTechnology{
 			OCT:       0,
 			Metal:     1_000,
 			Crystal:   300,
-			Deutereum: 100,
+			Deuterium: 100,
 		},
 		Dependencies: []types.OChainDependency{
 			{
@@ -397,7 +397,7 @@ var DefaultTechnologies []types.OChainTechnology = []types.OChainTechnology{
 			OCT:       0,
 			Metal:     2_000,
 			Crystal:   4_000,
-			Deutereum: 1_000,
+			Deuterium: 1_000,
 		},
 		Dependencies: []types.OChainDependency{
 			{
@@ -429,7 +429,7 @@ var DefaultTechnologies []types.OChainTechnology = []types.OChainTechnology{
 			OCT:       0,
 			Metal:     240_000,
 			Crystal:   400_000,
-			Deutereum: 160_000,
+			Deuterium: 160_000,
 		},
 		Dependencies: []types.OChainDependency{
 			{
@@ -456,7 +456,7 @@ var DefaultTechnologies []types.OChainTechnology = []types.OChainTechnology{
 			OCT:       0,
 			Metal:     4_000,
 			Crystal:   8_000,
-			Deutereum: 4_000,
+			Deuterium: 4_000,
 		},
 		Dependencies: []types.OChainDependency{
 			{
@@ -483,7 +483,7 @@ var DefaultTechnologies []types.OChainTechnology = []types.OChainTechnology{
 			OCT:       0,
 			Metal:     0,
 			Crystal:   0,
-			Deutereum: 0,
+			Deuterium: 0,
 		},
 		Dependencies: []types.OChainDependency{
 			{
@@ -513,7 +513,7 @@ var DefaultSpaceships []types.OChainSpaceship = []types.OChainSpaceship{
 			OCT:       0,
 			Metal:     2_000,
 			Crystal:   2_000,
-			Deutereum: 0,
+			Deuterium: 0,
 		},
 		Dependencies: []types.OChainDependency{
 			{
@@ -545,7 +545,7 @@ var DefaultSpaceships []types.OChainSpaceship = []types.OChainSpaceship{
 			OCT:       0,
 			Metal:     6_000,
 			Crystal:   6_000,
-			Deutereum: 0,
+			Deuterium: 0,
 		},
 		Dependencies: []types.OChainDependency{
 			{
@@ -577,7 +577,7 @@ var DefaultSpaceships []types.OChainSpaceship = []types.OChainSpaceship{
 			OCT:       0,
 			Metal:     3_000,
 			Crystal:   1_000,
-			Deutereum: 0,
+			Deuterium: 0,
 		},
 		Dependencies: []types.OChainDependency{
 			{
@@ -609,7 +609,7 @@ var DefaultSpaceships []types.OChainSpaceship = []types.OChainSpaceship{
 			OCT:       0,
 			Metal:     6_000,
 			Crystal:   4_000,
-			Deutereum: 0,
+			Deuterium: 0,
 		},
 		Dependencies: []types.OChainDependency{
 			{
@@ -646,7 +646,7 @@ var DefaultSpaceships []types.OChainSpaceship = []types.OChainSpaceship{
 			OCT:       0,
 			Metal:     20_000,
 			Crystal:   7_000,
-			Deutereum: 2_000,
+			Deuterium: 2_000,
 		},
 		Dependencies: []types.OChainDependency{
 			{
@@ -683,7 +683,7 @@ var DefaultSpaceships []types.OChainSpaceship = []types.OChainSpaceship{
 			OCT:       0,
 			Metal:     45_000,
 			Crystal:   15_000,
-			Deutereum: 0,
+			Deuterium: 0,
 		},
 		Dependencies: []types.OChainDependency{
 			{
@@ -715,7 +715,7 @@ var DefaultSpaceships []types.OChainSpaceship = []types.OChainSpaceship{
 			OCT:       0,
 			Metal:     30_000,
 			Crystal:   40_000,
-			Deutereum: 15_000,
+			Deuterium: 15_000,
 		},
 		Dependencies: []types.OChainDependency{
 			{
@@ -757,7 +757,7 @@ var DefaultSpaceships []types.OChainSpaceship = []types.OChainSpaceship{
 			OCT:       0,
 			Metal:     50_000,
 			Crystal:   25_000,
-			Deutereum: 15_000,
+			Deuterium: 15_000,
 		},
 		Dependencies: []types.OChainDependency{
 			{
@@ -794,7 +794,7 @@ var DefaultSpaceships []types.OChainSpaceship = []types.OChainSpaceship{
 			OCT:       0,
 			Metal:     60_000,
 			Crystal:   50_000,
-			Deutereum: 15_000,
+			Deuterium: 15_000,
 		},
 		Dependencies: []types.OChainDependency{
 			{
@@ -831,7 +831,7 @@ var DefaultSpaceships []types.OChainSpaceship = []types.OChainSpaceship{
 			OCT:       0,
 			Metal:     5_000_000,
 			Crystal:   4_000_000,
-			Deutereum: 1_000_000,
+			Deuterium: 1_000_000,
 		},
 		Dependencies: []types.OChainDependency{
 			{
@@ -873,7 +873,7 @@ var DefaultSpaceships []types.OChainSpaceship = []types.OChainSpaceship{
 			OCT:       0,
 			Metal:     85_000,
 			Crystal:   55_000,
-			Deutereum: 20_000,
+			Deuterium: 20_000,
 		},
 		Dependencies: []types.OChainDependency{
 			{
@@ -925,7 +925,7 @@ var DefaultSpaceships []types.OChainSpaceship = []types.OChainSpaceship{
 			OCT:       0,
 			Metal:     10_000_000,
 			Crystal:   6_000_000,
-			Deutereum: 2_000_000,
+			Deuterium: 2_000_000,
 		},
 
 		Dependencies: []types.OChainDependency{
@@ -961,7 +961,7 @@ var DefaultDefenses []types.OChainDefense = []types.OChainDefense{
 			OCT:       0,
 			Metal:     2_000,
 			Crystal:   1_000,
-			Deutereum: 0,
+			Deuterium: 0,
 		},
 		Dependencies: []types.OChainDependency{
 			{
@@ -983,7 +983,7 @@ var DefaultDefenses []types.OChainDefense = []types.OChainDefense{
 			OCT:       0,
 			Metal:     4_000,
 			Crystal:   2_000,
-			Deutereum: 0,
+			Deuterium: 0,
 		},
 		Dependencies: []types.OChainDependency{
 			{
@@ -1015,7 +1015,7 @@ var DefaultDefenses []types.OChainDefense = []types.OChainDefense{
 			OCT:       0,
 			Metal:     5_000,
 			Crystal:   2_500,
-			Deutereum: 0,
+			Deuterium: 0,
 		},
 		Dependencies: []types.OChainDependency{
 			{
@@ -1047,7 +1047,7 @@ var DefaultDefenses []types.OChainDefense = []types.OChainDefense{
 			OCT:       0,
 			Metal:     3_000,
 			Crystal:   2_000,
-			Deutereum: 0,
+			Deuterium: 0,
 		},
 		Dependencies: []types.OChainDependency{
 			{
@@ -1074,7 +1074,7 @@ var DefaultDefenses []types.OChainDefense = []types.OChainDefense{
 			OCT:       0,
 			Metal:     10_000,
 			Crystal:   5_000,
-			Deutereum: 1_000,
+			Deuterium: 1_000,
 		},
 		Dependencies: []types.OChainDependency{
 			{
@@ -1111,7 +1111,7 @@ var DefaultDefenses []types.OChainDefense = []types.OChainDefense{
 			OCT:       0,
 			Metal:     20_000,
 			Crystal:   20_000,
-			Deutereum: 5000,
+			Deuterium: 5000,
 		},
 		Dependencies: []types.OChainDependency{
 			{
@@ -1138,7 +1138,7 @@ var DefaultDefenses []types.OChainDefense = []types.OChainDefense{
 			OCT:       0,
 			Metal:     10_000_000,
 			Crystal:   6_000_000,
-			Deutereum: 5_000_000,
+			Deuterium: 5_000_000,
 		},
 		Dependencies: []types.OChainDependency{
 			{

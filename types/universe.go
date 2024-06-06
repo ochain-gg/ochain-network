@@ -1,12 +1,10 @@
 package types
 
-import "fmt"
-
 type OChainResources struct {
 	OCT       uint64 `cbor:"1,keyasint"`
 	Metal     uint64 `cbor:"2,keyasint"`
 	Crystal   uint64 `cbor:"3,keyasint"`
-	Deutereum uint64 `cbor:"4,keyasint"`
+	Deuterium uint64 `cbor:"4,keyasint"`
 }
 
 type OChainCost struct {
@@ -97,7 +95,7 @@ type OChainBuildingID string
 const (
 	MetalMineID           OChainBuildingID = "METAL_MINE"
 	CrystalMineID         OChainBuildingID = "CRYSTAL_MINE"
-	DeutereumMineID       OChainBuildingID = "DEUTEREUM_MINE"
+	DeuteriumMineID       OChainBuildingID = "DEUTERIUM_MINE"
 	SolarPowerPlantID     OChainBuildingID = "SOLAR_POWER_PLANT"
 	RoboticFactoryID      OChainBuildingID = "ROBOTIC_FACTORY"
 	NaniteFactoryID       OChainBuildingID = "NANITE_FACTORY"
@@ -168,69 +166,4 @@ type OChainTechnology struct {
 	Name         string             `cbor:"2,keyasint"`
 	BaseCost     OChainResources    `cbor:"3,keyasint"`
 	Dependencies []OChainDependency `cbor:"4,keyasint"`
-}
-
-type OChainPlanetBuildings struct {
-	MetalMine       uint64 `cbor:"1,keyasint"`
-	CrystalMine     uint64 `cbor:"2,keyasint"`
-	DeutereumMine   uint64 `cbor:"3,keyasint"`
-	SolarPowerPlant uint64 `cbor:"4,keyasint"`
-
-	RoboticFactory   uint64 `cbor:"5,keyasint"`
-	NaniteFactory    uint64 `cbor:"6,keyasint"`
-	SpaceshipFactory uint64 `cbor:"7,keyasint"`
-
-	IntergalacticPortal uint64 `cbor:"8,keyasint"`
-	ResearchLaboratory  uint64 `cbor:"9,keyasint"`
-	ShieldDome          uint64 `cbor:"10,keyasint"`
-}
-
-type OChainFleetSpaceships struct {
-	SmallCargo   uint64 `cbor:"1,keyasint"`
-	LargeCargo   uint64 `cbor:"2,keyasint"`
-	LightFighter uint64 `cbor:"3,keyasint"`
-	HeavyFighter uint64 `cbor:"4,keyasint"`
-
-	Cruiser       uint64 `cbor:"5,keyasint"`
-	Battleship    uint64 `cbor:"6,keyasint"`
-	Battlecruiser uint64 `cbor:"7,keyasint"`
-
-	Bomber    uint64 `cbor:"8,keyasint"`
-	Destroyer uint64 `cbor:"9,keyasint"`
-	Deathstar uint64 `cbor:"10,keyasint"`
-	Reaper    uint64 `cbor:"11,keyasint"`
-	Recycler  uint64 `cbor:"12,keyasint"`
-}
-
-type OChainPlanetDefences struct {
-	RocketLauncher  uint64 `cbor:"1,keyasint"`
-	LightLaser      uint64 `cbor:"2,keyasint"`
-	HeavyLaser      uint64 `cbor:"3,keyasint"`
-	IonCannon       uint64 `cbor:"4,keyasint"`
-	GaussCannon     uint64 `cbor:"5,keyasint"`
-	PlasmaTurret    uint64 `cbor:"6,keyasint"`
-	DarkMatterCanon uint64 `cbor:"7,keyasint"`
-}
-
-type OChainPlanet struct {
-	Owner       string `cbor:"1,keyasint"`
-	Universe    string `cbor:"2,keyasint"`
-	Galaxy      uint64 `cbor:"3,keyasint"`
-	SolarSystem uint64 `cbor:"4,keyasint"`
-	Planet      uint64 `cbor:"5,keyasint"`
-
-	Buildings  OChainPlanetBuildings `cbor:"6,keyasint"`
-	Spaceships OChainFleetSpaceships `cbor:"7,keyasint"`
-	Defenses   OChainPlanetDefences  `cbor:"8,keyasint"`
-	Resources  OChainResources       `cbor:"9,keyasint"`
-
-	LastResourceUpdate uint64 `cbor:"10,keyasint"`
-}
-
-func (planet *OChainPlanet) CoordinateId() string {
-	return fmt.Sprint(planet.Galaxy) + "_" + fmt.Sprint(planet.SolarSystem) + "_" + fmt.Sprint(planet.Planet)
-}
-
-func CoordinateId(galaxy uint64, solarSystem uint64, planet uint64) string {
-	return fmt.Sprint(galaxy) + "_" + fmt.Sprint(solarSystem) + "_" + fmt.Sprint(planet)
 }

@@ -171,7 +171,7 @@ func (tx *RegisterUniverseAccountTransaction) Execute(ctx TransactionContext) ([
 		Buildings: types.OChainPlanetBuildings{
 			MetalMine:       0,
 			CrystalMine:     0,
-			DeutereumMine:   0,
+			DeuteriumMine:   0,
 			SolarPowerPlant: 0,
 
 			RoboticFactory:   0,
@@ -211,12 +211,12 @@ func (tx *RegisterUniverseAccountTransaction) Execute(ctx TransactionContext) ([
 		},
 		Resources: types.OChainResources{
 			OCT:       0,
-			Metal:     0,
-			Crystal:   0,
-			Deutereum: 0,
+			Metal:     200,
+			Crystal:   100,
+			Deuterium: 0,
 		},
 
-		LastResourceUpdate: uint64(ctx.Date.Unix()),
+		LastResourceUpdate: ctx.Date.Unix(),
 	}
 
 	account.PlanetsCoordinates = append(account.PlanetsCoordinates, coordinateId)
