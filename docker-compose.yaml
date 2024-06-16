@@ -14,9 +14,9 @@ services:
       - LOG=${LOG:-tendermint.log}
     command: [
       "-config", "/config",
-      "-chainId", "http://evmrpc:8545/",
-      "-evmRpc", "31337",
-      "-portalAddress", "0x8A791620dd6260079BF849Dc5567aDC3F2FdC318",
+      "-chainId", "https://ethereum-sepolia.core.chainstack.com/ddf6b01951847ded1aac7e14b82c5b0c",
+      "-evmRpc", "11155111",
+      "-portalAddress", "0x4Dd9d772C67fbC858918f364E5CB9e0B6E53Fd44",
     ]
     volumes:
       - ./docker-data/node0:/data
@@ -24,54 +24,6 @@ services:
       localnet:
         ipv4_address: 192.167.10.2
 
-  node1:
-    container_name: node1
-    image: "ochain-validator"
-    ports:
-      - "26659-26660:26656-26657"
-    environment:
-      - ID=1
-      - LOG=${LOG:-tendermint.log}
-    command: [
-      "-config", "/config",
-      "-chainId", "http://evmrpc:8545/",
-      "-evmRpc", "31337",
-      "-portalAddress", "0x8A791620dd6260079BF849Dc5567aDC3F2FdC318",
-    ]
-    volumes:
-      - ./docker-data/node1:/data
-    networks:
-      localnet:
-        ipv4_address: 192.167.10.3
-
-  node2:
-    container_name: node2
-    image: "ochain-validator"
-    environment:
-      - ID=2
-      - LOG=${LOG:-tendermint.log}
-    command: [
-      "-config", "/config",
-      "-chainId", "http://evmrpc:8545/",
-      "-evmRpc", "31337",
-      "-portalAddress", "0x8A791620dd6260079BF849Dc5567aDC3F2FdC318",
-    ]
-    ports:
-      - "26661-26662:26656-26657"
-    volumes:
-      - ./docker-data/node2:/data
-    networks:
-      localnet:
-        ipv4_address: 192.167.10.4
-
-  evmrpc:
-    container_name: evmrpc
-    image: "ochain-remote-node:latest"
-    ports:
-      - "8545:8545"
-    networks:
-      localnet:
-        ipv4_address: 192.167.10.5
 
 networks:
   localnet:

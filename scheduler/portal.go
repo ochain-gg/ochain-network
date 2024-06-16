@@ -213,7 +213,7 @@ func CheckAndHandlePortalUpdate(cfg config.OChainConfig, db *database.OChainData
 			log.Printf("New validator transaction result: code=%d hash=%s height=%d", res.CheckTx.Code, res.Hash, res.Height)
 		}
 
-		_, err = portal.ParseOChainTokenDeposit(l)
+		_, err = portal.ParseOChainTokenDeposited(l)
 		if err == nil {
 			log.Print("token deposit evm log detected")
 

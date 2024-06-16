@@ -114,10 +114,10 @@ func (tx *RegisterAccountTransaction) Execute(ctx TransactionContext) ([]abcityp
 	}
 
 	account := types.OChainGlobalAccount{
-		Address:      tx.From,
-		Nonce:        1,
-		TokenBalance: "0",
-		USDBalance:   "0",
+		Address:       tx.From,
+		Nonce:         1,
+		TokenBalance:  0,
+		CreditBalance: 0,
 		IAM: types.OChainGlobalAccountIAM{
 			GuardianQuorum: tx.Data.GuardianQuorum,
 			Guardians:      tx.Data.Guardians,

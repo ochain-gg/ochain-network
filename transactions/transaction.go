@@ -25,7 +25,7 @@ const (
 	MaxTransactionType uint64 = 31
 	//Unauthenticated transactions
 	OChainPortalInteraction TransactionType = 0 // handle NewValidator / RemoveValidator / OChainTokenDeposit / OChainTokenWithdrawal / OChainBonusSubscription
-	ExecutePendingUpdate    TransactionType = 1 // handle BuildingUpgrade / TechnologyUpgrade / DefenseBuild / SpaceshipBuild / FleetMove
+	ExecutePendingUpgrade   TransactionType = 1 // handle BuildingUpgrade / TechnologyUpgrade / DefenseBuild / SpaceshipBuild / FleetMove
 
 	//Authenticated transactions
 	//Global Account transactions
@@ -72,6 +72,11 @@ const (
 
 	//EVM <-> Global transations
 	AccountOCTWithdraw TransactionType = 31
+
+	//Governance
+	CreateGovernanceVote TransactionType = 32
+	GovernanceVote       TransactionType = 33
+	ExecuteVote          TransactionType = 34
 )
 
 type TransactionContext struct {
@@ -117,7 +122,7 @@ func (tx *Transaction) IsValid() error {
 		_, err := ParseNewOChainPortalInteraction(*tx)
 		return err
 
-	case ExecutePendingUpdate:
+	case ExecutePendingUpgrade:
 		return nil
 
 	case RegisterAccount:

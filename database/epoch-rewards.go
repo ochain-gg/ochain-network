@@ -11,25 +11,25 @@ import (
 )
 
 const (
-	OChainEpochRewardsPrefix string = "epoch_rewards_"
+	OChainEpochValidatorRewardsPrefix string = "epoch_rewards_"
 )
 
-type OChainEpochRewardsTable struct {
+type OChainEpochValidatorRewardsTable struct {
 	bdb        *badger.DB
 	currentTxn *badger.Txn
 }
 
-func (db *OChainEpochRewardsTable) SetCurrentTxn(tx *badger.Txn) {
+func (db *OChainEpochValidatorRewardsTable) SetCurrentTxn(tx *badger.Txn) {
 	db.currentTxn = tx
 }
 
-func (db *OChainEpochRewardsTable) Exists(id string) (bool, error) {
+func (db *OChainEpochValidatorRewardsTable) Exists(id string) (bool, error) {
 	var at uint64 = math.MaxUint64
 	return db.ExistsAt(id, at)
 }
 
-func (db *OChainEpochRewardsTable) ExistsAt(id string, at uint64) (bool, error) {
-	key := []byte(OChainEpochRewardsPrefix + fmt.Sprint(id))
+func (db *OChainEpochValidatorRewardsTable) ExistsAt(id string, at uint64) (bool, error) {
+	key := []byte(OChainEpochValidatorRewardsPrefix + fmt.Sprint(id))
 	txn := db.bdb.NewTransactionAt(at, false)
 	if _, err := txn.Get([]byte(key)); err != nil {
 		if errors.Is(err, badger.ErrKeyNotFound) {
@@ -42,36 +42,36 @@ func (db *OChainEpochRewardsTable) ExistsAt(id string, at uint64) (bool, error) 
 	}
 }
 
-func (db *OChainEpochRewardsTable) Get(id string) (types.OChainEpochRewards, error) {
+func (db *OChainEpochValidatorRewardsTable) Get(id string) (types.OChainEpochValidatorRewards, error) {
 	var at uint64 = math.MaxUint64
 	return db.GetAt(id, at)
 }
 
-func (db *OChainEpochRewardsTable) GetAt(id string, at uint64) (types.OChainEpochRewards, error) {
-	var epoch types.OChainEpochRewards
-	key := []byte(OChainEpochRewardsPrefix + fmt.Sprint(id))
+func (db *OChainEpochValidatorRewardsTable) GetAt(id string, at uint64) (types.OChainEpochValidatorRewards, error) {
+	var epoch types.OChainEpochValidatorRewards
+	key := []byte(OChainEpochValidatorRewardsPrefix + fmt.Sprint(id))
 	txn := db.bdb.NewTransactionAt(at, false)
 
 	item, err := txn.Get([]byte(key))
 	if err != nil {
-		return types.OChainEpochRewards{}, err
+		return types.OChainEpochValidatorRewards{}, err
 	}
 
 	value, err := item.ValueCopy(nil)
 	if err != nil {
-		return types.OChainEpochRewards{}, err
+		return types.OChainEpochValidatorRewards{}, err
 	}
 
 	err = cbor.Unmarshal(value, &epoch)
 	if err != nil {
-		return types.OChainEpochRewards{}, err
+		return types.OChainEpochValidatorRewards{}, err
 	}
 
 	return epoch, nil
 }
 
-func (db *OChainEpochRewardsTable) Insert(epoch types.OChainEpochRewards) error {
-	key := []byte(OChainEpochRewardsPrefix + fmt.Sprint(epoch.Id))
+func (db *OChainEpochValidatorRewardsTable) Insert(epoch types.OChainEpochValidatorRewards) error {
+	key := []byte(OChainEpochValidatorRewardsPrefix + fmt.Sprint(epoch.Id))
 
 	exists, err := db.ExistsAt(epoch.Id, db.currentTxn.ReadTs())
 	if err != nil {
@@ -90,8 +90,8 @@ func (db *OChainEpochRewardsTable) Insert(epoch types.OChainEpochRewards) error 
 	return db.currentTxn.Set(key, value)
 }
 
-func (db *OChainEpochRewardsTable) Update(epoch types.OChainEpochRewards) error {
-	key := []byte(OChainEpochRewardsPrefix + fmt.Sprint(epoch.Id))
+func (db *OChainEpochValidatorRewardsTable) Update(epoch types.OChainEpochValidatorRewards) error {
+	key := []byte(OChainEpochValidatorRewardsPrefix + fmt.Sprint(epoch.Id))
 
 	exists, err := db.ExistsAt(epoch.Id, db.currentTxn.ReadTs())
 	if err != nil {
@@ -110,8 +110,8 @@ func (db *OChainEpochRewardsTable) Update(epoch types.OChainEpochRewards) error 
 	return db.currentTxn.Set(key, value)
 }
 
-func (db *OChainEpochRewardsTable) Upsert(epoch types.OChainEpochRewards) error {
-	key := []byte(OChainEpochRewardsPrefix + fmt.Sprint(epoch.Id))
+func (db *OChainEpochValidatorRewardsTable) Upsert(epoch types.OChainEpochValidatorRewards) error {
+	key := []byte(OChainEpochValidatorRewardsPrefix + fmt.Sprint(epoch.Id))
 	value, err := cbor.Marshal(epoch)
 	if err != nil {
 		return err
@@ -120,37 +120,37 @@ func (db *OChainEpochRewardsTable) Upsert(epoch types.OChainEpochRewards) error 
 	return db.currentTxn.Set(key, value)
 }
 
-func (db *OChainEpochRewardsTable) Delete(id string) error {
-	key := []byte(OChainEpochRewardsPrefix + fmt.Sprint(id))
+func (db *OChainEpochValidatorRewardsTable) Delete(id string) error {
+	key := []byte(OChainEpochValidatorRewardsPrefix + fmt.Sprint(id))
 	return db.currentTxn.Delete(key)
 }
 
-func (db *OChainEpochRewardsTable) GetAll() ([]types.OChainEpochRewards, error) {
+func (db *OChainEpochValidatorRewardsTable) GetAll() ([]types.OChainEpochValidatorRewards, error) {
 	var at uint64 = math.MaxUint64
 	return db.GetAllAt(at)
 }
 
-func (db *OChainEpochRewardsTable) GetAllAt(at uint64) ([]types.OChainEpochRewards, error) {
-	var epochs []types.OChainEpochRewards
+func (db *OChainEpochValidatorRewardsTable) GetAllAt(at uint64) ([]types.OChainEpochValidatorRewards, error) {
+	var epochs []types.OChainEpochValidatorRewards
 
 	txn := db.bdb.NewTransactionAt(at, false)
 	it := txn.NewIterator(badger.DefaultIteratorOptions)
 	defer it.Close()
 
-	prefix := []byte(OChainEpochRewardsPrefix)
+	prefix := []byte(OChainEpochValidatorRewardsPrefix)
 
 	for it.Seek(prefix); it.ValidForPrefix(prefix); it.Next() {
 		item := it.Item()
 
-		var epoch types.OChainEpochRewards
+		var epoch types.OChainEpochValidatorRewards
 		value, err := item.ValueCopy(nil)
 		if err != nil {
-			return []types.OChainEpochRewards{}, err
+			return []types.OChainEpochValidatorRewards{}, err
 		}
 
 		err = cbor.Unmarshal(value, &epoch)
 		if err != nil {
-			return []types.OChainEpochRewards{}, err
+			return []types.OChainEpochValidatorRewards{}, err
 		}
 
 		epochs = append(epochs, epoch)
@@ -159,8 +159,8 @@ func (db *OChainEpochRewardsTable) GetAllAt(at uint64) ([]types.OChainEpochRewar
 	return epochs, nil
 }
 
-func NewOChainEpochRewardsTable(db *badger.DB) *OChainEpochRewardsTable {
-	return &OChainEpochRewardsTable{
+func NewOChainEpochValidatorRewardsTable(db *badger.DB) *OChainEpochValidatorRewardsTable {
+	return &OChainEpochValidatorRewardsTable{
 		bdb: db,
 	}
 }

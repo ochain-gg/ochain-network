@@ -23,7 +23,7 @@ func CheckTx(ctx transactions.TransactionContext, req *abcitypes.RequestCheckTx)
 		return &abcitypes.ResponseCheckTx{Code: types.InvalidTransactionError}, nil
 	}
 
-	isSystemTx := tx.Type == transactions.OChainPortalInteraction || tx.Type == transactions.ExecutePendingUpdate
+	isSystemTx := tx.Type == transactions.OChainPortalInteraction || tx.Type == transactions.ExecutePendingUpgrade
 	if isSystemTx {
 		return CheckSystemTx(ctx, req, tx)
 	} else {

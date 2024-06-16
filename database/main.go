@@ -5,19 +5,21 @@ import (
 )
 
 type OChainDatabase struct {
-	DB                 *badger.DB
-	CurrentTxn         *badger.Txn
-	Validators         *OChainValidatorTable
-	BridgeTransactions *OChainBridgeTransactionTable
-	Universes          *OChainUniverseTable
-	GlobalsAccounts    *OChainGlobalAccountTable
-	UniverseAccounts   *OChainUniverseAccountTable
-	Planets            *OChainPlanetTable
-	Buildings          *OChainBuildingTable
-	Technologies       *OChainTechnologyTable
-	Defenses           *OChainDefenseTable
-	Spaceships         *OChainSpaceshipTable
-	ResourcesMarket    *OChainResourcesMarketTable
+	DB                         *badger.DB
+	CurrentTxn                 *badger.Txn
+	Validators                 *OChainValidatorTable
+	BridgeTransactions         *OChainBridgeTransactionTable
+	Universes                  *OChainUniverseTable
+	GlobalsAccounts            *OChainGlobalAccountTable
+	UniverseAccounts           *OChainUniverseAccountTable
+	Planets                    *OChainPlanetTable
+	Buildings                  *OChainBuildingTable
+	Technologies               *OChainTechnologyTable
+	Defenses                   *OChainDefenseTable
+	Spaceships                 *OChainSpaceshipTable
+	ResourcesMarket            *OChainResourcesMarketTable
+	UniverseAccountWeeklyUsage *OChainUniverseAccountWeeklyUsageTable
+	Upgrades                   *OChainUpgradeTable
 	// Fleets                 *OChainFleetTable
 	State *OChainStateTable
 }
@@ -50,6 +52,8 @@ func (db *OChainDatabase) LoadTables() {
 	db.Defenses = NewOChainDefenseTable(db.DB)
 	db.Spaceships = NewOChainSpaceshipTable(db.DB)
 	db.ResourcesMarket = NewOChainResourcesMarketTable(db.DB)
+	db.UniverseAccountWeeklyUsage = NewOChainUniverseAccountWeeklyUsageTable(db.DB)
+	db.Upgrades = NewOChainUpgradeTable(db.DB)
 	// db.Fleets = NewFleetsTable(db.DB)
 	db.State = NewOChainStateTable(db.DB)
 }
@@ -67,6 +71,9 @@ func (db *OChainDatabase) NewTransaction(ts uint64) {
 	db.Technologies.SetCurrentTxn(db.CurrentTxn)
 	db.Defenses.SetCurrentTxn(db.CurrentTxn)
 	db.Spaceships.SetCurrentTxn(db.CurrentTxn)
+	db.ResourcesMarket.SetCurrentTxn(db.CurrentTxn)
+	db.UniverseAccountWeeklyUsage.SetCurrentTxn(db.CurrentTxn)
+	db.Upgrades.SetCurrentTxn(db.CurrentTxn)
 	// db.Fleets.SetCurrentTxn(db.CurrentTxn)
 	db.State.SetCurrentTxn(db.CurrentTxn)
 }

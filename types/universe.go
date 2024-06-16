@@ -1,5 +1,7 @@
 package types
 
+import "math"
+
 type OChainResources struct {
 	OCT       uint64 `cbor:"1,keyasint"`
 	Metal     uint64 `cbor:"2,keyasint"`
@@ -161,9 +163,67 @@ type OChainBuilding struct {
 	Dependencies []OChainDependency `cbor:"4,keyasint"`
 }
 
+func (building *OChainBuilding) GetUpgradeCost(level uint64) OChainResources {
+	return OChainResources{
+		OCT:       0,
+		Metal:     uint64(float64(building.BaseCost.Metal) * math.Pow(1.75, float64(level-1))),
+		Crystal:   uint64(float64(building.BaseCost.Crystal) * math.Pow(1.75, float64(level-1))),
+		Deuterium: uint64(float64(building.BaseCost.Deuterium) * math.Pow(1.75, float64(level-1))),
+	}
+}
+
+func (building *OChainBuilding) MeetRequirements(planet OChainPlanet, acc OChainUniverseAccount) bool {
+
+	for i := 0; i < len(building.Dependencies); i++ {
+		dep := building.Dependencies[i]
+		if dep.DependencyType == OChainBuildingDependency {
+			if planet.BuildingLevel(OChainBuildingID(dep.DependencyId)) < dep.Level {
+				return false
+			}
+		}
+
+		if dep.DependencyType == OChainTechnologyDependency {
+			if acc.TechnologyLevel(OChainTechnologyID(dep.DependencyId)) < dep.Level {
+				return false
+			}
+		}
+	}
+
+	return true
+}
+
 type OChainTechnology struct {
 	Id           OChainTechnologyID `cbor:"1,keyasint"`
 	Name         string             `cbor:"2,keyasint"`
 	BaseCost     OChainResources    `cbor:"3,keyasint"`
 	Dependencies []OChainDependency `cbor:"4,keyasint"`
+}
+
+func (technology *OChainTechnology) GetUpgradeCost(level uint64) OChainResources {
+	return OChainResources{
+		OCT:       0,
+		Metal:     uint64(float64(technology.BaseCost.Metal) * math.Pow(2, float64(level-1))),
+		Crystal:   uint64(float64(technology.BaseCost.Crystal) * math.Pow(2, float64(level-1))),
+		Deuterium: uint64(float64(technology.BaseCost.Deuterium) * math.Pow(2, float64(level-1))),
+	}
+}
+
+func (technology *OChainTechnology) MeetRequirements(planet OChainPlanet, acc OChainUniverseAccount) bool {
+
+	for i := 0; i < len(technology.Dependencies); i++ {
+		dep := technology.Dependencies[i]
+		if dep.DependencyType == OChainBuildingDependency {
+			if planet.BuildingLevel(OChainBuildingID(dep.DependencyId)) < dep.Level {
+				return false
+			}
+		}
+
+		if dep.DependencyType == OChainTechnologyDependency {
+			if acc.TechnologyLevel(OChainTechnologyID(dep.DependencyId)) < dep.Level {
+				return false
+			}
+		}
+	}
+
+	return true
 }

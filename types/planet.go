@@ -1,6 +1,7 @@
 package types
 
 import (
+	"errors"
 	"fmt"
 	"math"
 )
@@ -27,6 +28,7 @@ type OChainUpgrade struct {
 	Level              uint64            `cbor:"5,keyasint"`
 	StartedAt          int64             `cbor:"6,keyasint"`
 	EndedAt            int64             `cbor:"7,keyasint"`
+	Executed           bool              `cbor:"8,keyasint"`
 }
 
 type OChainBuild struct {
@@ -97,6 +99,132 @@ type OChainPlanet struct {
 
 func (planet *OChainPlanet) CoordinateId() string {
 	return fmt.Sprint(planet.Galaxy) + "_" + fmt.Sprint(planet.SolarSystem) + "_" + fmt.Sprint(planet.Planet)
+}
+
+func (planet *OChainPlanet) BuildingLevel(id OChainBuildingID) uint64 {
+	switch id {
+	case MetalMineID:
+		return planet.Buildings.MetalMine
+	case CrystalMineID:
+		return planet.Buildings.CrystalMine
+	case DeuteriumMineID:
+		return planet.Buildings.DeuteriumMine
+	case SolarPowerPlantID:
+		return planet.Buildings.SolarPowerPlant
+	case RoboticFactoryID:
+		return planet.Buildings.RoboticFactory
+	case NaniteFactoryID:
+		return planet.Buildings.NaniteFactory
+	case SpaceshipFactoryID:
+		return planet.Buildings.SpaceshipFactory
+	case IntergalacticPortalID:
+		return planet.Buildings.IntergalacticPortal
+	case ResearchLaboratoryID:
+		return planet.Buildings.ResearchLaboratory
+	case ShieldDomeID:
+		return planet.Buildings.ShieldDome
+	}
+	return 0
+}
+
+func (planet *OChainPlanet) SetBuildingLevel(id OChainBuildingID, level uint64) {
+	switch id {
+	case MetalMineID:
+		planet.Buildings.MetalMine = level
+	case CrystalMineID:
+		planet.Buildings.CrystalMine = level
+	case DeuteriumMineID:
+		planet.Buildings.DeuteriumMine = level
+	case SolarPowerPlantID:
+		planet.Buildings.SolarPowerPlant = level
+	case RoboticFactoryID:
+		planet.Buildings.RoboticFactory = level
+	case NaniteFactoryID:
+		planet.Buildings.NaniteFactory = level
+	case SpaceshipFactoryID:
+		planet.Buildings.SpaceshipFactory = level
+	case IntergalacticPortalID:
+		planet.Buildings.IntergalacticPortal = level
+	case ResearchLaboratoryID:
+		planet.Buildings.ResearchLaboratory = level
+	case ShieldDomeID:
+		planet.Buildings.ShieldDome = level
+	}
+
+}
+
+func (planet *OChainPlanet) AddResourceById(id MarketResourceID, amount uint64) {
+	switch id {
+	case OCTResourceID:
+		planet.Resources.OCT += amount
+	case MetalResourceID:
+		planet.Resources.Metal += amount
+	case CrystalResourceID:
+		planet.Resources.Crystal += amount
+	case DeuteriumResourceID:
+		planet.Resources.Deuterium += amount
+	}
+}
+
+func (planet *OChainPlanet) RemoveResourceById(id MarketResourceID, amount uint64) error {
+	switch id {
+	case OCTResourceID:
+		if planet.Resources.OCT < amount {
+			return errors.New("remove resource overflow")
+		}
+		planet.Resources.OCT -= amount
+	case MetalResourceID:
+		if planet.Resources.Metal < amount {
+			return errors.New("remove resource overflow")
+		}
+		planet.Resources.Metal -= amount
+	case CrystalResourceID:
+		if planet.Resources.Crystal < amount {
+			return errors.New("remove resource overflow")
+		}
+		planet.Resources.Crystal -= amount
+	case DeuteriumResourceID:
+		if planet.Resources.Deuterium < amount {
+			return errors.New("remove resource overflow")
+		}
+		planet.Resources.Deuterium -= amount
+	}
+
+	return nil
+}
+
+func (planet *OChainPlanet) CanPay(cost OChainResources) bool {
+
+	if planet.Resources.OCT < cost.OCT {
+		return false
+	}
+
+	if planet.Resources.Metal < cost.Metal {
+		return false
+	}
+
+	if planet.Resources.Crystal < cost.Crystal {
+		return false
+	}
+
+	if planet.Resources.Deuterium < cost.Deuterium {
+		return false
+	}
+
+	return true
+}
+
+func (planet *OChainPlanet) Pay(cost OChainResources) error {
+	payable := planet.CanPay(cost)
+	if !payable {
+		return errors.New("insuficient resources")
+	}
+
+	planet.Resources.OCT -= cost.OCT
+	planet.Resources.Metal -= cost.Metal
+	planet.Resources.Crystal -= cost.Crystal
+	planet.Resources.Deuterium -= cost.Deuterium
+	return nil
 }
 
 func (planet *OChainPlanet) UpdateResources(speed uint64, timestamp int64, account OChainUniverseAccount) {

@@ -41,14 +41,14 @@ func (db *OChainResourcesMarketTable) ExistsAt(universeId string, at uint64) (bo
 	}
 }
 
-func (db *OChainResourcesMarketTable) Get(universeId string, address string) (types.OChainResourcesMarket, error) {
+func (db *OChainResourcesMarketTable) Get(universeId string) (types.OChainResourcesMarket, error) {
 	var at uint64 = math.MaxUint64
-	return db.GetAt(universeId, address, at)
+	return db.GetAt(universeId, at)
 }
 
-func (db *OChainResourcesMarketTable) GetAt(universeId string, address string, at uint64) (types.OChainResourcesMarket, error) {
+func (db *OChainResourcesMarketTable) GetAt(universeId string, at uint64) (types.OChainResourcesMarket, error) {
 	var account types.OChainResourcesMarket
-	key := []byte(OChainResourcesMarketPrefix + universeId + "_" + address)
+	key := []byte(OChainResourcesMarketPrefix + universeId)
 	txn := db.bdb.NewTransactionAt(at, false)
 
 	item, err := txn.Get([]byte(key))

@@ -33,9 +33,9 @@ var evmPortalAddress string
 
 func init() {
 	flag.StringVar(&homeDir, "cmt-home", "", "Path to the CometBFT config directory (if empty, uses $HOME/.cometbft)")
-	flag.StringVar(&evmChainId, "chainId", "31337", "OChain portal chainId")
-	flag.StringVar(&evmRpc, "evmRpc", "http://localhost:8545/", "OChain portal chain rpc address")
-	flag.StringVar(&evmPortalAddress, "portalAddress", "0x8A791620dd6260079BF849Dc5567aDC3F2FdC318", "OChain portal address")
+	flag.StringVar(&evmChainId, "chainId", "11155111", "OChain portal chainId")
+	flag.StringVar(&evmRpc, "evmRpc", "https://ethereum-sepolia.core.chainstack.com/ddf6b01951847ded1aac7e14b82c5b0c", "OChain portal chain rpc address")
+	flag.StringVar(&evmPortalAddress, "portalAddress", "0x4Dd9d772C67fbC858918f364E5CB9e0B6E53Fd44", "OChain portal address")
 }
 
 func main() {

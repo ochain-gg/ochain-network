@@ -482,7 +482,7 @@ type TokenDepositTransaction struct {
 
 type TokenDepositEventData TokenDepositTransactionDataArguments
 
-func (tx TokenDepositTransaction) Check(ctx TransactionContext) (contracts.OChainPortalOChainTokenDeposit, error) {
+func (tx TokenDepositTransaction) Check(ctx TransactionContext) (contracts.OChainPortalOChainTokenDeposited, error) {
 
 	client, err := ethclient.Dial(ctx.Config.EVMRpc)
 	if err != nil {
@@ -491,7 +491,7 @@ func (tx TokenDepositTransaction) Check(ctx TransactionContext) (contracts.OChai
 
 	remoteTx, _, err := client.TransactionByHash(context.Background(), common.HexToHash(tx.Data.Arguments.RemoteTransactionHash))
 	if err != nil {
-		return contracts.OChainPortalOChainTokenDeposit{}, err
+		return contracts.OChainPortalOChainTokenDeposited{}, err
 	}
 
 	if remoteTx.ChainId().Uint64() != ctx.Config.EVMChainId {
@@ -499,27 +499,27 @@ func (tx TokenDepositTransaction) Check(ctx TransactionContext) (contracts.OChai
 	}
 
 	if *remoteTx.To() != common.HexToAddress(ctx.Config.EVMPortalAddress) {
-		return contracts.OChainPortalOChainTokenDeposit{}, errors.New("wrong to address")
+		return contracts.OChainPortalOChainTokenDeposited{}, errors.New("wrong to address")
 	}
 
 	remoteTxReceipt, err := client.TransactionReceipt(context.Background(), common.HexToHash(tx.Data.Arguments.RemoteTransactionHash))
 	if err != nil {
-		return contracts.OChainPortalOChainTokenDeposit{}, err
+		return contracts.OChainPortalOChainTokenDeposited{}, err
 	}
 
 	if remoteTxReceipt.Status != 1 {
-		return contracts.OChainPortalOChainTokenDeposit{}, errors.New("non valid transaction")
+		return contracts.OChainPortalOChainTokenDeposited{}, errors.New("non valid transaction")
 	}
 
 	address := common.HexToAddress(ctx.Config.EVMPortalAddress)
 	portal, err := contracts.NewOChainPortal(address, client)
 	if err != nil {
-		return contracts.OChainPortalOChainTokenDeposit{}, err
+		return contracts.OChainPortalOChainTokenDeposited{}, err
 	}
 
 	for _, vLog := range remoteTxReceipt.Logs {
 
-		event, err := portal.ParseOChainTokenDeposit(*vLog)
+		event, err := portal.ParseOChainTokenDeposited(*vLog)
 		if err != nil {
 			continue
 		}
@@ -527,7 +527,7 @@ func (tx TokenDepositTransaction) Check(ctx TransactionContext) (contracts.OChai
 		return *event, nil
 	}
 
-	return contracts.OChainPortalOChainTokenDeposit{}, errors.New("invalid tx")
+	return contracts.OChainPortalOChainTokenDeposited{}, errors.New("invalid tx")
 }
 
 func (tx *TokenDepositTransaction) Execute(ctx TransactionContext) error {

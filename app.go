@@ -165,17 +165,17 @@ func (app *OChainValidatorApplication) InitChain(_ context.Context, chain *abcit
 		UniverseId: mainUniverse.Id,
 		FeesRate:   200,
 
-		MetalReserveRatio: 100_000,
-		MetalPoolBalance:  1_000_000_000,
-		MetalSupplyMinted: 10_000_000_000_000,
+		MetalReserveRatio: float64(0.9),
+		MetalPoolBalance:  uint64(100_000),        // 100k token for this reserve
+		MetalSupplyMinted: uint64(10_000_000_000), // 10B minted at init
 
-		CrystalReserveRatio: 100_000,
-		CrystalPoolBalance:  1_000_000_000,
-		CrystalSupplyMinted: 5_000_000_000_000,
+		CrystalReserveRatio: float64(0.9),
+		CrystalPoolBalance:  uint64(100_000_000_000_000), // 100k token for this reserve
+		CrystalSupplyMinted: uint64(5_000_000_000),       // 5B minted at init
 
-		DeuteriumReserveRatio: 100_000,
-		DeuteriumPoolBalance:  1_000_000_000,
-		DeuteriumSupplyMinted: 2_000_000_000_000,
+		DeuteriumReserveRatio: float64(0.9),
+		DeuteriumPoolBalance:  uint64(100_000_000_000_000), // 100k token for this reserve
+		DeuteriumSupplyMinted: uint64(2_000_000_000),       // 2B minted at init
 	}
 
 	app.db.ResourcesMarket.Insert(universeResourceMarket)

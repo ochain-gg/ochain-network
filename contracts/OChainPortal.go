@@ -61,7 +61,7 @@ type LibDiamondValidatorStacking struct {
 
 // OChainPortalMetaData contains all meta data concerning the OChainPortal contract.
 var OChainPortalMetaData = &bind.MetaData{
-	ABI: "[{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_contractOwner\",\"type\":\"address\"},{\"components\":[{\"internalType\":\"address\",\"name\":\"facetAddress\",\"type\":\"address\"},{\"internalType\":\"enumIDiamondCut.FacetCutAction\",\"name\":\"action\",\"type\":\"uint8\"},{\"internalType\":\"bytes4[]\",\"name\":\"functionSelectors\",\"type\":\"bytes4[]\"}],\"internalType\":\"structIDiamondCut.FacetCut[]\",\"name\":\"_diamondCut\",\"type\":\"tuple[]\"},{\"components\":[{\"internalType\":\"address\",\"name\":\"initContract\",\"type\":\"address\"},{\"internalType\":\"bytes\",\"name\":\"initData\",\"type\":\"bytes\"}],\"internalType\":\"structDiamond.Initialization[]\",\"name\":\"_initializations\",\"type\":\"tuple[]\"}],\"stateMutability\":\"payable\",\"type\":\"constructor\"},{\"stateMutability\":\"payable\",\"type\":\"fallback\"},{\"stateMutability\":\"payable\",\"type\":\"receive\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"target\",\"type\":\"address\"}],\"name\":\"AddressEmptyCode\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"AddressInsufficientBalance\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"AlreadyExecuted\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"BadSignature\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"ECDSAInvalidSignature\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"length\",\"type\":\"uint256\"}],\"name\":\"ECDSAInvalidSignatureLength\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"s\",\"type\":\"bytes32\"}],\"name\":\"ECDSAInvalidSignatureS\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"FailedInnerCall\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"GracePeriodNotEnded\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"NonceInvalid\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"QuorumNotReached\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"token\",\"type\":\"address\"}],\"name\":\"SafeERC20FailedOperation\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"WithdrawalNonceContexted\",\"type\":\"error\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"receiver\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"OChainTokenDeposit\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"nonce\",\"type\":\"uint256\"}],\"name\":\"OChainTokenWithdrawalRequestContested\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"nonce\",\"type\":\"uint256\"}],\"name\":\"OChainTokenWithdrawalRequestExecuted\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"sender\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"nonce\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256[]\",\"name\":\"signers\",\"type\":\"uint256[]\"}],\"name\":\"OChainTokenWithdrawalRequested\",\"type\":\"event\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"nonce\",\"type\":\"uint256\"},{\"internalType\":\"uint256[]\",\"name\":\"validatorIds\",\"type\":\"uint256[]\"},{\"internalType\":\"bytes[]\",\"name\":\"signatures\",\"type\":\"bytes[]\"}],\"name\":\"contestWithdraw\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"receiver\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"deposit\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"nonce\",\"type\":\"uint256\"}],\"name\":\"executeWithdraw\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"receiver\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"nonce\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"internalType\":\"uint256[]\",\"name\":\"validatorIds\",\"type\":\"uint256[]\"},{\"internalType\":\"bytes[]\",\"name\":\"signatures\",\"type\":\"bytes[]\"}],\"name\":\"withdrawalRequest\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"MaxValidatorReached\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"NotAuthorized\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"UnstakeProcessNotAvailable\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"UnstakeProcessNotEnded\",\"type\":\"error\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"validatorId\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"stacker\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"validator\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"string\",\"name\":\"publicKey\",\"type\":\"string\"}],\"name\":\"OChainNewValidator\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"validatorId\",\"type\":\"uint256\"}],\"name\":\"OChainRemoveValidator\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"validatorId\",\"type\":\"uint256\"}],\"name\":\"OChainUnstackSucceed\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"authorizer\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"latestUpdateAt\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"stacker\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"validator\",\"type\":\"address\"},{\"internalType\":\"string\",\"name\":\"pubkey\",\"type\":\"string\"}],\"name\":\"stake\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"validatorId\",\"type\":\"uint256\"}],\"name\":\"startUnstakeProcess\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"validatorId\",\"type\":\"uint256\"}],\"name\":\"unstake\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"validatorId\",\"type\":\"uint256\"}],\"name\":\"validatorInfo\",\"outputs\":[{\"components\":[{\"internalType\":\"bool\",\"name\":\"enabled\",\"type\":\"bool\"},{\"internalType\":\"address\",\"name\":\"depositor\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"validator\",\"type\":\"address\"},{\"internalType\":\"string\",\"name\":\"publicKey\",\"type\":\"string\"},{\"internalType\":\"address\",\"name\":\"token\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"withdrawRequestDate\",\"type\":\"uint256\"}],\"internalType\":\"structLibDiamond.ValidatorStacking\",\"name\":\"_validator\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"validatorNetworkInfo\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"maxValidators\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"validatorsMaxIndex\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"validatorsLength\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"anonymous\":false,\"inputs\":[{\"components\":[{\"internalType\":\"address\",\"name\":\"facetAddress\",\"type\":\"address\"},{\"internalType\":\"enumIDiamondCut.FacetCutAction\",\"name\":\"action\",\"type\":\"uint8\"},{\"internalType\":\"bytes4[]\",\"name\":\"functionSelectors\",\"type\":\"bytes4[]\"}],\"indexed\":false,\"internalType\":\"structIDiamondCut.FacetCut[]\",\"name\":\"_diamondCut\",\"type\":\"tuple[]\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"_init\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"bytes\",\"name\":\"_calldata\",\"type\":\"bytes\"}],\"name\":\"DiamondCut\",\"type\":\"event\"},{\"inputs\":[{\"components\":[{\"internalType\":\"address\",\"name\":\"facetAddress\",\"type\":\"address\"},{\"internalType\":\"enumIDiamondCut.FacetCutAction\",\"name\":\"action\",\"type\":\"uint8\"},{\"internalType\":\"bytes4[]\",\"name\":\"functionSelectors\",\"type\":\"bytes4[]\"}],\"internalType\":\"structIDiamondCut.FacetCut[]\",\"name\":\"_diamondCut\",\"type\":\"tuple[]\"},{\"internalType\":\"address\",\"name\":\"_init\",\"type\":\"address\"},{\"internalType\":\"bytes\",\"name\":\"_calldata\",\"type\":\"bytes\"}],\"name\":\"diamondCut\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"previousOwner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"OwnershipTransferred\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"owner_\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_newOwner\",\"type\":\"address\"}],\"name\":\"transferOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes4\",\"name\":\"_functionSelector\",\"type\":\"bytes4\"}],\"name\":\"facetAddress\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"facetAddress_\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"facetAddresses\",\"outputs\":[{\"internalType\":\"address[]\",\"name\":\"facetAddresses_\",\"type\":\"address[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_facet\",\"type\":\"address\"}],\"name\":\"facetFunctionSelectors\",\"outputs\":[{\"internalType\":\"bytes4[]\",\"name\":\"facetFunctionSelectors_\",\"type\":\"bytes4[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"facets\",\"outputs\":[{\"components\":[{\"internalType\":\"address\",\"name\":\"facetAddress\",\"type\":\"address\"},{\"internalType\":\"bytes4[]\",\"name\":\"functionSelectors\",\"type\":\"bytes4[]\"}],\"internalType\":\"structIDiamondLoupe.Facet[]\",\"name\":\"facets_\",\"type\":\"tuple[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes4\",\"name\":\"_interfaceId\",\"type\":\"bytes4\"}],\"name\":\"supportsInterface\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"}]",
+	ABI: "[{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_contractOwner\",\"type\":\"address\"},{\"components\":[{\"internalType\":\"address\",\"name\":\"facetAddress\",\"type\":\"address\"},{\"internalType\":\"enumIDiamondCut.FacetCutAction\",\"name\":\"action\",\"type\":\"uint8\"},{\"internalType\":\"bytes4[]\",\"name\":\"functionSelectors\",\"type\":\"bytes4[]\"}],\"internalType\":\"structIDiamondCut.FacetCut[]\",\"name\":\"_diamondCut\",\"type\":\"tuple[]\"},{\"components\":[{\"internalType\":\"address\",\"name\":\"initContract\",\"type\":\"address\"},{\"internalType\":\"bytes\",\"name\":\"initData\",\"type\":\"bytes\"}],\"internalType\":\"structDiamond.Initialization[]\",\"name\":\"_initializations\",\"type\":\"tuple[]\"}],\"stateMutability\":\"payable\",\"type\":\"constructor\"},{\"stateMutability\":\"payable\",\"type\":\"fallback\"},{\"stateMutability\":\"payable\",\"type\":\"receive\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"target\",\"type\":\"address\"}],\"name\":\"AddressEmptyCode\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"AddressInsufficientBalance\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"FailedInnerCall\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"NotValidator\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"QuorumNotReached\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"token\",\"type\":\"address\"}],\"name\":\"SafeERC20FailedOperation\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"WithdrawalAlreadyExecuted\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"WithdrawalAlreadySigned\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"WithdrawalCanceled\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"WithdrawalNonceInvalid\",\"type\":\"error\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"receiver\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"OChainTokenDeposited\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"nonce\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"signer\",\"type\":\"address\"}],\"name\":\"OChainTokenWithdrawalCanceled\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"nonce\",\"type\":\"uint256\"}],\"name\":\"OChainTokenWithdrawalExecuted\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"receiver\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"nonce\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"signer\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"OChainTokenWithdrawalSigned\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"receiver\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"USDDeposited\",\"type\":\"event\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"nonce\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"validatorId\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"receiver\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"approveWithdraw\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"nonce\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"validatorId\",\"type\":\"uint256\"}],\"name\":\"cancelWithdraw\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"receiver\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"deposit\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"receiver\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"depositUSD\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"nonce\",\"type\":\"uint256\"}],\"name\":\"withdraw\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"MaxValidatorReached\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"NotAuthorized\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"UnstakeProcessNotAvailable\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"UnstakeProcessNotEnded\",\"type\":\"error\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"validatorId\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"stacker\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"validator\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"string\",\"name\":\"publicKey\",\"type\":\"string\"}],\"name\":\"OChainNewValidator\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"validatorId\",\"type\":\"uint256\"}],\"name\":\"OChainRemoveValidator\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"validatorId\",\"type\":\"uint256\"}],\"name\":\"OChainUnstackSucceed\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"latestUpdateAt\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"stacker\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"validator\",\"type\":\"address\"},{\"internalType\":\"string\",\"name\":\"pubkey\",\"type\":\"string\"}],\"name\":\"stake\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"validatorId\",\"type\":\"uint256\"}],\"name\":\"startUnstakeProcess\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"validatorId\",\"type\":\"uint256\"}],\"name\":\"unstake\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"validatorId\",\"type\":\"uint256\"}],\"name\":\"validatorInfo\",\"outputs\":[{\"components\":[{\"internalType\":\"bool\",\"name\":\"enabled\",\"type\":\"bool\"},{\"internalType\":\"address\",\"name\":\"depositor\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"validator\",\"type\":\"address\"},{\"internalType\":\"string\",\"name\":\"publicKey\",\"type\":\"string\"},{\"internalType\":\"address\",\"name\":\"token\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"withdrawRequestDate\",\"type\":\"uint256\"}],\"internalType\":\"structLibDiamond.ValidatorStacking\",\"name\":\"_validator\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"validatorNetworkInfo\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"maxValidators\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"validatorsMaxIndex\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"validatorsLength\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"anonymous\":false,\"inputs\":[{\"components\":[{\"internalType\":\"address\",\"name\":\"facetAddress\",\"type\":\"address\"},{\"internalType\":\"enumIDiamondCut.FacetCutAction\",\"name\":\"action\",\"type\":\"uint8\"},{\"internalType\":\"bytes4[]\",\"name\":\"functionSelectors\",\"type\":\"bytes4[]\"}],\"indexed\":false,\"internalType\":\"structIDiamondCut.FacetCut[]\",\"name\":\"_diamondCut\",\"type\":\"tuple[]\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"_init\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"bytes\",\"name\":\"_calldata\",\"type\":\"bytes\"}],\"name\":\"DiamondCut\",\"type\":\"event\"},{\"inputs\":[{\"components\":[{\"internalType\":\"address\",\"name\":\"facetAddress\",\"type\":\"address\"},{\"internalType\":\"enumIDiamondCut.FacetCutAction\",\"name\":\"action\",\"type\":\"uint8\"},{\"internalType\":\"bytes4[]\",\"name\":\"functionSelectors\",\"type\":\"bytes4[]\"}],\"internalType\":\"structIDiamondCut.FacetCut[]\",\"name\":\"_diamondCut\",\"type\":\"tuple[]\"},{\"internalType\":\"address\",\"name\":\"_init\",\"type\":\"address\"},{\"internalType\":\"bytes\",\"name\":\"_calldata\",\"type\":\"bytes\"}],\"name\":\"diamondCut\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"previousOwner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"OwnershipTransferred\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"owner_\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_newOwner\",\"type\":\"address\"}],\"name\":\"transferOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes4\",\"name\":\"_functionSelector\",\"type\":\"bytes4\"}],\"name\":\"facetAddress\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"facetAddress_\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"facetAddresses\",\"outputs\":[{\"internalType\":\"address[]\",\"name\":\"facetAddresses_\",\"type\":\"address[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_facet\",\"type\":\"address\"}],\"name\":\"facetFunctionSelectors\",\"outputs\":[{\"internalType\":\"bytes4[]\",\"name\":\"facetFunctionSelectors_\",\"type\":\"bytes4[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"facets\",\"outputs\":[{\"components\":[{\"internalType\":\"address\",\"name\":\"facetAddress\",\"type\":\"address\"},{\"internalType\":\"bytes4[]\",\"name\":\"functionSelectors\",\"type\":\"bytes4[]\"}],\"internalType\":\"structIDiamondLoupe.Facet[]\",\"name\":\"facets_\",\"type\":\"tuple[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes4\",\"name\":\"_interfaceId\",\"type\":\"bytes4\"}],\"name\":\"supportsInterface\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"}]",
 }
 
 // OChainPortalABI is the input ABI used to generate the binding from.
@@ -208,37 +208,6 @@ func (_OChainPortal *OChainPortalTransactorRaw) Transfer(opts *bind.TransactOpts
 // Transact invokes the (paid) contract method with params as input values.
 func (_OChainPortal *OChainPortalTransactorRaw) Transact(opts *bind.TransactOpts, method string, params ...interface{}) (*types.Transaction, error) {
 	return _OChainPortal.Contract.contract.Transact(opts, method, params...)
-}
-
-// Authorizer is a free data retrieval call binding the contract method 0xd09edf31.
-//
-// Solidity: function authorizer() view returns(address)
-func (_OChainPortal *OChainPortalCaller) Authorizer(opts *bind.CallOpts) (common.Address, error) {
-	var out []interface{}
-	err := _OChainPortal.contract.Call(opts, &out, "authorizer")
-
-	if err != nil {
-		return *new(common.Address), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
-
-	return out0, err
-
-}
-
-// Authorizer is a free data retrieval call binding the contract method 0xd09edf31.
-//
-// Solidity: function authorizer() view returns(address)
-func (_OChainPortal *OChainPortalSession) Authorizer() (common.Address, error) {
-	return _OChainPortal.Contract.Authorizer(&_OChainPortal.CallOpts)
-}
-
-// Authorizer is a free data retrieval call binding the contract method 0xd09edf31.
-//
-// Solidity: function authorizer() view returns(address)
-func (_OChainPortal *OChainPortalCallerSession) Authorizer() (common.Address, error) {
-	return _OChainPortal.Contract.Authorizer(&_OChainPortal.CallOpts)
 }
 
 // FacetAddress is a free data retrieval call binding the contract method 0xcdffacc6.
@@ -539,25 +508,46 @@ func (_OChainPortal *OChainPortalCallerSession) ValidatorNetworkInfo() (struct {
 	return _OChainPortal.Contract.ValidatorNetworkInfo(&_OChainPortal.CallOpts)
 }
 
-// ContestWithdraw is a paid mutator transaction binding the contract method 0x6cee8910.
+// ApproveWithdraw is a paid mutator transaction binding the contract method 0xbc8bb253.
 //
-// Solidity: function contestWithdraw(uint256 nonce, uint256[] validatorIds, bytes[] signatures) returns()
-func (_OChainPortal *OChainPortalTransactor) ContestWithdraw(opts *bind.TransactOpts, nonce *big.Int, validatorIds []*big.Int, signatures [][]byte) (*types.Transaction, error) {
-	return _OChainPortal.contract.Transact(opts, "contestWithdraw", nonce, validatorIds, signatures)
+// Solidity: function approveWithdraw(uint256 nonce, uint256 validatorId, address receiver, uint256 amount) returns(bool)
+func (_OChainPortal *OChainPortalTransactor) ApproveWithdraw(opts *bind.TransactOpts, nonce *big.Int, validatorId *big.Int, receiver common.Address, amount *big.Int) (*types.Transaction, error) {
+	return _OChainPortal.contract.Transact(opts, "approveWithdraw", nonce, validatorId, receiver, amount)
 }
 
-// ContestWithdraw is a paid mutator transaction binding the contract method 0x6cee8910.
+// ApproveWithdraw is a paid mutator transaction binding the contract method 0xbc8bb253.
 //
-// Solidity: function contestWithdraw(uint256 nonce, uint256[] validatorIds, bytes[] signatures) returns()
-func (_OChainPortal *OChainPortalSession) ContestWithdraw(nonce *big.Int, validatorIds []*big.Int, signatures [][]byte) (*types.Transaction, error) {
-	return _OChainPortal.Contract.ContestWithdraw(&_OChainPortal.TransactOpts, nonce, validatorIds, signatures)
+// Solidity: function approveWithdraw(uint256 nonce, uint256 validatorId, address receiver, uint256 amount) returns(bool)
+func (_OChainPortal *OChainPortalSession) ApproveWithdraw(nonce *big.Int, validatorId *big.Int, receiver common.Address, amount *big.Int) (*types.Transaction, error) {
+	return _OChainPortal.Contract.ApproveWithdraw(&_OChainPortal.TransactOpts, nonce, validatorId, receiver, amount)
 }
 
-// ContestWithdraw is a paid mutator transaction binding the contract method 0x6cee8910.
+// ApproveWithdraw is a paid mutator transaction binding the contract method 0xbc8bb253.
 //
-// Solidity: function contestWithdraw(uint256 nonce, uint256[] validatorIds, bytes[] signatures) returns()
-func (_OChainPortal *OChainPortalTransactorSession) ContestWithdraw(nonce *big.Int, validatorIds []*big.Int, signatures [][]byte) (*types.Transaction, error) {
-	return _OChainPortal.Contract.ContestWithdraw(&_OChainPortal.TransactOpts, nonce, validatorIds, signatures)
+// Solidity: function approveWithdraw(uint256 nonce, uint256 validatorId, address receiver, uint256 amount) returns(bool)
+func (_OChainPortal *OChainPortalTransactorSession) ApproveWithdraw(nonce *big.Int, validatorId *big.Int, receiver common.Address, amount *big.Int) (*types.Transaction, error) {
+	return _OChainPortal.Contract.ApproveWithdraw(&_OChainPortal.TransactOpts, nonce, validatorId, receiver, amount)
+}
+
+// CancelWithdraw is a paid mutator transaction binding the contract method 0x005919c7.
+//
+// Solidity: function cancelWithdraw(uint256 nonce, uint256 validatorId) returns(bool)
+func (_OChainPortal *OChainPortalTransactor) CancelWithdraw(opts *bind.TransactOpts, nonce *big.Int, validatorId *big.Int) (*types.Transaction, error) {
+	return _OChainPortal.contract.Transact(opts, "cancelWithdraw", nonce, validatorId)
+}
+
+// CancelWithdraw is a paid mutator transaction binding the contract method 0x005919c7.
+//
+// Solidity: function cancelWithdraw(uint256 nonce, uint256 validatorId) returns(bool)
+func (_OChainPortal *OChainPortalSession) CancelWithdraw(nonce *big.Int, validatorId *big.Int) (*types.Transaction, error) {
+	return _OChainPortal.Contract.CancelWithdraw(&_OChainPortal.TransactOpts, nonce, validatorId)
+}
+
+// CancelWithdraw is a paid mutator transaction binding the contract method 0x005919c7.
+//
+// Solidity: function cancelWithdraw(uint256 nonce, uint256 validatorId) returns(bool)
+func (_OChainPortal *OChainPortalTransactorSession) CancelWithdraw(nonce *big.Int, validatorId *big.Int) (*types.Transaction, error) {
+	return _OChainPortal.Contract.CancelWithdraw(&_OChainPortal.TransactOpts, nonce, validatorId)
 }
 
 // Deposit is a paid mutator transaction binding the contract method 0x47e7ef24.
@@ -581,6 +571,27 @@ func (_OChainPortal *OChainPortalTransactorSession) Deposit(receiver common.Addr
 	return _OChainPortal.Contract.Deposit(&_OChainPortal.TransactOpts, receiver, amount)
 }
 
+// DepositUSD is a paid mutator transaction binding the contract method 0xdd15f993.
+//
+// Solidity: function depositUSD(address receiver, uint256 amount) returns()
+func (_OChainPortal *OChainPortalTransactor) DepositUSD(opts *bind.TransactOpts, receiver common.Address, amount *big.Int) (*types.Transaction, error) {
+	return _OChainPortal.contract.Transact(opts, "depositUSD", receiver, amount)
+}
+
+// DepositUSD is a paid mutator transaction binding the contract method 0xdd15f993.
+//
+// Solidity: function depositUSD(address receiver, uint256 amount) returns()
+func (_OChainPortal *OChainPortalSession) DepositUSD(receiver common.Address, amount *big.Int) (*types.Transaction, error) {
+	return _OChainPortal.Contract.DepositUSD(&_OChainPortal.TransactOpts, receiver, amount)
+}
+
+// DepositUSD is a paid mutator transaction binding the contract method 0xdd15f993.
+//
+// Solidity: function depositUSD(address receiver, uint256 amount) returns()
+func (_OChainPortal *OChainPortalTransactorSession) DepositUSD(receiver common.Address, amount *big.Int) (*types.Transaction, error) {
+	return _OChainPortal.Contract.DepositUSD(&_OChainPortal.TransactOpts, receiver, amount)
+}
+
 // DiamondCut is a paid mutator transaction binding the contract method 0x1f931c1c.
 //
 // Solidity: function diamondCut((address,uint8,bytes4[])[] _diamondCut, address _init, bytes _calldata) returns()
@@ -600,27 +611,6 @@ func (_OChainPortal *OChainPortalSession) DiamondCut(_diamondCut []IDiamondCutFa
 // Solidity: function diamondCut((address,uint8,bytes4[])[] _diamondCut, address _init, bytes _calldata) returns()
 func (_OChainPortal *OChainPortalTransactorSession) DiamondCut(_diamondCut []IDiamondCutFacetCut, _init common.Address, _calldata []byte) (*types.Transaction, error) {
 	return _OChainPortal.Contract.DiamondCut(&_OChainPortal.TransactOpts, _diamondCut, _init, _calldata)
-}
-
-// ExecuteWithdraw is a paid mutator transaction binding the contract method 0x2104ebf1.
-//
-// Solidity: function executeWithdraw(uint256 nonce) returns()
-func (_OChainPortal *OChainPortalTransactor) ExecuteWithdraw(opts *bind.TransactOpts, nonce *big.Int) (*types.Transaction, error) {
-	return _OChainPortal.contract.Transact(opts, "executeWithdraw", nonce)
-}
-
-// ExecuteWithdraw is a paid mutator transaction binding the contract method 0x2104ebf1.
-//
-// Solidity: function executeWithdraw(uint256 nonce) returns()
-func (_OChainPortal *OChainPortalSession) ExecuteWithdraw(nonce *big.Int) (*types.Transaction, error) {
-	return _OChainPortal.Contract.ExecuteWithdraw(&_OChainPortal.TransactOpts, nonce)
-}
-
-// ExecuteWithdraw is a paid mutator transaction binding the contract method 0x2104ebf1.
-//
-// Solidity: function executeWithdraw(uint256 nonce) returns()
-func (_OChainPortal *OChainPortalTransactorSession) ExecuteWithdraw(nonce *big.Int) (*types.Transaction, error) {
-	return _OChainPortal.Contract.ExecuteWithdraw(&_OChainPortal.TransactOpts, nonce)
 }
 
 // Stake is a paid mutator transaction binding the contract method 0xc27c12c2.
@@ -707,25 +697,25 @@ func (_OChainPortal *OChainPortalTransactorSession) Unstake(validatorId *big.Int
 	return _OChainPortal.Contract.Unstake(&_OChainPortal.TransactOpts, validatorId)
 }
 
-// WithdrawalRequest is a paid mutator transaction binding the contract method 0x1cba64a7.
+// Withdraw is a paid mutator transaction binding the contract method 0x2e1a7d4d.
 //
-// Solidity: function withdrawalRequest(address receiver, uint256 nonce, uint256 amount, uint256[] validatorIds, bytes[] signatures) returns()
-func (_OChainPortal *OChainPortalTransactor) WithdrawalRequest(opts *bind.TransactOpts, receiver common.Address, nonce *big.Int, amount *big.Int, validatorIds []*big.Int, signatures [][]byte) (*types.Transaction, error) {
-	return _OChainPortal.contract.Transact(opts, "withdrawalRequest", receiver, nonce, amount, validatorIds, signatures)
+// Solidity: function withdraw(uint256 nonce) returns(bool)
+func (_OChainPortal *OChainPortalTransactor) Withdraw(opts *bind.TransactOpts, nonce *big.Int) (*types.Transaction, error) {
+	return _OChainPortal.contract.Transact(opts, "withdraw", nonce)
 }
 
-// WithdrawalRequest is a paid mutator transaction binding the contract method 0x1cba64a7.
+// Withdraw is a paid mutator transaction binding the contract method 0x2e1a7d4d.
 //
-// Solidity: function withdrawalRequest(address receiver, uint256 nonce, uint256 amount, uint256[] validatorIds, bytes[] signatures) returns()
-func (_OChainPortal *OChainPortalSession) WithdrawalRequest(receiver common.Address, nonce *big.Int, amount *big.Int, validatorIds []*big.Int, signatures [][]byte) (*types.Transaction, error) {
-	return _OChainPortal.Contract.WithdrawalRequest(&_OChainPortal.TransactOpts, receiver, nonce, amount, validatorIds, signatures)
+// Solidity: function withdraw(uint256 nonce) returns(bool)
+func (_OChainPortal *OChainPortalSession) Withdraw(nonce *big.Int) (*types.Transaction, error) {
+	return _OChainPortal.Contract.Withdraw(&_OChainPortal.TransactOpts, nonce)
 }
 
-// WithdrawalRequest is a paid mutator transaction binding the contract method 0x1cba64a7.
+// Withdraw is a paid mutator transaction binding the contract method 0x2e1a7d4d.
 //
-// Solidity: function withdrawalRequest(address receiver, uint256 nonce, uint256 amount, uint256[] validatorIds, bytes[] signatures) returns()
-func (_OChainPortal *OChainPortalTransactorSession) WithdrawalRequest(receiver common.Address, nonce *big.Int, amount *big.Int, validatorIds []*big.Int, signatures [][]byte) (*types.Transaction, error) {
-	return _OChainPortal.Contract.WithdrawalRequest(&_OChainPortal.TransactOpts, receiver, nonce, amount, validatorIds, signatures)
+// Solidity: function withdraw(uint256 nonce) returns(bool)
+func (_OChainPortal *OChainPortalTransactorSession) Withdraw(nonce *big.Int) (*types.Transaction, error) {
+	return _OChainPortal.Contract.Withdraw(&_OChainPortal.TransactOpts, nonce)
 }
 
 // Fallback is a paid mutator transaction binding the contract fallback function.
@@ -1197,9 +1187,9 @@ func (_OChainPortal *OChainPortalFilterer) ParseOChainRemoveValidator(log types.
 	return event, nil
 }
 
-// OChainPortalOChainTokenDepositIterator is returned from FilterOChainTokenDeposit and is used to iterate over the raw logs and unpacked data for OChainTokenDeposit events raised by the OChainPortal contract.
-type OChainPortalOChainTokenDepositIterator struct {
-	Event *OChainPortalOChainTokenDeposit // Event containing the contract specifics and raw log
+// OChainPortalOChainTokenDepositedIterator is returned from FilterOChainTokenDeposited and is used to iterate over the raw logs and unpacked data for OChainTokenDeposited events raised by the OChainPortal contract.
+type OChainPortalOChainTokenDepositedIterator struct {
+	Event *OChainPortalOChainTokenDeposited // Event containing the contract specifics and raw log
 
 	contract *bind.BoundContract // Generic contract to use for unpacking event data
 	event    string              // Event name to use for unpacking event data
@@ -1213,7 +1203,7 @@ type OChainPortalOChainTokenDepositIterator struct {
 // Next advances the iterator to the subsequent event, returning whether there
 // are any more events found. In case of a retrieval or parsing error, false is
 // returned and Error() can be queried for the exact failure.
-func (it *OChainPortalOChainTokenDepositIterator) Next() bool {
+func (it *OChainPortalOChainTokenDepositedIterator) Next() bool {
 	// If the iterator failed, stop iterating
 	if it.fail != nil {
 		return false
@@ -1222,7 +1212,7 @@ func (it *OChainPortalOChainTokenDepositIterator) Next() bool {
 	if it.done {
 		select {
 		case log := <-it.logs:
-			it.Event = new(OChainPortalOChainTokenDeposit)
+			it.Event = new(OChainPortalOChainTokenDeposited)
 			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
 				it.fail = err
 				return false
@@ -1237,7 +1227,7 @@ func (it *OChainPortalOChainTokenDepositIterator) Next() bool {
 	// Iterator still in progress, wait for either a data or an error event
 	select {
 	case log := <-it.logs:
-		it.Event = new(OChainPortalOChainTokenDeposit)
+		it.Event = new(OChainPortalOChainTokenDeposited)
 		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
 			it.fail = err
 			return false
@@ -1253,52 +1243,52 @@ func (it *OChainPortalOChainTokenDepositIterator) Next() bool {
 }
 
 // Error returns any retrieval or parsing error occurred during filtering.
-func (it *OChainPortalOChainTokenDepositIterator) Error() error {
+func (it *OChainPortalOChainTokenDepositedIterator) Error() error {
 	return it.fail
 }
 
 // Close terminates the iteration process, releasing any pending underlying
 // resources.
-func (it *OChainPortalOChainTokenDepositIterator) Close() error {
+func (it *OChainPortalOChainTokenDepositedIterator) Close() error {
 	it.sub.Unsubscribe()
 	return nil
 }
 
-// OChainPortalOChainTokenDeposit represents a OChainTokenDeposit event raised by the OChainPortal contract.
-type OChainPortalOChainTokenDeposit struct {
+// OChainPortalOChainTokenDeposited represents a OChainTokenDeposited event raised by the OChainPortal contract.
+type OChainPortalOChainTokenDeposited struct {
 	Receiver common.Address
 	Amount   *big.Int
 	Raw      types.Log // Blockchain specific contextual infos
 }
 
-// FilterOChainTokenDeposit is a free log retrieval operation binding the contract event 0x65ad5f5e2c996a7dd0047b15db95807104f818650054d36a2ee6ca27eed441f4.
+// FilterOChainTokenDeposited is a free log retrieval operation binding the contract event 0x88112089f3bf2b25173c874be9948d7624cf84b9f155afde2e3f065742a06917.
 //
-// Solidity: event OChainTokenDeposit(address indexed receiver, uint256 amount)
-func (_OChainPortal *OChainPortalFilterer) FilterOChainTokenDeposit(opts *bind.FilterOpts, receiver []common.Address) (*OChainPortalOChainTokenDepositIterator, error) {
+// Solidity: event OChainTokenDeposited(address indexed receiver, uint256 amount)
+func (_OChainPortal *OChainPortalFilterer) FilterOChainTokenDeposited(opts *bind.FilterOpts, receiver []common.Address) (*OChainPortalOChainTokenDepositedIterator, error) {
 
 	var receiverRule []interface{}
 	for _, receiverItem := range receiver {
 		receiverRule = append(receiverRule, receiverItem)
 	}
 
-	logs, sub, err := _OChainPortal.contract.FilterLogs(opts, "OChainTokenDeposit", receiverRule)
+	logs, sub, err := _OChainPortal.contract.FilterLogs(opts, "OChainTokenDeposited", receiverRule)
 	if err != nil {
 		return nil, err
 	}
-	return &OChainPortalOChainTokenDepositIterator{contract: _OChainPortal.contract, event: "OChainTokenDeposit", logs: logs, sub: sub}, nil
+	return &OChainPortalOChainTokenDepositedIterator{contract: _OChainPortal.contract, event: "OChainTokenDeposited", logs: logs, sub: sub}, nil
 }
 
-// WatchOChainTokenDeposit is a free log subscription operation binding the contract event 0x65ad5f5e2c996a7dd0047b15db95807104f818650054d36a2ee6ca27eed441f4.
+// WatchOChainTokenDeposited is a free log subscription operation binding the contract event 0x88112089f3bf2b25173c874be9948d7624cf84b9f155afde2e3f065742a06917.
 //
-// Solidity: event OChainTokenDeposit(address indexed receiver, uint256 amount)
-func (_OChainPortal *OChainPortalFilterer) WatchOChainTokenDeposit(opts *bind.WatchOpts, sink chan<- *OChainPortalOChainTokenDeposit, receiver []common.Address) (event.Subscription, error) {
+// Solidity: event OChainTokenDeposited(address indexed receiver, uint256 amount)
+func (_OChainPortal *OChainPortalFilterer) WatchOChainTokenDeposited(opts *bind.WatchOpts, sink chan<- *OChainPortalOChainTokenDeposited, receiver []common.Address) (event.Subscription, error) {
 
 	var receiverRule []interface{}
 	for _, receiverItem := range receiver {
 		receiverRule = append(receiverRule, receiverItem)
 	}
 
-	logs, sub, err := _OChainPortal.contract.WatchLogs(opts, "OChainTokenDeposit", receiverRule)
+	logs, sub, err := _OChainPortal.contract.WatchLogs(opts, "OChainTokenDeposited", receiverRule)
 	if err != nil {
 		return nil, err
 	}
@@ -1308,8 +1298,8 @@ func (_OChainPortal *OChainPortalFilterer) WatchOChainTokenDeposit(opts *bind.Wa
 			select {
 			case log := <-logs:
 				// New log arrived, parse the event and forward to the user
-				event := new(OChainPortalOChainTokenDeposit)
-				if err := _OChainPortal.contract.UnpackLog(event, "OChainTokenDeposit", log); err != nil {
+				event := new(OChainPortalOChainTokenDeposited)
+				if err := _OChainPortal.contract.UnpackLog(event, "OChainTokenDeposited", log); err != nil {
 					return err
 				}
 				event.Raw = log
@@ -1330,21 +1320,21 @@ func (_OChainPortal *OChainPortalFilterer) WatchOChainTokenDeposit(opts *bind.Wa
 	}), nil
 }
 
-// ParseOChainTokenDeposit is a log parse operation binding the contract event 0x65ad5f5e2c996a7dd0047b15db95807104f818650054d36a2ee6ca27eed441f4.
+// ParseOChainTokenDeposited is a log parse operation binding the contract event 0x88112089f3bf2b25173c874be9948d7624cf84b9f155afde2e3f065742a06917.
 //
-// Solidity: event OChainTokenDeposit(address indexed receiver, uint256 amount)
-func (_OChainPortal *OChainPortalFilterer) ParseOChainTokenDeposit(log types.Log) (*OChainPortalOChainTokenDeposit, error) {
-	event := new(OChainPortalOChainTokenDeposit)
-	if err := _OChainPortal.contract.UnpackLog(event, "OChainTokenDeposit", log); err != nil {
+// Solidity: event OChainTokenDeposited(address indexed receiver, uint256 amount)
+func (_OChainPortal *OChainPortalFilterer) ParseOChainTokenDeposited(log types.Log) (*OChainPortalOChainTokenDeposited, error) {
+	event := new(OChainPortalOChainTokenDeposited)
+	if err := _OChainPortal.contract.UnpackLog(event, "OChainTokenDeposited", log); err != nil {
 		return nil, err
 	}
 	event.Raw = log
 	return event, nil
 }
 
-// OChainPortalOChainTokenWithdrawalRequestContestedIterator is returned from FilterOChainTokenWithdrawalRequestContested and is used to iterate over the raw logs and unpacked data for OChainTokenWithdrawalRequestContested events raised by the OChainPortal contract.
-type OChainPortalOChainTokenWithdrawalRequestContestedIterator struct {
-	Event *OChainPortalOChainTokenWithdrawalRequestContested // Event containing the contract specifics and raw log
+// OChainPortalOChainTokenWithdrawalCanceledIterator is returned from FilterOChainTokenWithdrawalCanceled and is used to iterate over the raw logs and unpacked data for OChainTokenWithdrawalCanceled events raised by the OChainPortal contract.
+type OChainPortalOChainTokenWithdrawalCanceledIterator struct {
+	Event *OChainPortalOChainTokenWithdrawalCanceled // Event containing the contract specifics and raw log
 
 	contract *bind.BoundContract // Generic contract to use for unpacking event data
 	event    string              // Event name to use for unpacking event data
@@ -1358,7 +1348,7 @@ type OChainPortalOChainTokenWithdrawalRequestContestedIterator struct {
 // Next advances the iterator to the subsequent event, returning whether there
 // are any more events found. In case of a retrieval or parsing error, false is
 // returned and Error() can be queried for the exact failure.
-func (it *OChainPortalOChainTokenWithdrawalRequestContestedIterator) Next() bool {
+func (it *OChainPortalOChainTokenWithdrawalCanceledIterator) Next() bool {
 	// If the iterator failed, stop iterating
 	if it.fail != nil {
 		return false
@@ -1367,7 +1357,7 @@ func (it *OChainPortalOChainTokenWithdrawalRequestContestedIterator) Next() bool
 	if it.done {
 		select {
 		case log := <-it.logs:
-			it.Event = new(OChainPortalOChainTokenWithdrawalRequestContested)
+			it.Event = new(OChainPortalOChainTokenWithdrawalCanceled)
 			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
 				it.fail = err
 				return false
@@ -1382,7 +1372,7 @@ func (it *OChainPortalOChainTokenWithdrawalRequestContestedIterator) Next() bool
 	// Iterator still in progress, wait for either a data or an error event
 	select {
 	case log := <-it.logs:
-		it.Event = new(OChainPortalOChainTokenWithdrawalRequestContested)
+		it.Event = new(OChainPortalOChainTokenWithdrawalCanceled)
 		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
 			it.fail = err
 			return false
@@ -1398,41 +1388,196 @@ func (it *OChainPortalOChainTokenWithdrawalRequestContestedIterator) Next() bool
 }
 
 // Error returns any retrieval or parsing error occurred during filtering.
-func (it *OChainPortalOChainTokenWithdrawalRequestContestedIterator) Error() error {
+func (it *OChainPortalOChainTokenWithdrawalCanceledIterator) Error() error {
 	return it.fail
 }
 
 // Close terminates the iteration process, releasing any pending underlying
 // resources.
-func (it *OChainPortalOChainTokenWithdrawalRequestContestedIterator) Close() error {
+func (it *OChainPortalOChainTokenWithdrawalCanceledIterator) Close() error {
 	it.sub.Unsubscribe()
 	return nil
 }
 
-// OChainPortalOChainTokenWithdrawalRequestContested represents a OChainTokenWithdrawalRequestContested event raised by the OChainPortal contract.
-type OChainPortalOChainTokenWithdrawalRequestContested struct {
+// OChainPortalOChainTokenWithdrawalCanceled represents a OChainTokenWithdrawalCanceled event raised by the OChainPortal contract.
+type OChainPortalOChainTokenWithdrawalCanceled struct {
+	Nonce  *big.Int
+	Signer common.Address
+	Raw    types.Log // Blockchain specific contextual infos
+}
+
+// FilterOChainTokenWithdrawalCanceled is a free log retrieval operation binding the contract event 0x22ae3800792c66156c83bcc6edc71ab26c5c361fab0a834ebfecf95d258140a6.
+//
+// Solidity: event OChainTokenWithdrawalCanceled(uint256 indexed nonce, address signer)
+func (_OChainPortal *OChainPortalFilterer) FilterOChainTokenWithdrawalCanceled(opts *bind.FilterOpts, nonce []*big.Int) (*OChainPortalOChainTokenWithdrawalCanceledIterator, error) {
+
+	var nonceRule []interface{}
+	for _, nonceItem := range nonce {
+		nonceRule = append(nonceRule, nonceItem)
+	}
+
+	logs, sub, err := _OChainPortal.contract.FilterLogs(opts, "OChainTokenWithdrawalCanceled", nonceRule)
+	if err != nil {
+		return nil, err
+	}
+	return &OChainPortalOChainTokenWithdrawalCanceledIterator{contract: _OChainPortal.contract, event: "OChainTokenWithdrawalCanceled", logs: logs, sub: sub}, nil
+}
+
+// WatchOChainTokenWithdrawalCanceled is a free log subscription operation binding the contract event 0x22ae3800792c66156c83bcc6edc71ab26c5c361fab0a834ebfecf95d258140a6.
+//
+// Solidity: event OChainTokenWithdrawalCanceled(uint256 indexed nonce, address signer)
+func (_OChainPortal *OChainPortalFilterer) WatchOChainTokenWithdrawalCanceled(opts *bind.WatchOpts, sink chan<- *OChainPortalOChainTokenWithdrawalCanceled, nonce []*big.Int) (event.Subscription, error) {
+
+	var nonceRule []interface{}
+	for _, nonceItem := range nonce {
+		nonceRule = append(nonceRule, nonceItem)
+	}
+
+	logs, sub, err := _OChainPortal.contract.WatchLogs(opts, "OChainTokenWithdrawalCanceled", nonceRule)
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(OChainPortalOChainTokenWithdrawalCanceled)
+				if err := _OChainPortal.contract.UnpackLog(event, "OChainTokenWithdrawalCanceled", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseOChainTokenWithdrawalCanceled is a log parse operation binding the contract event 0x22ae3800792c66156c83bcc6edc71ab26c5c361fab0a834ebfecf95d258140a6.
+//
+// Solidity: event OChainTokenWithdrawalCanceled(uint256 indexed nonce, address signer)
+func (_OChainPortal *OChainPortalFilterer) ParseOChainTokenWithdrawalCanceled(log types.Log) (*OChainPortalOChainTokenWithdrawalCanceled, error) {
+	event := new(OChainPortalOChainTokenWithdrawalCanceled)
+	if err := _OChainPortal.contract.UnpackLog(event, "OChainTokenWithdrawalCanceled", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
+// OChainPortalOChainTokenWithdrawalExecutedIterator is returned from FilterOChainTokenWithdrawalExecuted and is used to iterate over the raw logs and unpacked data for OChainTokenWithdrawalExecuted events raised by the OChainPortal contract.
+type OChainPortalOChainTokenWithdrawalExecutedIterator struct {
+	Event *OChainPortalOChainTokenWithdrawalExecuted // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *OChainPortalOChainTokenWithdrawalExecutedIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(OChainPortalOChainTokenWithdrawalExecuted)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(OChainPortalOChainTokenWithdrawalExecuted)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *OChainPortalOChainTokenWithdrawalExecutedIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *OChainPortalOChainTokenWithdrawalExecutedIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// OChainPortalOChainTokenWithdrawalExecuted represents a OChainTokenWithdrawalExecuted event raised by the OChainPortal contract.
+type OChainPortalOChainTokenWithdrawalExecuted struct {
 	Nonce *big.Int
 	Raw   types.Log // Blockchain specific contextual infos
 }
 
-// FilterOChainTokenWithdrawalRequestContested is a free log retrieval operation binding the contract event 0x304eeb90c4d61fec6d6dbf54316009fc718ac82c4a7baaf965ba7e0d5905f5e4.
+// FilterOChainTokenWithdrawalExecuted is a free log retrieval operation binding the contract event 0xc5c1ff4ceee69008bffb1581fa3dbd1aca29688ada0b4d9ca21722291793564f.
 //
-// Solidity: event OChainTokenWithdrawalRequestContested(uint256 nonce)
-func (_OChainPortal *OChainPortalFilterer) FilterOChainTokenWithdrawalRequestContested(opts *bind.FilterOpts) (*OChainPortalOChainTokenWithdrawalRequestContestedIterator, error) {
+// Solidity: event OChainTokenWithdrawalExecuted(uint256 indexed nonce)
+func (_OChainPortal *OChainPortalFilterer) FilterOChainTokenWithdrawalExecuted(opts *bind.FilterOpts, nonce []*big.Int) (*OChainPortalOChainTokenWithdrawalExecutedIterator, error) {
 
-	logs, sub, err := _OChainPortal.contract.FilterLogs(opts, "OChainTokenWithdrawalRequestContested")
+	var nonceRule []interface{}
+	for _, nonceItem := range nonce {
+		nonceRule = append(nonceRule, nonceItem)
+	}
+
+	logs, sub, err := _OChainPortal.contract.FilterLogs(opts, "OChainTokenWithdrawalExecuted", nonceRule)
 	if err != nil {
 		return nil, err
 	}
-	return &OChainPortalOChainTokenWithdrawalRequestContestedIterator{contract: _OChainPortal.contract, event: "OChainTokenWithdrawalRequestContested", logs: logs, sub: sub}, nil
+	return &OChainPortalOChainTokenWithdrawalExecutedIterator{contract: _OChainPortal.contract, event: "OChainTokenWithdrawalExecuted", logs: logs, sub: sub}, nil
 }
 
-// WatchOChainTokenWithdrawalRequestContested is a free log subscription operation binding the contract event 0x304eeb90c4d61fec6d6dbf54316009fc718ac82c4a7baaf965ba7e0d5905f5e4.
+// WatchOChainTokenWithdrawalExecuted is a free log subscription operation binding the contract event 0xc5c1ff4ceee69008bffb1581fa3dbd1aca29688ada0b4d9ca21722291793564f.
 //
-// Solidity: event OChainTokenWithdrawalRequestContested(uint256 nonce)
-func (_OChainPortal *OChainPortalFilterer) WatchOChainTokenWithdrawalRequestContested(opts *bind.WatchOpts, sink chan<- *OChainPortalOChainTokenWithdrawalRequestContested) (event.Subscription, error) {
+// Solidity: event OChainTokenWithdrawalExecuted(uint256 indexed nonce)
+func (_OChainPortal *OChainPortalFilterer) WatchOChainTokenWithdrawalExecuted(opts *bind.WatchOpts, sink chan<- *OChainPortalOChainTokenWithdrawalExecuted, nonce []*big.Int) (event.Subscription, error) {
 
-	logs, sub, err := _OChainPortal.contract.WatchLogs(opts, "OChainTokenWithdrawalRequestContested")
+	var nonceRule []interface{}
+	for _, nonceItem := range nonce {
+		nonceRule = append(nonceRule, nonceItem)
+	}
+
+	logs, sub, err := _OChainPortal.contract.WatchLogs(opts, "OChainTokenWithdrawalExecuted", nonceRule)
 	if err != nil {
 		return nil, err
 	}
@@ -1442,8 +1587,8 @@ func (_OChainPortal *OChainPortalFilterer) WatchOChainTokenWithdrawalRequestCont
 			select {
 			case log := <-logs:
 				// New log arrived, parse the event and forward to the user
-				event := new(OChainPortalOChainTokenWithdrawalRequestContested)
-				if err := _OChainPortal.contract.UnpackLog(event, "OChainTokenWithdrawalRequestContested", log); err != nil {
+				event := new(OChainPortalOChainTokenWithdrawalExecuted)
+				if err := _OChainPortal.contract.UnpackLog(event, "OChainTokenWithdrawalExecuted", log); err != nil {
 					return err
 				}
 				event.Raw = log
@@ -1464,21 +1609,21 @@ func (_OChainPortal *OChainPortalFilterer) WatchOChainTokenWithdrawalRequestCont
 	}), nil
 }
 
-// ParseOChainTokenWithdrawalRequestContested is a log parse operation binding the contract event 0x304eeb90c4d61fec6d6dbf54316009fc718ac82c4a7baaf965ba7e0d5905f5e4.
+// ParseOChainTokenWithdrawalExecuted is a log parse operation binding the contract event 0xc5c1ff4ceee69008bffb1581fa3dbd1aca29688ada0b4d9ca21722291793564f.
 //
-// Solidity: event OChainTokenWithdrawalRequestContested(uint256 nonce)
-func (_OChainPortal *OChainPortalFilterer) ParseOChainTokenWithdrawalRequestContested(log types.Log) (*OChainPortalOChainTokenWithdrawalRequestContested, error) {
-	event := new(OChainPortalOChainTokenWithdrawalRequestContested)
-	if err := _OChainPortal.contract.UnpackLog(event, "OChainTokenWithdrawalRequestContested", log); err != nil {
+// Solidity: event OChainTokenWithdrawalExecuted(uint256 indexed nonce)
+func (_OChainPortal *OChainPortalFilterer) ParseOChainTokenWithdrawalExecuted(log types.Log) (*OChainPortalOChainTokenWithdrawalExecuted, error) {
+	event := new(OChainPortalOChainTokenWithdrawalExecuted)
+	if err := _OChainPortal.contract.UnpackLog(event, "OChainTokenWithdrawalExecuted", log); err != nil {
 		return nil, err
 	}
 	event.Raw = log
 	return event, nil
 }
 
-// OChainPortalOChainTokenWithdrawalRequestExecutedIterator is returned from FilterOChainTokenWithdrawalRequestExecuted and is used to iterate over the raw logs and unpacked data for OChainTokenWithdrawalRequestExecuted events raised by the OChainPortal contract.
-type OChainPortalOChainTokenWithdrawalRequestExecutedIterator struct {
-	Event *OChainPortalOChainTokenWithdrawalRequestExecuted // Event containing the contract specifics and raw log
+// OChainPortalOChainTokenWithdrawalSignedIterator is returned from FilterOChainTokenWithdrawalSigned and is used to iterate over the raw logs and unpacked data for OChainTokenWithdrawalSigned events raised by the OChainPortal contract.
+type OChainPortalOChainTokenWithdrawalSignedIterator struct {
+	Event *OChainPortalOChainTokenWithdrawalSigned // Event containing the contract specifics and raw log
 
 	contract *bind.BoundContract // Generic contract to use for unpacking event data
 	event    string              // Event name to use for unpacking event data
@@ -1492,7 +1637,7 @@ type OChainPortalOChainTokenWithdrawalRequestExecutedIterator struct {
 // Next advances the iterator to the subsequent event, returning whether there
 // are any more events found. In case of a retrieval or parsing error, false is
 // returned and Error() can be queried for the exact failure.
-func (it *OChainPortalOChainTokenWithdrawalRequestExecutedIterator) Next() bool {
+func (it *OChainPortalOChainTokenWithdrawalSignedIterator) Next() bool {
 	// If the iterator failed, stop iterating
 	if it.fail != nil {
 		return false
@@ -1501,7 +1646,7 @@ func (it *OChainPortalOChainTokenWithdrawalRequestExecutedIterator) Next() bool 
 	if it.done {
 		select {
 		case log := <-it.logs:
-			it.Event = new(OChainPortalOChainTokenWithdrawalRequestExecuted)
+			it.Event = new(OChainPortalOChainTokenWithdrawalSigned)
 			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
 				it.fail = err
 				return false
@@ -1516,7 +1661,7 @@ func (it *OChainPortalOChainTokenWithdrawalRequestExecutedIterator) Next() bool 
 	// Iterator still in progress, wait for either a data or an error event
 	select {
 	case log := <-it.logs:
-		it.Event = new(OChainPortalOChainTokenWithdrawalRequestExecuted)
+		it.Event = new(OChainPortalOChainTokenWithdrawalSigned)
 		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
 			it.fail = err
 			return false
@@ -1532,41 +1677,62 @@ func (it *OChainPortalOChainTokenWithdrawalRequestExecutedIterator) Next() bool 
 }
 
 // Error returns any retrieval or parsing error occurred during filtering.
-func (it *OChainPortalOChainTokenWithdrawalRequestExecutedIterator) Error() error {
+func (it *OChainPortalOChainTokenWithdrawalSignedIterator) Error() error {
 	return it.fail
 }
 
 // Close terminates the iteration process, releasing any pending underlying
 // resources.
-func (it *OChainPortalOChainTokenWithdrawalRequestExecutedIterator) Close() error {
+func (it *OChainPortalOChainTokenWithdrawalSignedIterator) Close() error {
 	it.sub.Unsubscribe()
 	return nil
 }
 
-// OChainPortalOChainTokenWithdrawalRequestExecuted represents a OChainTokenWithdrawalRequestExecuted event raised by the OChainPortal contract.
-type OChainPortalOChainTokenWithdrawalRequestExecuted struct {
-	Nonce *big.Int
-	Raw   types.Log // Blockchain specific contextual infos
+// OChainPortalOChainTokenWithdrawalSigned represents a OChainTokenWithdrawalSigned event raised by the OChainPortal contract.
+type OChainPortalOChainTokenWithdrawalSigned struct {
+	Receiver common.Address
+	Nonce    *big.Int
+	Signer   common.Address
+	Amount   *big.Int
+	Raw      types.Log // Blockchain specific contextual infos
 }
 
-// FilterOChainTokenWithdrawalRequestExecuted is a free log retrieval operation binding the contract event 0x730a5bb623337c88e68b5d82b90939b77f0d2871f86aec602bff04f5c96a4063.
+// FilterOChainTokenWithdrawalSigned is a free log retrieval operation binding the contract event 0x705a95ffa8fe3052f7d1a9eaaa9096da294c91527cd40052fdcaa4f1c1c47eb9.
 //
-// Solidity: event OChainTokenWithdrawalRequestExecuted(uint256 nonce)
-func (_OChainPortal *OChainPortalFilterer) FilterOChainTokenWithdrawalRequestExecuted(opts *bind.FilterOpts) (*OChainPortalOChainTokenWithdrawalRequestExecutedIterator, error) {
+// Solidity: event OChainTokenWithdrawalSigned(address indexed receiver, uint256 indexed nonce, address signer, uint256 amount)
+func (_OChainPortal *OChainPortalFilterer) FilterOChainTokenWithdrawalSigned(opts *bind.FilterOpts, receiver []common.Address, nonce []*big.Int) (*OChainPortalOChainTokenWithdrawalSignedIterator, error) {
 
-	logs, sub, err := _OChainPortal.contract.FilterLogs(opts, "OChainTokenWithdrawalRequestExecuted")
+	var receiverRule []interface{}
+	for _, receiverItem := range receiver {
+		receiverRule = append(receiverRule, receiverItem)
+	}
+	var nonceRule []interface{}
+	for _, nonceItem := range nonce {
+		nonceRule = append(nonceRule, nonceItem)
+	}
+
+	logs, sub, err := _OChainPortal.contract.FilterLogs(opts, "OChainTokenWithdrawalSigned", receiverRule, nonceRule)
 	if err != nil {
 		return nil, err
 	}
-	return &OChainPortalOChainTokenWithdrawalRequestExecutedIterator{contract: _OChainPortal.contract, event: "OChainTokenWithdrawalRequestExecuted", logs: logs, sub: sub}, nil
+	return &OChainPortalOChainTokenWithdrawalSignedIterator{contract: _OChainPortal.contract, event: "OChainTokenWithdrawalSigned", logs: logs, sub: sub}, nil
 }
 
-// WatchOChainTokenWithdrawalRequestExecuted is a free log subscription operation binding the contract event 0x730a5bb623337c88e68b5d82b90939b77f0d2871f86aec602bff04f5c96a4063.
+// WatchOChainTokenWithdrawalSigned is a free log subscription operation binding the contract event 0x705a95ffa8fe3052f7d1a9eaaa9096da294c91527cd40052fdcaa4f1c1c47eb9.
 //
-// Solidity: event OChainTokenWithdrawalRequestExecuted(uint256 nonce)
-func (_OChainPortal *OChainPortalFilterer) WatchOChainTokenWithdrawalRequestExecuted(opts *bind.WatchOpts, sink chan<- *OChainPortalOChainTokenWithdrawalRequestExecuted) (event.Subscription, error) {
+// Solidity: event OChainTokenWithdrawalSigned(address indexed receiver, uint256 indexed nonce, address signer, uint256 amount)
+func (_OChainPortal *OChainPortalFilterer) WatchOChainTokenWithdrawalSigned(opts *bind.WatchOpts, sink chan<- *OChainPortalOChainTokenWithdrawalSigned, receiver []common.Address, nonce []*big.Int) (event.Subscription, error) {
 
-	logs, sub, err := _OChainPortal.contract.WatchLogs(opts, "OChainTokenWithdrawalRequestExecuted")
+	var receiverRule []interface{}
+	for _, receiverItem := range receiver {
+		receiverRule = append(receiverRule, receiverItem)
+	}
+	var nonceRule []interface{}
+	for _, nonceItem := range nonce {
+		nonceRule = append(nonceRule, nonceItem)
+	}
+
+	logs, sub, err := _OChainPortal.contract.WatchLogs(opts, "OChainTokenWithdrawalSigned", receiverRule, nonceRule)
 	if err != nil {
 		return nil, err
 	}
@@ -1576,8 +1742,8 @@ func (_OChainPortal *OChainPortalFilterer) WatchOChainTokenWithdrawalRequestExec
 			select {
 			case log := <-logs:
 				// New log arrived, parse the event and forward to the user
-				event := new(OChainPortalOChainTokenWithdrawalRequestExecuted)
-				if err := _OChainPortal.contract.UnpackLog(event, "OChainTokenWithdrawalRequestExecuted", log); err != nil {
+				event := new(OChainPortalOChainTokenWithdrawalSigned)
+				if err := _OChainPortal.contract.UnpackLog(event, "OChainTokenWithdrawalSigned", log); err != nil {
 					return err
 				}
 				event.Raw = log
@@ -1598,159 +1764,12 @@ func (_OChainPortal *OChainPortalFilterer) WatchOChainTokenWithdrawalRequestExec
 	}), nil
 }
 
-// ParseOChainTokenWithdrawalRequestExecuted is a log parse operation binding the contract event 0x730a5bb623337c88e68b5d82b90939b77f0d2871f86aec602bff04f5c96a4063.
+// ParseOChainTokenWithdrawalSigned is a log parse operation binding the contract event 0x705a95ffa8fe3052f7d1a9eaaa9096da294c91527cd40052fdcaa4f1c1c47eb9.
 //
-// Solidity: event OChainTokenWithdrawalRequestExecuted(uint256 nonce)
-func (_OChainPortal *OChainPortalFilterer) ParseOChainTokenWithdrawalRequestExecuted(log types.Log) (*OChainPortalOChainTokenWithdrawalRequestExecuted, error) {
-	event := new(OChainPortalOChainTokenWithdrawalRequestExecuted)
-	if err := _OChainPortal.contract.UnpackLog(event, "OChainTokenWithdrawalRequestExecuted", log); err != nil {
-		return nil, err
-	}
-	event.Raw = log
-	return event, nil
-}
-
-// OChainPortalOChainTokenWithdrawalRequestedIterator is returned from FilterOChainTokenWithdrawalRequested and is used to iterate over the raw logs and unpacked data for OChainTokenWithdrawalRequested events raised by the OChainPortal contract.
-type OChainPortalOChainTokenWithdrawalRequestedIterator struct {
-	Event *OChainPortalOChainTokenWithdrawalRequested // Event containing the contract specifics and raw log
-
-	contract *bind.BoundContract // Generic contract to use for unpacking event data
-	event    string              // Event name to use for unpacking event data
-
-	logs chan types.Log        // Log channel receiving the found contract events
-	sub  ethereum.Subscription // Subscription for errors, completion and termination
-	done bool                  // Whether the subscription completed delivering logs
-	fail error                 // Occurred error to stop iteration
-}
-
-// Next advances the iterator to the subsequent event, returning whether there
-// are any more events found. In case of a retrieval or parsing error, false is
-// returned and Error() can be queried for the exact failure.
-func (it *OChainPortalOChainTokenWithdrawalRequestedIterator) Next() bool {
-	// If the iterator failed, stop iterating
-	if it.fail != nil {
-		return false
-	}
-	// If the iterator completed, deliver directly whatever's available
-	if it.done {
-		select {
-		case log := <-it.logs:
-			it.Event = new(OChainPortalOChainTokenWithdrawalRequested)
-			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
-				it.fail = err
-				return false
-			}
-			it.Event.Raw = log
-			return true
-
-		default:
-			return false
-		}
-	}
-	// Iterator still in progress, wait for either a data or an error event
-	select {
-	case log := <-it.logs:
-		it.Event = new(OChainPortalOChainTokenWithdrawalRequested)
-		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
-			it.fail = err
-			return false
-		}
-		it.Event.Raw = log
-		return true
-
-	case err := <-it.sub.Err():
-		it.done = true
-		it.fail = err
-		return it.Next()
-	}
-}
-
-// Error returns any retrieval or parsing error occurred during filtering.
-func (it *OChainPortalOChainTokenWithdrawalRequestedIterator) Error() error {
-	return it.fail
-}
-
-// Close terminates the iteration process, releasing any pending underlying
-// resources.
-func (it *OChainPortalOChainTokenWithdrawalRequestedIterator) Close() error {
-	it.sub.Unsubscribe()
-	return nil
-}
-
-// OChainPortalOChainTokenWithdrawalRequested represents a OChainTokenWithdrawalRequested event raised by the OChainPortal contract.
-type OChainPortalOChainTokenWithdrawalRequested struct {
-	Sender  common.Address
-	Nonce   *big.Int
-	Amount  *big.Int
-	Signers []*big.Int
-	Raw     types.Log // Blockchain specific contextual infos
-}
-
-// FilterOChainTokenWithdrawalRequested is a free log retrieval operation binding the contract event 0x7581f25582ecb69233c1174995be6e1300c86e62a7fbe1ee4e98a0e4ba577b7d.
-//
-// Solidity: event OChainTokenWithdrawalRequested(address indexed sender, uint256 nonce, uint256 amount, uint256[] signers)
-func (_OChainPortal *OChainPortalFilterer) FilterOChainTokenWithdrawalRequested(opts *bind.FilterOpts, sender []common.Address) (*OChainPortalOChainTokenWithdrawalRequestedIterator, error) {
-
-	var senderRule []interface{}
-	for _, senderItem := range sender {
-		senderRule = append(senderRule, senderItem)
-	}
-
-	logs, sub, err := _OChainPortal.contract.FilterLogs(opts, "OChainTokenWithdrawalRequested", senderRule)
-	if err != nil {
-		return nil, err
-	}
-	return &OChainPortalOChainTokenWithdrawalRequestedIterator{contract: _OChainPortal.contract, event: "OChainTokenWithdrawalRequested", logs: logs, sub: sub}, nil
-}
-
-// WatchOChainTokenWithdrawalRequested is a free log subscription operation binding the contract event 0x7581f25582ecb69233c1174995be6e1300c86e62a7fbe1ee4e98a0e4ba577b7d.
-//
-// Solidity: event OChainTokenWithdrawalRequested(address indexed sender, uint256 nonce, uint256 amount, uint256[] signers)
-func (_OChainPortal *OChainPortalFilterer) WatchOChainTokenWithdrawalRequested(opts *bind.WatchOpts, sink chan<- *OChainPortalOChainTokenWithdrawalRequested, sender []common.Address) (event.Subscription, error) {
-
-	var senderRule []interface{}
-	for _, senderItem := range sender {
-		senderRule = append(senderRule, senderItem)
-	}
-
-	logs, sub, err := _OChainPortal.contract.WatchLogs(opts, "OChainTokenWithdrawalRequested", senderRule)
-	if err != nil {
-		return nil, err
-	}
-	return event.NewSubscription(func(quit <-chan struct{}) error {
-		defer sub.Unsubscribe()
-		for {
-			select {
-			case log := <-logs:
-				// New log arrived, parse the event and forward to the user
-				event := new(OChainPortalOChainTokenWithdrawalRequested)
-				if err := _OChainPortal.contract.UnpackLog(event, "OChainTokenWithdrawalRequested", log); err != nil {
-					return err
-				}
-				event.Raw = log
-
-				select {
-				case sink <- event:
-				case err := <-sub.Err():
-					return err
-				case <-quit:
-					return nil
-				}
-			case err := <-sub.Err():
-				return err
-			case <-quit:
-				return nil
-			}
-		}
-	}), nil
-}
-
-// ParseOChainTokenWithdrawalRequested is a log parse operation binding the contract event 0x7581f25582ecb69233c1174995be6e1300c86e62a7fbe1ee4e98a0e4ba577b7d.
-//
-// Solidity: event OChainTokenWithdrawalRequested(address indexed sender, uint256 nonce, uint256 amount, uint256[] signers)
-func (_OChainPortal *OChainPortalFilterer) ParseOChainTokenWithdrawalRequested(log types.Log) (*OChainPortalOChainTokenWithdrawalRequested, error) {
-	event := new(OChainPortalOChainTokenWithdrawalRequested)
-	if err := _OChainPortal.contract.UnpackLog(event, "OChainTokenWithdrawalRequested", log); err != nil {
+// Solidity: event OChainTokenWithdrawalSigned(address indexed receiver, uint256 indexed nonce, address signer, uint256 amount)
+func (_OChainPortal *OChainPortalFilterer) ParseOChainTokenWithdrawalSigned(log types.Log) (*OChainPortalOChainTokenWithdrawalSigned, error) {
+	event := new(OChainPortalOChainTokenWithdrawalSigned)
+	if err := _OChainPortal.contract.UnpackLog(event, "OChainTokenWithdrawalSigned", log); err != nil {
 		return nil, err
 	}
 	event.Raw = log
@@ -2048,6 +2067,151 @@ func (_OChainPortal *OChainPortalFilterer) WatchOwnershipTransferred(opts *bind.
 func (_OChainPortal *OChainPortalFilterer) ParseOwnershipTransferred(log types.Log) (*OChainPortalOwnershipTransferred, error) {
 	event := new(OChainPortalOwnershipTransferred)
 	if err := _OChainPortal.contract.UnpackLog(event, "OwnershipTransferred", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
+// OChainPortalUSDDepositedIterator is returned from FilterUSDDeposited and is used to iterate over the raw logs and unpacked data for USDDeposited events raised by the OChainPortal contract.
+type OChainPortalUSDDepositedIterator struct {
+	Event *OChainPortalUSDDeposited // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *OChainPortalUSDDepositedIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(OChainPortalUSDDeposited)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(OChainPortalUSDDeposited)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *OChainPortalUSDDepositedIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *OChainPortalUSDDepositedIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// OChainPortalUSDDeposited represents a USDDeposited event raised by the OChainPortal contract.
+type OChainPortalUSDDeposited struct {
+	Receiver common.Address
+	Amount   *big.Int
+	Raw      types.Log // Blockchain specific contextual infos
+}
+
+// FilterUSDDeposited is a free log retrieval operation binding the contract event 0xae6217b78ca94469877824ba7a838231a40d9fc97d55939c2ee70d44ac49cf50.
+//
+// Solidity: event USDDeposited(address indexed receiver, uint256 amount)
+func (_OChainPortal *OChainPortalFilterer) FilterUSDDeposited(opts *bind.FilterOpts, receiver []common.Address) (*OChainPortalUSDDepositedIterator, error) {
+
+	var receiverRule []interface{}
+	for _, receiverItem := range receiver {
+		receiverRule = append(receiverRule, receiverItem)
+	}
+
+	logs, sub, err := _OChainPortal.contract.FilterLogs(opts, "USDDeposited", receiverRule)
+	if err != nil {
+		return nil, err
+	}
+	return &OChainPortalUSDDepositedIterator{contract: _OChainPortal.contract, event: "USDDeposited", logs: logs, sub: sub}, nil
+}
+
+// WatchUSDDeposited is a free log subscription operation binding the contract event 0xae6217b78ca94469877824ba7a838231a40d9fc97d55939c2ee70d44ac49cf50.
+//
+// Solidity: event USDDeposited(address indexed receiver, uint256 amount)
+func (_OChainPortal *OChainPortalFilterer) WatchUSDDeposited(opts *bind.WatchOpts, sink chan<- *OChainPortalUSDDeposited, receiver []common.Address) (event.Subscription, error) {
+
+	var receiverRule []interface{}
+	for _, receiverItem := range receiver {
+		receiverRule = append(receiverRule, receiverItem)
+	}
+
+	logs, sub, err := _OChainPortal.contract.WatchLogs(opts, "USDDeposited", receiverRule)
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(OChainPortalUSDDeposited)
+				if err := _OChainPortal.contract.UnpackLog(event, "USDDeposited", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseUSDDeposited is a log parse operation binding the contract event 0xae6217b78ca94469877824ba7a838231a40d9fc97d55939c2ee70d44ac49cf50.
+//
+// Solidity: event USDDeposited(address indexed receiver, uint256 amount)
+func (_OChainPortal *OChainPortalFilterer) ParseUSDDeposited(log types.Log) (*OChainPortalUSDDeposited, error) {
+	event := new(OChainPortalUSDDeposited)
+	if err := _OChainPortal.contract.UnpackLog(event, "USDDeposited", log); err != nil {
 		return nil, err
 	}
 	event.Raw = log

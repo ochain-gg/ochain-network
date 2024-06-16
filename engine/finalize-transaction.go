@@ -23,7 +23,7 @@ func FinalizeTx(ctx transactions.TransactionContext, tx []byte) (*abcitypes.Exec
 		return &abcitypes.ExecTxResult{Code: types.InvalidTransactionError}, []abcitypes.ValidatorUpdate{}
 	}
 
-	isSystemTx := transaction.Type == transactions.OChainPortalInteraction || transaction.Type == transactions.ExecutePendingUpdate
+	isSystemTx := transaction.Type == transactions.OChainPortalInteraction || transaction.Type == transactions.ExecutePendingUpgrade
 	if isSystemTx {
 		return FinalizeSystemTx(ctx, transaction)
 	} else {
