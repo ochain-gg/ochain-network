@@ -10,6 +10,7 @@ const (
 	CheckTransactionFailure     uint32 = 5
 	ExecuteTransactionFailure   uint32 = 6
 	NotImplemented              uint32 = 7
+	GasCostHigherThanBalance    uint32 = 8
 )
 
 type OChainError struct {

@@ -1,7 +1,6 @@
 package transactions
 
 import (
-	"errors"
 	"fmt"
 
 	abcitypes "github.com/cometbft/cometbft/abci/types"
@@ -38,79 +37,104 @@ func (tx *UniverseAccountDepositTransaction) Transaction() (Transaction, error) 
 	}, nil
 }
 
-func (tx *UniverseAccountDepositTransaction) Check(ctx TransactionContext) error {
+func (tx *UniverseAccountDepositTransaction) Check(ctx TransactionContext) *abcitypes.ResponseCheckTx {
 	globalAccount, err := ctx.Db.GlobalsAccounts.GetAt(tx.From, uint64(ctx.Date.Unix()))
-	if err == nil {
-		return errors.New("account doesn't exists")
+	if err != nil {
+		return &abcitypes.ResponseCheckTx{
+			Code: types.InvalidTransactionError,
+		}
 	}
 
 	_, err = ctx.Db.UniverseAccounts.GetAt(tx.Data.Universe, tx.From, uint64(ctx.Date.Unix()))
-	if err == nil {
-		return errors.New("universe account doesn't exists")
+	if err != nil {
+		return &abcitypes.ResponseCheckTx{
+			Code: types.InvalidTransactionError,
+		}
 	}
 
 	_, err = ctx.Db.Planets.GetAt(tx.Data.Universe, tx.Data.Planet, uint64(ctx.Date.Unix()))
-	if err == nil {
-		return errors.New("planet doesn't exists")
+	if err != nil {
+		return &abcitypes.ResponseCheckTx{
+			Code: types.InvalidTransactionError,
+		}
 	}
 
 	if globalAccount.TokenBalance < tx.Data.Amount {
-		return errors.New("unsuficient oct balance")
+		return &abcitypes.ResponseCheckTx{
+			Code: types.InvalidTransactionError,
+		}
 	}
 
 	year, week := ctx.Date.ISOWeek()
 	weeklyUsage, err := ctx.Db.UniverseAccountWeeklyUsage.GetAt(tx.Data.Universe, tx.From, year, week, uint64(ctx.Date.Unix()))
-	if err == nil {
-		return errors.New("error on retrieve limits")
+	if err != nil {
+		return &abcitypes.ResponseCheckTx{
+			Code: types.InvalidTransactionError,
+		}
 	}
 
 	newDepositWeeklyUsage := weeklyUsage.DepositedAmount + tx.Data.Amount
 
 	//if account balance >= TwoWeekCommanderPrice
 	if newDepositWeeklyUsage > types.MaxWeeklyOCTDeposit {
-		return errors.New("weekly deposit limit reach")
+		return &abcitypes.ResponseCheckTx{
+			Code: types.InvalidTransactionError,
+		}
 	}
 
 	return nil
 }
 
-func (tx *UniverseAccountDepositTransaction) Execute(ctx TransactionContext) ([]abcitypes.Event, error) {
-	err := tx.Check(ctx)
-	if err != nil {
-		return []abcitypes.Event{}, err
+func (tx *UniverseAccountDepositTransaction) Execute(ctx TransactionContext) *abcitypes.ExecTxResult {
+	result := tx.Check(ctx)
+	if result.Code != types.NoError {
+		return &abcitypes.ExecTxResult{
+			Code: result.GetCode(),
+		}
 	}
 
 	currentDate := uint64(ctx.Date.Unix())
 
 	globalAccount, err := ctx.Db.GlobalsAccounts.GetAt(tx.From, currentDate)
-	if err == nil {
-		return []abcitypes.Event{}, errors.New("account doesn't exists")
+	if err != nil {
+		return &abcitypes.ExecTxResult{
+			Code: types.InvalidTransactionError,
+		}
 	}
 
 	universe, err := ctx.Db.Universes.GetAt(tx.Data.Universe, currentDate)
-	if err == nil {
-		return []abcitypes.Event{}, errors.New("universe doesn't exists")
+	if err != nil {
+		return &abcitypes.ExecTxResult{
+			Code: types.InvalidTransactionError,
+		}
 	}
 
 	account, err := ctx.Db.UniverseAccounts.GetAt(universe.Id, tx.From, currentDate)
-	if err == nil {
-		return []abcitypes.Event{}, errors.New("account doesn't exists")
+	if err != nil {
+		return &abcitypes.ExecTxResult{
+			Code: types.InvalidTransactionError,
+		}
 	}
 
 	planet, err := ctx.Db.Planets.GetAt(tx.Data.Universe, tx.Data.Planet, currentDate)
-	if err == nil {
-		return []abcitypes.Event{}, errors.New("planet doesn't exists")
+	if err != nil {
+		return &abcitypes.ExecTxResult{
+			Code: types.InvalidTransactionError,
+		}
 	}
-
 	year, week := ctx.Date.ISOWeek()
 	weeklyUsage, err := ctx.Db.UniverseAccountWeeklyUsage.GetAt(tx.Data.Universe, tx.From, year, week, uint64(ctx.Date.Unix()))
-	if err == nil {
-		return []abcitypes.Event{}, errors.New("error on retrieve limits")
+	if err != nil {
+		return &abcitypes.ExecTxResult{
+			Code: types.InvalidTransactionError,
+		}
 	}
 
 	newDepositWeeklyUsage := weeklyUsage.DepositedAmount + tx.Data.Amount
 	if newDepositWeeklyUsage > types.MaxWeeklyOCTDeposit {
-		return []abcitypes.Event{}, errors.New("weekly deposit limit reach")
+		return &abcitypes.ExecTxResult{
+			Code: types.InvalidTransactionError,
+		}
 	}
 
 	weeklyUsage.DepositedAmount = newDepositWeeklyUsage
@@ -121,17 +145,34 @@ func (tx *UniverseAccountDepositTransaction) Execute(ctx TransactionContext) ([]
 
 	err = ctx.Db.GlobalsAccounts.Update(globalAccount)
 	if err != nil {
-		return []abcitypes.Event{}, err
+		return &abcitypes.ExecTxResult{
+			Code: types.InvalidTransactionError,
+		}
 	}
 
 	err = ctx.Db.Planets.Update(tx.Data.Universe, planet)
 	if err != nil {
-		return []abcitypes.Event{}, err
+		return &abcitypes.ExecTxResult{
+			Code: types.InvalidTransactionError,
+		}
 	}
 
 	err = ctx.Db.UniverseAccountWeeklyUsage.Upsert(weeklyUsage)
 	if err != nil {
-		return []abcitypes.Event{}, err
+		return &abcitypes.ExecTxResult{
+			Code: types.InvalidTransactionError,
+		}
+	}
+
+	txGasCost, err := globalAccount.ApplyGasCost(uint64(ctx.Date.Unix()))
+	if err != nil {
+		return &abcitypes.ExecTxResult{
+			Code: types.GasCostHigherThanBalance,
+		}
+	}
+
+	receipt := TransactionReceipt{
+		GasCost: txGasCost,
 	}
 
 	events := []abcitypes.Event{
@@ -158,7 +199,13 @@ func (tx *UniverseAccountDepositTransaction) Execute(ctx TransactionContext) ([]
 		},
 	}
 
-	return events, nil
+	return &abcitypes.ExecTxResult{
+		Code:      types.NoError,
+		Events:    events,
+		GasUsed:   100,
+		GasWanted: 100,
+		Data:      receipt.Bytes(),
+	}
 }
 
 func ParseUniverseAccountDepositTransaction(tx Transaction) (UniverseAccountDepositTransaction, error) {

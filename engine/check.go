@@ -9,18 +9,18 @@ import (
 	"github.com/ochain-gg/ochain-network/types"
 )
 
-func CheckTx(ctx transactions.TransactionContext, req *abcitypes.RequestCheckTx) (*abcitypes.ResponseCheckTx, error) {
+func CheckTx(ctx transactions.TransactionContext, req *abcitypes.RequestCheckTx) *abcitypes.ResponseCheckTx {
 
 	log.Printf("Check tx: %s", hex.EncodeToString(req.Tx))
 
 	tx, err := transactions.ParseTransaction(req.Tx)
 	if err != nil {
-		return &abcitypes.ResponseCheckTx{Code: types.ParsingTransactionError}, nil
+		return &abcitypes.ResponseCheckTx{Code: types.ParsingTransactionError}
 	}
 
 	err = tx.IsValid()
 	if err != nil {
-		return &abcitypes.ResponseCheckTx{Code: types.InvalidTransactionError}, nil
+		return &abcitypes.ResponseCheckTx{Code: types.InvalidTransactionError}
 	}
 
 	isSystemTx := tx.Type == transactions.OChainPortalInteraction || tx.Type == transactions.ExecutePendingUpgrade

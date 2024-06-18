@@ -42,21 +42,12 @@ func FinalizeAuthenticatedTx(ctx transactions.TransactionContext, tx transaction
 			return &abcitypes.ExecTxResult{Code: types.ParsingTransactionDataError}, valUpdates
 		}
 
-		err = transaction.Check(ctx)
-		if err != nil {
-			return &abcitypes.ExecTxResult{Code: types.CheckTransactionFailure}, valUpdates
+		checkResult := transaction.Check(ctx)
+		if checkResult.Code != types.NoError {
+			return &abcitypes.ExecTxResult{Code: checkResult.Code, GasWanted: 0, GasUsed: 0}, valUpdates
 		}
 
-		events, err := transaction.Execute(ctx)
-		if err != nil {
-			return &abcitypes.ExecTxResult{Code: types.ExecuteTransactionFailure}, valUpdates
-		}
-
-		return &abcitypes.ExecTxResult{
-			Code:    types.NoError,
-			Events:  events,
-			GasUsed: 0,
-		}, valUpdates
+		return transaction.Execute(ctx), valUpdates
 
 	case transactions.RegisterUniverseAccount:
 
@@ -65,21 +56,12 @@ func FinalizeAuthenticatedTx(ctx transactions.TransactionContext, tx transaction
 			return &abcitypes.ExecTxResult{Code: types.ParsingTransactionDataError}, valUpdates
 		}
 
-		err = transaction.Check(ctx)
-		if err != nil {
-			return &abcitypes.ExecTxResult{Code: types.CheckTransactionFailure}, valUpdates
+		checkResult := transaction.Check(ctx)
+		if checkResult.Code != types.NoError {
+			return &abcitypes.ExecTxResult{Code: checkResult.Code, GasWanted: 0, GasUsed: 0}, valUpdates
 		}
 
-		events, err := transaction.Execute(ctx)
-		if err != nil {
-			return &abcitypes.ExecTxResult{Code: types.ExecuteTransactionFailure}, valUpdates
-		}
-
-		return &abcitypes.ExecTxResult{
-			Code:    types.NoError,
-			Events:  events,
-			GasUsed: 0,
-		}, valUpdates
+		return transaction.Execute(ctx), valUpdates
 	}
 
 	return &abcitypes.ExecTxResult{Code: types.NotImplemented, GasWanted: 0}, valUpdates

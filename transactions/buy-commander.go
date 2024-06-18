@@ -1,8 +1,6 @@
 package transactions
 
 import (
-	"errors"
-
 	abcitypes "github.com/cometbft/cometbft/abci/types"
 	"github.com/fxamacker/cbor/v2"
 
@@ -37,51 +35,82 @@ func (tx *BuyCommanderTransaction) Transaction() (Transaction, error) {
 	}, nil
 }
 
-func (tx *BuyCommanderTransaction) Check(ctx TransactionContext) error {
+func (tx *BuyCommanderTransaction) Check(ctx TransactionContext) *abcitypes.ResponseCheckTx {
 	globalAccount, err := ctx.Db.GlobalsAccounts.Get(tx.From)
-	if err == nil {
-		return errors.New("account doesn't exists")
+	if err != nil {
+		return &abcitypes.ResponseCheckTx{
+			Code: types.InvalidTransactionError,
+		}
+	}
+
+	txGasCost := globalAccount.GetGasCost(uint64(ctx.Date.Unix()))
+	if txGasCost > globalAccount.TokenBalance {
+		return &abcitypes.ResponseCheckTx{
+			Code: types.GasCostHigherThanBalance,
+		}
 	}
 
 	_, err = ctx.Db.UniverseAccounts.Get(tx.Data.Universe, tx.From)
 	if err == nil {
-		return errors.New("universe account doesn't exists")
+		return &abcitypes.ResponseCheckTx{
+			Code: types.InvalidTransactionError,
+		}
 	}
 
 	//if account balance >= TwoWeekCommanderPrice
 	if globalAccount.CreditBalance < types.TwoWeekCommanderPrice {
-		return errors.New("unsuficient usd balance")
+		return &abcitypes.ResponseCheckTx{
+			Code: types.InvalidTransactionError,
+		}
 	}
 
 	return nil
 }
 
-func (tx *BuyCommanderTransaction) Execute(ctx TransactionContext) ([]abcitypes.Event, error) {
-	err := tx.Check(ctx)
-	if err != nil {
-		return []abcitypes.Event{}, err
+func (tx *BuyCommanderTransaction) Execute(ctx TransactionContext) *abcitypes.ExecTxResult {
+	response := tx.Check(ctx)
+	if response.Code != types.NoError {
+		return &abcitypes.ExecTxResult{
+			Code: response.Code,
+		}
 	}
 
 	globalAccount, err := ctx.Db.GlobalsAccounts.Get(tx.From)
 	if err == nil {
-		return []abcitypes.Event{}, errors.New("account doesn't exists")
+		return &abcitypes.ExecTxResult{
+			Code: types.InvalidTransactionError,
+		}
 	}
 
 	account, err := ctx.Db.UniverseAccounts.Get(tx.Data.Universe, tx.From)
 	if err == nil {
-		return []abcitypes.Event{}, errors.New("universe account doesn't exists")
+		return &abcitypes.ExecTxResult{
+			Code: types.InvalidTransactionError,
+		}
 	}
 
 	globalAccount.CreditBalance -= types.TwoWeekCommanderPrice
 	account.SubscribeToCommander(ctx.Date.Unix(), tx.Data.Commander)
 
+	txGasCost, err := globalAccount.ApplyGasCost(uint64(ctx.Date.Unix()))
+	if err != nil {
+		return &abcitypes.ExecTxResult{
+			Code: types.GasCostHigherThanBalance,
+		}
+	}
+
 	err = ctx.Db.GlobalsAccounts.Update(globalAccount)
 	if err != nil {
-		return []abcitypes.Event{}, err
+		return &abcitypes.ExecTxResult{
+			Code: types.InvalidTransactionError,
+		}
 	}
+
 	err = ctx.Db.UniverseAccounts.Update(account)
 	if err != nil {
-		return []abcitypes.Event{}, err
+		return &abcitypes.ExecTxResult{
+			Code: types.InvalidTransactionError,
+		}
 	}
 
 	events := []abcitypes.Event{
@@ -95,7 +124,17 @@ func (tx *BuyCommanderTransaction) Execute(ctx TransactionContext) ([]abcitypes.
 		},
 	}
 
-	return events, nil
+	receipt := TransactionReceipt{
+		GasCost: txGasCost,
+	}
+
+	return &abcitypes.ExecTxResult{
+		Code:      types.NoError,
+		Events:    events,
+		GasUsed:   100,
+		GasWanted: 100,
+		Data:      receipt.Bytes(),
+	}
 }
 
 func ParseBuyCommanderTransaction(tx Transaction) (BuyCommanderTransaction, error) {

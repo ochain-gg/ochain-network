@@ -15,12 +15,12 @@ func FinalizeTx(ctx transactions.TransactionContext, tx []byte) (*abcitypes.Exec
 
 	transaction, err := transactions.ParseTransaction(tx)
 	if err != nil {
-		return &abcitypes.ExecTxResult{Code: types.ParsingTransactionError}, []abcitypes.ValidatorUpdate{}
+		return &abcitypes.ExecTxResult{Code: types.ParsingTransactionError, GasWanted: 0, GasUsed: 0}, []abcitypes.ValidatorUpdate{}
 	}
 
 	err = transaction.IsValid()
 	if err != nil {
-		return &abcitypes.ExecTxResult{Code: types.InvalidTransactionError}, []abcitypes.ValidatorUpdate{}
+		return &abcitypes.ExecTxResult{Code: types.InvalidTransactionError, GasWanted: 0, GasUsed: 0}, []abcitypes.ValidatorUpdate{}
 	}
 
 	isSystemTx := transaction.Type == transactions.OChainPortalInteraction || transaction.Type == transactions.ExecutePendingUpgrade

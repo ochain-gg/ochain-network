@@ -1,5 +1,10 @@
 package types
 
+import (
+	"errors"
+	"math"
+)
+
 type OChainGlobalAccountIAM struct {
 	GuardianQuorum uint64   `cbor:"1,keyasint"`
 	Guardians      []string `cbor:"2,keyasint"`
@@ -17,6 +22,40 @@ type OChainGlobalAccount struct {
 	CreditBalance           uint64                 `cbor:"6,keyasint"`
 	LastDailyClaim          int64                  `cbor:"7,keyasint"`
 	CreatedAt               int64                  `cbor:"8,keyasint"`
+
+	LastTransactionHour  uint64 `cbor:"9,keyasint"`
+	LastTransactionCount uint64 `cbor:"10,keyasint"`
+}
+
+func (acc *OChainGlobalAccount) GetGasCost(timestamp uint64) uint64 {
+	defaultGasCost := 100_000
+	currentTransactionHour := timestamp / 60
+
+	if currentTransactionHour > acc.LastTransactionHour {
+		return uint64(defaultGasCost)
+	}
+
+	lastHourCount := acc.LastTransactionCount + 1
+	return uint64(float64(defaultGasCost) * math.Pow(float64(lastHourCount), 3))
+}
+
+func (acc *OChainGlobalAccount) ApplyGasCost(timestamp uint64) (uint64, error) {
+	currentTransactionHour := timestamp / 60
+
+	if currentTransactionHour > acc.LastTransactionHour {
+		acc.LastTransactionHour = currentTransactionHour
+		acc.LastTransactionCount = 1
+	} else {
+		acc.LastTransactionCount += 1
+	}
+
+	gasCost := acc.GetGasCost(timestamp)
+	if gasCost > acc.TokenBalance {
+		return 0, errors.New("account balance don't cover gas cost")
+	}
+
+	acc.TokenBalance -= gasCost
+	return gasCost, nil
 }
 
 func (acc *OChainGlobalAccount) getAllowedSigners() []string {

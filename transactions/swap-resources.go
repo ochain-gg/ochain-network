@@ -1,7 +1,6 @@
 package transactions
 
 import (
-	"errors"
 	"fmt"
 
 	abcitypes "github.com/cometbft/cometbft/abci/types"
@@ -40,21 +39,27 @@ func (tx *SwapResourcesTransaction) Transaction() (Transaction, error) {
 	}, nil
 }
 
-func (tx *SwapResourcesTransaction) Check(ctx TransactionContext) error {
+func (tx *SwapResourcesTransaction) Check(ctx TransactionContext) *abcitypes.ResponseCheckTx {
 
 	account, err := ctx.Db.UniverseAccounts.GetAt(tx.Data.Universe, tx.From, uint64(ctx.Date.Unix()))
-	if err == nil {
-		return errors.New("universe account doesn't exists")
+	if err != nil {
+		return &abcitypes.ResponseCheckTx{
+			Code: types.InvalidTransactionError,
+		}
 	}
 
 	universe, err := ctx.Db.Universes.GetAt(tx.Data.Universe, uint64(ctx.Date.Unix()))
-	if err == nil {
-		return errors.New("universe doesn't exists")
+	if err != nil {
+		return &abcitypes.ResponseCheckTx{
+			Code: types.InvalidTransactionError,
+		}
 	}
 
 	planet, err := ctx.Db.Planets.GetAt(tx.Data.Universe, tx.Data.Planet, uint64(ctx.Date.Unix()))
-	if err == nil {
-		return errors.New("planet doesn't exists")
+	if err != nil {
+		return &abcitypes.ResponseCheckTx{
+			Code: types.InvalidTransactionError,
+		}
 	}
 
 	planet.UpdateResources(universe.Speed, int64(ctx.Date.Unix()), account)
@@ -62,69 +67,117 @@ func (tx *SwapResourcesTransaction) Check(ctx TransactionContext) error {
 	switch tx.Data.From {
 	case types.OCTResourceID:
 		if planet.Resources.OCT < tx.Data.Amount {
-			return errors.New("not sufficient resources")
+			return &abcitypes.ResponseCheckTx{
+				Code: types.InvalidTransactionError,
+			}
 		}
 	case types.MetalResourceID:
 		if planet.Resources.Metal < tx.Data.Amount {
-			return errors.New("not sufficient resources")
+			return &abcitypes.ResponseCheckTx{
+				Code: types.InvalidTransactionError,
+			}
 		}
 	case types.CrystalResourceID:
 		if planet.Resources.Crystal < tx.Data.Amount {
-			return errors.New("not sufficient resources")
+			return &abcitypes.ResponseCheckTx{
+				Code: types.InvalidTransactionError,
+			}
 		}
 	case types.DeuteriumResourceID:
 		if planet.Resources.Deuterium < tx.Data.Amount {
-			return errors.New("not sufficient resources")
+			return &abcitypes.ResponseCheckTx{
+				Code: types.InvalidTransactionError,
+			}
 		}
 	default:
-		return errors.New("bad resource id")
+		return &abcitypes.ResponseCheckTx{
+			Code: types.InvalidTransactionError,
+		}
 	}
 
 	return nil
 }
 
-func (tx *SwapResourcesTransaction) Execute(ctx TransactionContext) ([]abcitypes.Event, error) {
-	err := tx.Check(ctx)
+func (tx *SwapResourcesTransaction) Execute(ctx TransactionContext) *abcitypes.ExecTxResult {
+	result := tx.Check(ctx)
+	if result.Code != types.NoError {
+		return &abcitypes.ExecTxResult{
+			Code: result.GetCode(),
+		}
+	}
+
+	globalAccount, err := ctx.Db.GlobalsAccounts.GetAt(tx.From, uint64(ctx.Date.Unix()))
 	if err != nil {
-		return []abcitypes.Event{}, err
+		return &abcitypes.ExecTxResult{
+			Code: types.InvalidTransactionError,
+		}
 	}
 
 	account, err := ctx.Db.UniverseAccounts.GetAt(tx.Data.Universe, tx.From, uint64(ctx.Date.Unix()))
-	if err == nil {
-		return []abcitypes.Event{}, errors.New("universe account doesn't exists")
+	if err != nil {
+		return &abcitypes.ExecTxResult{
+			Code: types.InvalidTransactionError,
+		}
 	}
 
 	universe, err := ctx.Db.Universes.GetAt(tx.Data.Universe, uint64(ctx.Date.Unix()))
-	if err == nil {
-		return []abcitypes.Event{}, errors.New("universe doesn't exists")
+	if err != nil {
+		return &abcitypes.ExecTxResult{
+			Code: types.InvalidTransactionError,
+		}
 	}
 
 	planet, err := ctx.Db.Planets.GetAt(tx.Data.Universe, tx.Data.Planet, uint64(ctx.Date.Unix()))
-	if err == nil {
-		return []abcitypes.Event{}, errors.New("planet doesn't exists")
+	if err != nil {
+		return &abcitypes.ExecTxResult{
+			Code: types.InvalidTransactionError,
+		}
 	}
 
 	market, err := ctx.Db.ResourcesMarket.GetAt(tx.Data.Universe, uint64(ctx.Date.Unix()))
-	if err == nil {
-		return []abcitypes.Event{}, errors.New("market doesn't exists")
+	if err != nil {
+		return &abcitypes.ExecTxResult{
+			Code: types.InvalidTransactionError,
+		}
 	}
 
 	planet.UpdateResources(universe.Speed, ctx.Date.Unix(), account)
 
 	amountOut, err := market.SwapResources(tx.Data.From, tx.Data.To, tx.Data.Amount)
-	if err == nil {
-		return []abcitypes.Event{}, err
+	if err != nil {
+		return &abcitypes.ExecTxResult{
+			Code: types.InvalidTransactionError,
+		}
 	}
 
 	err = planet.RemoveResourceById(tx.Data.From, tx.Data.Amount)
-	if err == nil {
-		return []abcitypes.Event{}, err
+	if err != nil {
+		return &abcitypes.ExecTxResult{
+			Code: types.InvalidTransactionError,
+		}
 	}
 
 	planet.AddResourceById(tx.Data.To, amountOut)
+
+	txGasCost, err := globalAccount.ApplyGasCost(uint64(ctx.Date.Unix()))
+	if err != nil {
+		return &abcitypes.ExecTxResult{
+			Code: types.GasCostHigherThanBalance,
+		}
+	}
+
+	err = ctx.Db.GlobalsAccounts.Update(globalAccount)
+	if err != nil {
+		return &abcitypes.ExecTxResult{
+			Code: types.InvalidTransactionError,
+		}
+	}
+
 	err = ctx.Db.Planets.Update(universe.Id, planet)
-	if err == nil {
-		return []abcitypes.Event{}, err
+	if err != nil {
+		return &abcitypes.ExecTxResult{
+			Code: types.InvalidTransactionError,
+		}
 	}
 
 	events := []abcitypes.Event{
@@ -154,7 +207,17 @@ func (tx *SwapResourcesTransaction) Execute(ctx TransactionContext) ([]abcitypes
 		},
 	}
 
-	return events, nil
+	receipt := TransactionReceipt{
+		GasCost: txGasCost,
+	}
+
+	return &abcitypes.ExecTxResult{
+		Code:      types.NoError,
+		Events:    events,
+		GasUsed:   100,
+		GasWanted: 100,
+		Data:      receipt.Bytes(),
+	}
 }
 
 func ParseSwapResourcesTransaction(tx Transaction) (SwapResourcesTransaction, error) {

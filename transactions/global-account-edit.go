@@ -2,6 +2,9 @@ package transactions
 
 import (
 	"errors"
+
+	abcitypes "github.com/cometbft/cometbft/abci/types"
+	"github.com/ochain-gg/ochain-network/types"
 )
 
 type ChangeAccountIAMTransactionData struct {
@@ -18,7 +21,7 @@ type ChangeAccountIAMTransaction struct {
 	Signature string          `cbor:"5,keyasint"`
 }
 
-func (tx *ChangeAccountIAMTransaction) Check(ctx TransactionContext) (uint64, error) {
+func (tx *ChangeAccountIAMTransaction) Check(ctx TransactionContext) *abcitypes.ResponseCheckTx {
 	_, err := ctx.Db.GlobalsAccounts.Get(tx.From)
 	if err != nil {
 		return 1, errors.New("account don't exists")
@@ -28,12 +31,22 @@ func (tx *ChangeAccountIAMTransaction) Check(ctx TransactionContext) (uint64, er
 	return 0, nil
 }
 
-func (tx *ChangeAccountIAMTransaction) Execute(ctx TransactionContext) (uint64, error) {
-	_, err := ctx.Db.GlobalsAccounts.Get(tx.From)
-	if err != nil {
-		return 1, errors.New("account don't exists")
+func (tx *ChangeAccountIAMTransaction) Execute(ctx TransactionContext) *abcitypes.ExecTxResult {
+	result := tx.Check(ctx)
+	if result.Code != types.NoError {
+		return &abcitypes.ExecTxResult{
+			Code: result.GetCode(),
+		}
 	}
 
-	//TODO: verify authrorizer signature
-	return 0, nil
+	_, err := ctx.Db.GlobalsAccounts.Get(tx.From)
+	if err != nil {
+		return &abcitypes.ExecTxResult{
+			Code: types.ExecuteTransactionFailure,
+		}
+	}
+
+	return &abcitypes.ExecTxResult{
+		Code: types.NoError,
+	}
 }

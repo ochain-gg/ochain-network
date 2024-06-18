@@ -95,6 +95,18 @@ type Transaction struct {
 	Signature []byte          `cbor:"5,keyasint,omitempty"`
 }
 
+type TransactionReceipt struct {
+	GasCost uint64 `cbor:"1,keyasint"`
+}
+
+func (receipt *TransactionReceipt) Bytes() []byte {
+	receiptBytes, err := cbor.Marshal(receipt)
+	if err != nil {
+		return []byte("")
+	}
+	return receiptBytes
+}
+
 func (tx *Transaction) UniqueID() ([]byte, error) {
 
 	payload, err := cbor.Marshal(tx)

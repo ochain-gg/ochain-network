@@ -1,7 +1,6 @@
 package transactions
 
 import (
-	"errors"
 	"fmt"
 
 	abcitypes "github.com/cometbft/cometbft/abci/types"
@@ -33,25 +32,33 @@ func (tx *ExecuteUpgradeTransaction) Transaction() (Transaction, error) {
 	}, nil
 }
 
-func (tx *ExecuteUpgradeTransaction) Check(ctx TransactionContext) error {
+func (tx *ExecuteUpgradeTransaction) Check(ctx TransactionContext) *abcitypes.ResponseCheckTx {
 	currentDate := uint64(ctx.Date.Unix())
 	universe, err := ctx.Db.Universes.GetAt(tx.Data.Universe, currentDate)
-	if err == nil {
-		return errors.New("universe doesn't exists")
+	if err != nil {
+		return &abcitypes.ResponseCheckTx{
+			Code: types.InvalidTransactionError,
+		}
 	}
 
 	planet, err := ctx.Db.Planets.GetAt(tx.Data.Universe, tx.Data.Planet, currentDate)
-	if err == nil {
-		return errors.New("planet doesn't exists")
+	if err != nil {
+		return &abcitypes.ResponseCheckTx{
+			Code: types.InvalidTransactionError,
+		}
 	}
 
 	pendingUpgrades, err := ctx.Db.Upgrades.GetPendingTechnologyUpgradesByPlanetAt(universe.Id, planet.CoordinateId(), uint64(ctx.Date.Unix()))
 	if err != nil {
-		return errors.New("errors on pending upgrades loading")
+		return &abcitypes.ResponseCheckTx{
+			Code: types.InvalidTransactionError,
+		}
 	}
 
 	if len(pendingUpgrades) == 0 {
-		return errors.New("no upgrade pending")
+		return &abcitypes.ResponseCheckTx{
+			Code: types.InvalidTransactionError,
+		}
 	}
 
 	for i := 0; i < len(pendingUpgrades); i++ {
@@ -62,42 +69,58 @@ func (tx *ExecuteUpgradeTransaction) Check(ctx TransactionContext) error {
 		}
 
 		if upgrade.EndedAt > ctx.Date.Unix() {
-			return errors.New("upgrade end time not reached")
+			return &abcitypes.ResponseCheckTx{
+				Code: types.InvalidTransactionError,
+			}
 		}
 	}
 
-	return nil
+	return &abcitypes.ResponseCheckTx{
+		Code: types.NoError,
+	}
 }
 
-func (tx *ExecuteUpgradeTransaction) Execute(ctx TransactionContext) ([]abcitypes.Event, error) {
-	err := tx.Check(ctx)
-	if err != nil {
-		return []abcitypes.Event{}, err
+func (tx *ExecuteUpgradeTransaction) Execute(ctx TransactionContext) *abcitypes.ExecTxResult {
+	result := tx.Check(ctx)
+	if result.Code != types.NoError {
+		return &abcitypes.ExecTxResult{
+			Code: result.GetCode(),
+		}
 	}
 
 	currentDate := uint64(ctx.Date.Unix())
 	universe, err := ctx.Db.Universes.GetAt(tx.Data.Universe, currentDate)
-	if err == nil {
-		return []abcitypes.Event{}, errors.New("universe doesn't exists")
+	if err != nil {
+		return &abcitypes.ExecTxResult{
+			Code: types.InvalidTransactionError,
+		}
 	}
 
 	planet, err := ctx.Db.Planets.GetAt(tx.Data.Universe, tx.Data.Planet, currentDate)
-	if err == nil {
-		return []abcitypes.Event{}, errors.New("planet doesn't exists")
+	if err != nil {
+		return &abcitypes.ExecTxResult{
+			Code: types.InvalidTransactionError,
+		}
 	}
 
 	account, err := ctx.Db.UniverseAccounts.GetAt(universe.Id, planet.Owner, currentDate)
-	if err == nil {
-		return []abcitypes.Event{}, errors.New("account doesn't exists")
+	if err != nil {
+		return &abcitypes.ExecTxResult{
+			Code: types.InvalidTransactionError,
+		}
 	}
 
 	pendingUpgrades, err := ctx.Db.Upgrades.GetPendingTechnologyUpgradesByPlanetAt(universe.Id, planet.CoordinateId(), uint64(ctx.Date.Unix()))
 	if err != nil {
-		return []abcitypes.Event{}, errors.New("errors on pending upgrades loading")
+		return &abcitypes.ExecTxResult{
+			Code: types.InvalidTransactionError,
+		}
 	}
 
 	if len(pendingUpgrades) == 0 {
-		return []abcitypes.Event{}, errors.New("no upgrade pending")
+		return &abcitypes.ExecTxResult{
+			Code: types.InvalidTransactionError,
+		}
 	}
 
 	var level uint64
@@ -110,7 +133,9 @@ func (tx *ExecuteUpgradeTransaction) Execute(ctx TransactionContext) ([]abcitype
 		}
 
 		if upgrade.EndedAt > ctx.Date.Unix() {
-			return []abcitypes.Event{}, errors.New("upgrade end time not reached")
+			return &abcitypes.ExecTxResult{
+				Code: types.InvalidTransactionError,
+			}
 		}
 
 		upgrade.Executed = true
@@ -119,7 +144,9 @@ func (tx *ExecuteUpgradeTransaction) Execute(ctx TransactionContext) ([]abcitype
 			planet.SetBuildingLevel(types.OChainBuildingID(upgrade.UpgradeId), upgrade.Level)
 			err = ctx.Db.Planets.Update(universe.Id, planet)
 			if err != nil {
-				return []abcitypes.Event{}, err
+				return &abcitypes.ExecTxResult{
+					Code: types.InvalidTransactionError,
+				}
 			}
 		}
 
@@ -127,7 +154,9 @@ func (tx *ExecuteUpgradeTransaction) Execute(ctx TransactionContext) ([]abcitype
 			account.SetTechnologyLevel(types.OChainTechnologyID(upgrade.UpgradeId), upgrade.Level)
 			err = ctx.Db.UniverseAccounts.Update(account)
 			if err != nil {
-				return []abcitypes.Event{}, err
+				return &abcitypes.ExecTxResult{
+					Code: types.InvalidTransactionError,
+				}
 			}
 		}
 
@@ -135,7 +164,9 @@ func (tx *ExecuteUpgradeTransaction) Execute(ctx TransactionContext) ([]abcitype
 
 		err = ctx.Db.Upgrades.Update(upgrade)
 		if err != nil {
-			return []abcitypes.Event{}, err
+			return &abcitypes.ExecTxResult{
+				Code: types.InvalidTransactionError,
+			}
 		}
 	}
 
@@ -168,7 +199,12 @@ func (tx *ExecuteUpgradeTransaction) Execute(ctx TransactionContext) ([]abcitype
 		},
 	}
 
-	return events, nil
+	return &abcitypes.ExecTxResult{
+		Code:      types.NoError,
+		Events:    events,
+		GasUsed:   0,
+		GasWanted: 0,
+	}
 }
 
 func ParseExecuteUpgradeTransaction(tx Transaction) (ExecuteUpgradeTransaction, error) {

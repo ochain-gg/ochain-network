@@ -2,7 +2,6 @@ package transactions
 
 import (
 	"encoding/hex"
-	"errors"
 	"fmt"
 	"math/big"
 
@@ -40,46 +39,65 @@ func (tx *RegisterUniverseAccountTransaction) Transaction() (Transaction, error)
 	}, nil
 }
 
-func (tx *RegisterUniverseAccountTransaction) Check(ctx TransactionContext) error {
+func (tx *RegisterUniverseAccountTransaction) Check(ctx TransactionContext) *abcitypes.ResponseCheckTx {
 	_, err := ctx.Db.GlobalsAccounts.Get(tx.From)
-	if err == nil {
-		return errors.New("account doesn't exists")
+	if err != nil {
+		return &abcitypes.ResponseCheckTx{
+			Code: types.InvalidTransactionError,
+		}
 	}
 
 	universeExists, err := ctx.Db.Universes.Exists(tx.Data.UniverseId)
 	if err != nil {
-		return errors.New("error on universe account fetch")
+		return &abcitypes.ResponseCheckTx{
+			Code: types.InvalidTransactionError,
+		}
 	}
+
 	if !universeExists {
-		return errors.New("universe doesn't exists")
+		return &abcitypes.ResponseCheckTx{
+			Code: types.InvalidTransactionError,
+		}
 	}
 
 	exists, err := ctx.Db.UniverseAccounts.Exists(tx.Data.UniverseId, tx.From)
 	if err != nil {
-		return errors.New("error on universe account fetch")
+		return &abcitypes.ResponseCheckTx{
+			Code: types.InvalidTransactionError,
+		}
 	}
 
 	if exists {
-		return errors.New("universe account already exists")
+		return &abcitypes.ResponseCheckTx{
+			Code: types.InvalidTransactionError,
+		}
 	}
 
-	return nil
+	return &abcitypes.ResponseCheckTx{
+		Code: types.NoError,
+	}
 }
 
-func (tx *RegisterUniverseAccountTransaction) Execute(ctx TransactionContext) ([]abcitypes.Event, error) {
-	err := tx.Check(ctx)
-	if err != nil {
-		return []abcitypes.Event{}, err
+func (tx *RegisterUniverseAccountTransaction) Execute(ctx TransactionContext) *abcitypes.ExecTxResult {
+	result := tx.Check(ctx)
+	if result.Code != types.NoError {
+		return &abcitypes.ExecTxResult{
+			Code: result.GetCode(),
+		}
 	}
 
 	globalAccount, err := ctx.Db.GlobalsAccounts.Get(tx.From)
-	if err == nil {
-		return []abcitypes.Event{}, errors.New("account doesn't exists")
+	if err != nil {
+		return &abcitypes.ExecTxResult{
+			Code: types.InvalidTransactionError,
+		}
 	}
 
 	universe, err := ctx.Db.Universes.Get(tx.Data.UniverseId)
 	if err != nil {
-		return []abcitypes.Event{}, errors.New("error on universe account fetch")
+		return &abcitypes.ExecTxResult{
+			Code: types.InvalidTransactionError,
+		}
 	}
 
 	account := types.OChainUniverseAccount{
@@ -151,7 +169,9 @@ func (tx *RegisterUniverseAccountTransaction) Execute(ctx TransactionContext) ([
 		coordinateId = types.CoordinateId(galaxy.Uint64(), solarSystem.Uint64(), planet.Uint64())
 		exists, err := ctx.Db.Planets.Exists(tx.Data.UniverseId, coordinateId)
 		if err != nil {
-			return []abcitypes.Event{}, err
+			return &abcitypes.ExecTxResult{
+				Code: types.InvalidTransactionError,
+			}
 		}
 
 		if exists {
@@ -223,18 +243,35 @@ func (tx *RegisterUniverseAccountTransaction) Execute(ctx TransactionContext) ([
 
 	err = ctx.Db.UniverseAccounts.Insert(account)
 	if err != nil {
-		return []abcitypes.Event{}, err
+		return &abcitypes.ExecTxResult{
+			Code: types.InvalidTransactionError,
+		}
 	}
 
 	err = ctx.Db.Planets.Insert(universe.Id, p)
 	if err != nil {
-		return []abcitypes.Event{}, err
+		return &abcitypes.ExecTxResult{
+			Code: types.InvalidTransactionError,
+		}
 	}
 
 	universe.Accounts += 1
 	err = ctx.Db.Universes.Update(universe)
 	if err != nil {
-		return []abcitypes.Event{}, err
+		return &abcitypes.ExecTxResult{
+			Code: types.InvalidTransactionError,
+		}
+	}
+
+	txGasCost, err := globalAccount.ApplyGasCost(uint64(ctx.Date.Unix()))
+	if err != nil {
+		return &abcitypes.ExecTxResult{
+			Code: types.GasCostHigherThanBalance,
+		}
+	}
+
+	receipt := TransactionReceipt{
+		GasCost: txGasCost,
 	}
 
 	events := []abcitypes.Event{
@@ -255,7 +292,13 @@ func (tx *RegisterUniverseAccountTransaction) Execute(ctx TransactionContext) ([
 		},
 	}
 
-	return events, nil
+	return &abcitypes.ExecTxResult{
+		Code:      types.NoError,
+		Events:    events,
+		GasUsed:   100,
+		GasWanted: 100,
+		Data:      receipt.Bytes(),
+	}
 }
 
 func ParseRegisterUniverseAccountTransaction(tx Transaction) (RegisterUniverseAccountTransaction, error) {

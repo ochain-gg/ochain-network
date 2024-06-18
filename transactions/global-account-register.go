@@ -1,9 +1,7 @@
 package transactions
 
 import (
-	"errors"
 	"fmt"
-	"log"
 
 	abcitypes "github.com/cometbft/cometbft/abci/types"
 	"github.com/ethereum/go-ethereum/common"
@@ -46,10 +44,12 @@ func (tx *RegisterAccountTransaction) Transaction() (Transaction, error) {
 	}, nil
 }
 
-func (tx *RegisterAccountTransaction) Check(ctx TransactionContext) error {
+func (tx *RegisterAccountTransaction) Check(ctx TransactionContext) *abcitypes.ResponseCheckTx {
 	_, err := ctx.Db.GlobalsAccounts.Get(tx.Data.Address)
 	if err == nil {
-		return errors.New("account aleady exists")
+		return &abcitypes.ResponseCheckTx{
+			Code: types.InvalidTransactionError,
+		}
 	}
 
 	typedData := apitypes.TypedData{
@@ -78,11 +78,16 @@ func (tx *RegisterAccountTransaction) Check(ctx TransactionContext) error {
 	// EIP-712 typed data marshalling
 	domainSeparator, err := typedData.HashStruct("EIP712Domain", typedData.Domain.Map())
 	if err != nil {
-		return err
+		return &abcitypes.ResponseCheckTx{
+			Code: types.InvalidTransactionError,
+		}
 	}
+
 	typedDataHash, err := typedData.HashStruct(typedData.PrimaryType, typedData.Message)
 	if err != nil {
-		return err
+		return &abcitypes.ResponseCheckTx{
+			Code: types.InvalidTransactionError,
+		}
 	}
 
 	typedDataHashSigned := []byte(fmt.Sprintf("\x19\x01%s%s", string(domainSeparator), string(typedDataHash)))
@@ -95,22 +100,27 @@ func (tx *RegisterAccountTransaction) Check(ctx TransactionContext) error {
 
 	sigPubkey, err := crypto.SigToPub(sighash, signature)
 	if err != nil {
-		log.Println("SigToPub: " + err.Error())
-		return err
+		return &abcitypes.ResponseCheckTx{
+			Code: types.InvalidTransactionError,
+		}
 	}
 
 	address := crypto.PubkeyToAddress(*sigPubkey)
 	if address != common.HexToAddress("0x190144001306820e9BdF6eB2dB8d747B4fCE7980") {
-		return errors.New("bad registration signature")
+		return &abcitypes.ResponseCheckTx{
+			Code: types.InvalidTransactionError,
+		}
 	}
 
 	return nil
 }
 
-func (tx *RegisterAccountTransaction) Execute(ctx TransactionContext) ([]abcitypes.Event, error) {
-	err := tx.Check(ctx)
-	if err != nil {
-		return []abcitypes.Event{}, err
+func (tx *RegisterAccountTransaction) Execute(ctx TransactionContext) *abcitypes.ExecTxResult {
+	response := tx.Check(ctx)
+	if response.Code != types.NoError {
+		return &abcitypes.ExecTxResult{
+			Code: response.Code,
+		}
 	}
 
 	account := types.OChainGlobalAccount{
@@ -126,9 +136,11 @@ func (tx *RegisterAccountTransaction) Execute(ctx TransactionContext) ([]abcityp
 		CreatedAt: ctx.Date.Unix(),
 	}
 
-	err = ctx.Db.GlobalsAccounts.Insert(account)
+	err := ctx.Db.GlobalsAccounts.Insert(account)
 	if err != nil {
-		return []abcitypes.Event{}, err
+		return &abcitypes.ExecTxResult{
+			Code: types.InvalidTransactionError,
+		}
 	}
 
 	events := []abcitypes.Event{
@@ -140,7 +152,24 @@ func (tx *RegisterAccountTransaction) Execute(ctx TransactionContext) ([]abcityp
 		},
 	}
 
-	return events, nil
+	receipt := TransactionReceipt{
+		GasCost: 0,
+	}
+
+	receiptBytes, err := cbor.Marshal(receipt)
+	if err != nil {
+		return &abcitypes.ExecTxResult{
+			Code: types.InvalidTransactionError,
+		}
+	}
+
+	return &abcitypes.ExecTxResult{
+		Code:      types.NoError,
+		Events:    events,
+		GasUsed:   0,
+		GasWanted: 0,
+		Data:      receiptBytes,
+	}
 }
 
 func ParseRegisterAccountTransaction(tx Transaction) (RegisterAccountTransaction, error) {
