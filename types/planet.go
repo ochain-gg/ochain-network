@@ -82,6 +82,20 @@ type OChainPlanetDefences struct {
 	DarkMatterCanon uint64 `cbor:"7,keyasint"`
 }
 
+type OChainBuild struct {
+	BuildType OChainBuildType `cbor:"1,keyasint"`
+	BuildId   string          `cbor:"2,keyasint"`
+	Count     uint64          `cbor:"3,keyasint"`
+}
+
+type OChainBuildQueueItem struct {
+	BuildType OChainBuildType `cbor:"1,keyasint"`
+	BuildId   string          `cbor:"2,keyasint"`
+	Count     uint64          `cbor:"3,keyasint"`
+	StartedAt uint64          `cbor:"4,keyasint"`
+	FinishAt  uint64          `cbor:"5,keyasint"`
+}
+
 type OChainPlanet struct {
 	Owner       string `cbor:"1,keyasint"`
 	Universe    string `cbor:"2,keyasint"`
@@ -94,7 +108,9 @@ type OChainPlanet struct {
 	Defenses   OChainPlanetDefences  `cbor:"8,keyasint"`
 	Resources  OChainResources       `cbor:"9,keyasint"`
 
-	LastResourceUpdate int64 `cbor:"10,keyasint"`
+	BuildQueue []OChainBuildQueueItem `cbor:"10,keyasint"`
+
+	LastResourceUpdate int64 `cbor:"11,keyasint"`
 }
 
 func (planet *OChainPlanet) CoordinateId() string {
@@ -151,6 +167,102 @@ func (planet *OChainPlanet) SetBuildingLevel(id OChainBuildingID, level uint64) 
 		planet.Buildings.ShieldDome = level
 	}
 
+}
+
+func (planet *OChainPlanet) AddDefenses(id OChainDefenseID, count uint64) {
+	switch id {
+	case RocketLauncherID:
+		planet.Defenses.RocketLauncher += count
+	case LightLaserID:
+		planet.Defenses.LightLaser += count
+	case HeavyLaserID:
+		planet.Defenses.HeavyLaser += count
+	case IonCannonID:
+		planet.Defenses.IonCannon += count
+	case GaussCannonID:
+		planet.Defenses.GaussCannon += count
+	case PlasmaTurretID:
+		planet.Defenses.PlasmaTurret += count
+	case DarkMatterCanonID:
+		planet.Defenses.DarkMatterCanon += count
+	}
+}
+
+func (planet *OChainPlanet) RemoveDefenses(id OChainDefenseID, count uint64) {
+	switch id {
+	case RocketLauncherID:
+		planet.Defenses.RocketLauncher -= count
+	case LightLaserID:
+		planet.Defenses.LightLaser -= count
+	case HeavyLaserID:
+		planet.Defenses.HeavyLaser -= count
+	case IonCannonID:
+		planet.Defenses.IonCannon -= count
+	case GaussCannonID:
+		planet.Defenses.GaussCannon -= count
+	case PlasmaTurretID:
+		planet.Defenses.PlasmaTurret -= count
+	case DarkMatterCanonID:
+		planet.Defenses.DarkMatterCanon -= count
+	}
+}
+
+func (planet *OChainPlanet) AddSpaceships(id OChainSpaceshipID, count uint64) {
+	switch id {
+	case SmallCargoID:
+		planet.Spaceships.SmallCargo += count
+	case LargeCargoID:
+		planet.Spaceships.LargeCargo += count
+	case LightFighterID:
+		planet.Spaceships.LightFighter += count
+	case HeavyFighterID:
+		planet.Spaceships.HeavyFighter += count
+	case CruiserID:
+		planet.Spaceships.Cruiser += count
+	case BattleshipID:
+		planet.Spaceships.Battleship += count
+	case BattlecruiserID:
+		planet.Spaceships.Battlecruiser += count
+	case BomberID:
+		planet.Spaceships.Bomber += count
+	case DestroyerID:
+		planet.Spaceships.Destroyer += count
+	case DeathstarID:
+		planet.Spaceships.Deathstar += count
+	case ReaperID:
+		planet.Spaceships.Reaper += count
+	case RecyclerID:
+		planet.Spaceships.Recycler += count
+	}
+}
+
+func (planet *OChainPlanet) RemoveSpaceships(id OChainSpaceshipID, count uint64) {
+	switch id {
+	case SmallCargoID:
+		planet.Spaceships.SmallCargo -= count
+	case LargeCargoID:
+		planet.Spaceships.LargeCargo -= count
+	case LightFighterID:
+		planet.Spaceships.LightFighter -= count
+	case HeavyFighterID:
+		planet.Spaceships.HeavyFighter -= count
+	case CruiserID:
+		planet.Spaceships.Cruiser -= count
+	case BattleshipID:
+		planet.Spaceships.Battleship -= count
+	case BattlecruiserID:
+		planet.Spaceships.Battlecruiser -= count
+	case BomberID:
+		planet.Spaceships.Bomber -= count
+	case DestroyerID:
+		planet.Spaceships.Destroyer -= count
+	case DeathstarID:
+		planet.Spaceships.Deathstar -= count
+	case ReaperID:
+		planet.Spaceships.Reaper -= count
+	case RecyclerID:
+		planet.Spaceships.Recycler -= count
+	}
 }
 
 func (planet *OChainPlanet) AddResourceById(id MarketResourceID, amount uint64) {
@@ -225,6 +337,46 @@ func (planet *OChainPlanet) Pay(cost OChainResources) error {
 	planet.Resources.Crystal -= cost.Crystal
 	planet.Resources.Deuterium -= cost.Deuterium
 	return nil
+}
+
+func (planet *OChainPlanet) UpdateBuildQueue(timestamp uint64) {
+	newState := []OChainBuildQueueItem{}
+	for i := 0; i < len(planet.BuildQueue); i++ {
+		item := planet.BuildQueue[i]
+
+		//if currently processing or ended
+		if item.StartedAt > timestamp {
+
+			//if item in queue is finished
+			if item.FinishAt <= timestamp {
+				if item.BuildType == OChainDefenseBuild {
+					planet.AddDefenses(OChainDefenseID(item.BuildId), item.Count)
+				}
+				if item.BuildType == OChainSpaceshipBuild {
+					planet.AddSpaceships(OChainSpaceshipID(item.BuildId), item.Count)
+				}
+			} else {
+				//if item isn't finished yet
+				itemDuration := (item.FinishAt - item.StartedAt) / item.Count
+				effectiveTime := timestamp - item.StartedAt
+
+				itemsFinished := effectiveTime / itemDuration
+				if item.BuildType == OChainDefenseBuild {
+					planet.AddDefenses(OChainDefenseID(item.BuildId), itemsFinished)
+				}
+				if item.BuildType == OChainSpaceshipBuild {
+					planet.AddSpaceships(OChainSpaceshipID(item.BuildId), itemsFinished)
+				}
+
+				item.Count -= itemsFinished
+				item.StartedAt = item.StartedAt + (itemsFinished * itemDuration)
+
+				newState = append(newState, item)
+			}
+		}
+
+	}
+	planet.BuildQueue = newState
 }
 
 func (planet *OChainPlanet) UpdateResources(speed uint64, timestamp int64, account OChainUniverseAccount) {
