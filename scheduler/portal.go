@@ -130,14 +130,11 @@ func CheckAndHandlePortalUpdate(cfg config.OChainConfig, db *database.OChainData
 			log.Print("new validator evm log detected")
 
 			tx := transactions.NewValidatorTransaction{
-				Type: transactions.OChainPortalInteraction,
+				Type: transactions.NewValidator,
 				Data: transactions.NewValidatorTransactionData{
-					Type: transactions.NewValidatorPortalInteractionType,
-					Arguments: transactions.NewValidatorTransactionDataArguments{
-						ValidatorId:           newValidatorLog.ValidatorId.Uint64(),
-						RemoteTransactionHash: l.TxHash.Hex(),
-						PublicKey:             newValidatorLog.PublicKey,
-					},
+					ValidatorId:           newValidatorLog.ValidatorId.Uint64(),
+					RemoteTransactionHash: l.TxHash.Hex(),
+					PublicKey:             newValidatorLog.PublicKey,
 				},
 			}
 
@@ -183,13 +180,10 @@ func CheckAndHandlePortalUpdate(cfg config.OChainConfig, db *database.OChainData
 			log.Print("remove validator evm log detected")
 
 			tx := transactions.RemoveValidatorTransaction{
-				Type: transactions.OChainPortalInteraction,
+				Type: transactions.RemoveValidator,
 				Data: transactions.RemoveValidatorTransactionData{
-					Type: transactions.RemoveValidatorPortalInteractionType,
-					Arguments: transactions.RemoveValidatorTransactionDataArguments{
-						ValidatorId:           removeValidatorLog.ValidatorId.Uint64(),
-						RemoteTransactionHash: l.TxHash.Hex(),
-					},
+					ValidatorId:           removeValidatorLog.ValidatorId.Uint64(),
+					RemoteTransactionHash: l.TxHash.Hex(),
 				},
 			}
 
@@ -217,13 +211,10 @@ func CheckAndHandlePortalUpdate(cfg config.OChainConfig, db *database.OChainData
 		if err == nil {
 			log.Print("token deposit evm log detected")
 
-			tx := transactions.TokenDepositTransaction{
-				Type: transactions.OChainPortalInteraction,
-				Data: transactions.TokenDepositTransactionData{
-					Type: transactions.OChainTokenDepositPortalInteractionType,
-					Arguments: transactions.TokenDepositTransactionDataArguments{
-						RemoteTransactionHash: l.TxHash.Hex(),
-					},
+			tx := transactions.OChainTokenDepositTransaction{
+				Type: transactions.OChainTokenDeposit,
+				Data: transactions.OChainTokenDepositTransactionData{
+					RemoteTransactionHash: l.TxHash.Hex(),
 				},
 			}
 

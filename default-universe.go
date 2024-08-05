@@ -1111,7 +1111,7 @@ var DefaultDefenses []types.OChainDefense = []types.OChainDefense{
 			OCT:       0,
 			Metal:     20_000,
 			Crystal:   20_000,
-			Deuterium: 5000,
+			Deuterium: 5_000,
 		},
 		Dependencies: []types.OChainDependency{
 			{
@@ -1130,9 +1130,9 @@ var DefaultDefenses []types.OChainDefense = []types.OChainDefense{
 		Id:   types.DarkMatterCanonID,
 		Name: "Dark matter canon",
 		FighterStats: types.OChainFighterStats{
-			Armor:  500000,
-			Shield: 1000,
-			Attack: 100000,
+			Armor:  500_000,
+			Shield: 1_000,
+			Attack: 100_000,
 		},
 		Cost: types.OChainResources{
 			OCT:       0,

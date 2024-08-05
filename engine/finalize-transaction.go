@@ -23,7 +23,7 @@ func FinalizeTx(ctx transactions.TransactionContext, tx []byte) (*abcitypes.Exec
 		return &abcitypes.ExecTxResult{Code: types.InvalidTransactionError, GasWanted: 0, GasUsed: 0}, []abcitypes.ValidatorUpdate{}
 	}
 
-	isSystemTx := transaction.Type == transactions.OChainPortalInteraction || transaction.Type == transactions.ExecutePendingUpgrade
+	isSystemTx := uint64(transaction.Type) <= 5
 	if isSystemTx {
 		return FinalizeSystemTx(ctx, transaction)
 	} else {

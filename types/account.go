@@ -210,8 +210,6 @@ func (acc *OChainUniverseAccount) SubscribeToCommander(timestamp int64, commande
 		CommanderId: commander,
 		EndedAt:     timestamp + 1209600,
 	})
-
-	return
 }
 
 func (acc *OChainUniverseAccount) HasEngineerCommander(timestamp int64) bool {

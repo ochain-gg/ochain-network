@@ -1,8 +1,6 @@
 package transactions
 
 import (
-	"errors"
-
 	abcitypes "github.com/cometbft/cometbft/abci/types"
 	"github.com/ochain-gg/ochain-network/types"
 )
@@ -24,11 +22,15 @@ type ChangeAccountIAMTransaction struct {
 func (tx *ChangeAccountIAMTransaction) Check(ctx TransactionContext) *abcitypes.ResponseCheckTx {
 	_, err := ctx.Db.GlobalsAccounts.Get(tx.From)
 	if err != nil {
-		return 1, errors.New("account don't exists")
+		return &abcitypes.ResponseCheckTx{
+			Code: types.InvalidTransactionError,
+		}
 	}
 
 	//TODO: verify authrorizer signature
-	return 0, nil
+	return &abcitypes.ResponseCheckTx{
+		Code: types.NoError,
+	}
 }
 
 func (tx *ChangeAccountIAMTransaction) Execute(ctx TransactionContext) *abcitypes.ExecTxResult {

@@ -9,21 +9,21 @@ import (
 	"github.com/ochain-gg/ochain-network/types"
 )
 
-type BuildDefensesTransactionData struct {
-	Universe string            `cbor:"1,keyasint"`
-	Planet   string            `cbor:"2,keyasint"`
-	Builds   types.OChainBuild `cbor:"3,keyasint"`
+type BuildTransactionData struct {
+	UniverseId         string              `cbor:"1,keyasint"`
+	PlanetCoordinateId string              `cbor:"2,keyasint"`
+	Builds             []types.OChainBuild `cbor:"3,keyasint"`
 }
 
-type BuildDefensesTransaction struct {
-	Type      TransactionType              `cbor:"1,keyasint"`
-	From      string                       `cbor:"2,keyasint"`
-	Nonce     uint64                       `cbor:"3,keyasint"`
-	Data      BuildDefensesTransactionData `cbor:"4,keyasint"`
-	Signature []byte                       `cbor:"5,keyasint"`
+type BuildTransaction struct {
+	Type      TransactionType      `cbor:"1,keyasint"`
+	From      string               `cbor:"2,keyasint"`
+	Nonce     uint64               `cbor:"3,keyasint"`
+	Data      BuildTransactionData `cbor:"4,keyasint"`
+	Signature []byte               `cbor:"5,keyasint"`
 }
 
-func (tx *BuildDefensesTransaction) Transaction() (Transaction, error) {
+func (tx *BuildTransaction) Transaction() (Transaction, error) {
 	txData, err := cbor.Marshal(tx.Data)
 	if err != nil {
 		return Transaction{}, err
@@ -38,7 +38,7 @@ func (tx *BuildDefensesTransaction) Transaction() (Transaction, error) {
 	}, nil
 }
 
-func (tx *BuildDefensesTransaction) Check(ctx TransactionContext) *abcitypes.ResponseCheckTx {
+func (tx *BuildTransaction) Check(ctx TransactionContext) *abcitypes.ResponseCheckTx {
 	_, err := ctx.Db.GlobalsAccounts.GetAt(tx.From, uint64(ctx.Date.Unix()))
 	if err != nil {
 		return &abcitypes.ResponseCheckTx{
@@ -46,70 +46,92 @@ func (tx *BuildDefensesTransaction) Check(ctx TransactionContext) *abcitypes.Res
 		}
 	}
 
-	account, err := ctx.Db.UniverseAccounts.GetAt(tx.Data.Universe, tx.From, uint64(ctx.Date.Unix()))
+	account, err := ctx.Db.UniverseAccounts.GetAt(tx.Data.UniverseId, tx.From, uint64(ctx.Date.Unix()))
 	if err != nil {
 		return &abcitypes.ResponseCheckTx{
 			Code: types.InvalidTransactionError,
 		}
 	}
 
-	universe, err := ctx.Db.Universes.GetAt(tx.Data.Universe, uint64(ctx.Date.Unix()))
+	universe, err := ctx.Db.Universes.GetAt(tx.Data.UniverseId, uint64(ctx.Date.Unix()))
 	if err != nil {
 		return &abcitypes.ResponseCheckTx{
 			Code: types.InvalidTransactionError,
 		}
 	}
 
-	planet, err := ctx.Db.Planets.GetAt(tx.Data.Universe, tx.Data.Planet, uint64(ctx.Date.Unix()))
+	planet, err := ctx.Db.Planets.GetAt(tx.Data.UniverseId, tx.Data.PlanetCoordinateId, uint64(ctx.Date.Unix()))
 	if err != nil {
 		return &abcitypes.ResponseCheckTx{
 			Code: types.InvalidTransactionError,
 		}
 	}
 
-	building, err := ctx.Db.Buildings.GetAt(tx.Data.Building, uint64(ctx.Date.Unix()))
-	if err != nil {
-		return &abcitypes.ResponseCheckTx{
-			Code: types.InvalidTransactionError,
-		}
+	totalCost := types.OChainResources{
+		OCT:       0,
+		Metal:     0,
+		Crystal:   0,
+		Deuterium: 0,
 	}
 
-	ok := building.MeetRequirements(planet, account)
-	if !ok {
-		return &abcitypes.ResponseCheckTx{
-			Code: types.InvalidTransactionError,
+	for i := 0; i < len(tx.Data.Builds); i++ {
+		build := tx.Data.Builds[i]
+		if build.BuildType == types.OChainSpaceshipBuild {
+
+			spaceship, err := ctx.Db.Spaceships.GetAt(build.BuildId, uint64(ctx.Date.Unix()))
+			if err != nil {
+				return &abcitypes.ResponseCheckTx{
+					Code: types.InvalidTransactionError,
+				}
+			}
+
+			ok := spaceship.MeetRequirements(planet, account)
+			if !ok {
+				return &abcitypes.ResponseCheckTx{
+					Code: types.InvalidTransactionError,
+				}
+			}
+
+			cost := spaceship.Cost
+			cost.Mul(build.Count)
+			totalCost.Add(cost)
+		}
+
+		if build.BuildType == types.OChainDefenseBuild {
+			defense, err := ctx.Db.Defenses.GetAt(build.BuildId, uint64(ctx.Date.Unix()))
+			if err != nil {
+				return &abcitypes.ResponseCheckTx{
+					Code: types.InvalidTransactionError,
+				}
+			}
+
+			ok := defense.MeetRequirements(planet, account)
+			if !ok {
+				return &abcitypes.ResponseCheckTx{
+					Code: types.InvalidTransactionError,
+				}
+			}
+
+			cost := defense.Cost
+			cost.Mul(build.Count)
+			totalCost.Add(cost)
 		}
 	}
 
 	planet.UpdateResources(universe.Speed, int64(ctx.Date.Unix()), account)
-
-	level := planet.BuildingLevel(building.Id) + 1
-	cost := building.GetUpgradeCost(level)
-
-	payable := planet.CanPay(cost)
+	payable := planet.CanPay(totalCost)
 	if !payable {
 		return &abcitypes.ResponseCheckTx{
 			Code: types.InvalidTransactionError,
 		}
 	}
 
-	pendingUpgrades, err := ctx.Db.Upgrades.GetPendingBuildingUpgradesByPlanetAt(universe.Id, planet.CoordinateId(), uint64(ctx.Date.Unix()))
-	if err != nil {
-		return &abcitypes.ResponseCheckTx{
-			Code: types.InvalidTransactionError,
-		}
+	return &abcitypes.ResponseCheckTx{
+		Code: types.NoError,
 	}
-
-	if len(pendingUpgrades) > 0 {
-		return &abcitypes.ResponseCheckTx{
-			Code: types.InvalidTransactionError,
-		}
-	}
-
-	return nil
 }
 
-func (tx *BuildDefensesTransaction) Execute(ctx TransactionContext) *abcitypes.ExecTxResult {
+func (tx *BuildTransaction) Execute(ctx TransactionContext) *abcitypes.ExecTxResult {
 	result := tx.Check(ctx)
 	if result.Code != types.NoError {
 		return &abcitypes.ExecTxResult{
@@ -117,84 +139,123 @@ func (tx *BuildDefensesTransaction) Execute(ctx TransactionContext) *abcitypes.E
 		}
 	}
 
-	currentDate := uint64(ctx.Date.Unix())
-	universe, err := ctx.Db.Universes.GetAt(tx.Data.Universe, currentDate)
+	globalAccount, err := ctx.Db.GlobalsAccounts.GetAt(tx.From, uint64(ctx.Date.Unix()))
 	if err != nil {
 		return &abcitypes.ExecTxResult{
 			Code: types.InvalidTransactionError,
 		}
 	}
 
-	globalAccount, err := ctx.Db.GlobalsAccounts.GetAt(tx.From, currentDate)
+	account, err := ctx.Db.UniverseAccounts.GetAt(tx.Data.UniverseId, tx.From, uint64(ctx.Date.Unix()))
 	if err != nil {
 		return &abcitypes.ExecTxResult{
 			Code: types.InvalidTransactionError,
 		}
 	}
 
-	account, err := ctx.Db.UniverseAccounts.GetAt(universe.Id, tx.From, currentDate)
+	universe, err := ctx.Db.Universes.GetAt(tx.Data.UniverseId, uint64(ctx.Date.Unix()))
 	if err != nil {
 		return &abcitypes.ExecTxResult{
 			Code: types.InvalidTransactionError,
 		}
 	}
 
-	planet, err := ctx.Db.Planets.GetAt(tx.Data.Universe, tx.Data.Planet, currentDate)
+	planet, err := ctx.Db.Planets.GetAt(tx.Data.UniverseId, tx.Data.PlanetCoordinateId, uint64(ctx.Date.Unix()))
 	if err != nil {
 		return &abcitypes.ExecTxResult{
 			Code: types.InvalidTransactionError,
 		}
 	}
 
-	building, err := ctx.Db.Buildings.GetAt(tx.Data.Building, currentDate)
+	totalCost := types.OChainResources{
+		OCT:       0,
+		Metal:     0,
+		Crystal:   0,
+		Deuterium: 0,
+	}
+
+	planet.UpdateBuildQueue(uint64(ctx.Date.Unix()))
+	planet.UpdateResources(universe.Speed, int64(ctx.Date.Unix()), account)
+
+	var buildEvents []abcitypes.Event
+	for i := 0; i < len(tx.Data.Builds); i++ {
+		build := tx.Data.Builds[i]
+		if build.BuildType == types.OChainSpaceshipBuild {
+
+			spaceship, err := ctx.Db.Spaceships.GetAt(build.BuildId, uint64(ctx.Date.Unix()))
+			if err != nil {
+				return &abcitypes.ExecTxResult{
+					Code: types.InvalidTransactionError,
+				}
+			}
+
+			duration := (spaceship.Cost.Metal + spaceship.Cost.Crystal) * 3600
+			duration /= (2500 * (1 + planet.BuildingLevel(types.SpaceshipFactoryID)) * uint64(math.Pow(float64(2), float64(planet.BuildingLevel(types.NaniteFactoryID)))) * universe.Speed)
+			duration *= build.Count
+
+			item := planet.AddItemToBuildQueue(build, duration)
+
+			buildEvents = append(buildEvents, abcitypes.Event{
+				Type: "BuildQueueItemAdded",
+				Attributes: []abcitypes.EventAttribute{
+					{Key: "account", Value: tx.From, Index: true},
+					{Key: "universe", Value: tx.Data.UniverseId, Index: true},
+					{Key: "planet", Value: tx.Data.PlanetCoordinateId, Index: true},
+					{Key: "buildType", Value: fmt.Sprint(item.BuildType)},
+					{Key: "buildId", Value: item.BuildId},
+					{Key: "count", Value: fmt.Sprint(item.Count)},
+					{Key: "startAt", Value: fmt.Sprint(item.StartAt)},
+					{Key: "finishAt", Value: fmt.Sprint(item.FinishAt)},
+				},
+			})
+
+			cost := spaceship.Cost
+			cost.Mul(build.Count)
+			totalCost.Add(cost)
+		}
+
+		if build.BuildType == types.OChainDefenseBuild {
+			defense, err := ctx.Db.Defenses.GetAt(build.BuildId, uint64(ctx.Date.Unix()))
+			if err != nil {
+				return &abcitypes.ExecTxResult{
+					Code: types.InvalidTransactionError,
+				}
+			}
+
+			duration := (defense.Cost.Metal + defense.Cost.Crystal) * 3600
+			duration /= (2500 * (1 + planet.BuildingLevel(types.SpaceshipFactoryID)) * uint64(math.Pow(float64(2), float64(planet.BuildingLevel(types.NaniteFactoryID)))) * universe.Speed)
+			duration *= build.Count
+
+			item := planet.AddItemToBuildQueue(build, duration)
+
+			buildEvents = append(buildEvents, abcitypes.Event{
+				Type: "BuildQueueItemAdded",
+				Attributes: []abcitypes.EventAttribute{
+					{Key: "account", Value: tx.From, Index: true},
+					{Key: "universe", Value: tx.Data.UniverseId, Index: true},
+					{Key: "planet", Value: tx.Data.PlanetCoordinateId, Index: true},
+					{Key: "buildType", Value: fmt.Sprint(item.BuildType)},
+					{Key: "buildId", Value: item.BuildId},
+					{Key: "count", Value: fmt.Sprint(item.Count)},
+					{Key: "startAt", Value: fmt.Sprint(item.StartAt)},
+					{Key: "finishAt", Value: fmt.Sprint(item.FinishAt)},
+				},
+			})
+
+			cost := defense.Cost
+			cost.Mul(build.Count)
+			totalCost.Add(cost)
+		}
+	}
+
+	err = planet.Pay(totalCost)
 	if err != nil {
 		return &abcitypes.ExecTxResult{
 			Code: types.InvalidTransactionError,
 		}
 	}
 
-	ok := building.MeetRequirements(planet, account)
-	if !ok {
-		return &abcitypes.ExecTxResult{
-			Code: types.InvalidTransactionError,
-		}
-	}
-
-	upgradeToLevel := planet.BuildingLevel(building.Id) + 1
-	upgradeCost := building.GetUpgradeCost(upgradeToLevel)
-
-	duration := (upgradeCost.Metal + upgradeCost.Crystal) * 3600
-	duration /= (2500 * (1 + planet.BuildingLevel(types.RoboticFactoryID)) * uint64(math.Pow(float64(2), float64(planet.BuildingLevel(types.NaniteFactoryID)))) * universe.Speed)
-
-	upgrade := types.OChainUpgrade{
-		UniverseId:         universe.Id,
-		PlanetCoordinateId: planet.CoordinateId(),
-		UpgradeType:        types.OChainBuildingUpgrade,
-		UpgradeId:          tx.Data.Building,
-		Level:              planet.BuildingLevel(building.Id) + 1,
-		StartedAt:          ctx.Date.Unix(),
-		EndedAt:            ctx.Date.Unix() + int64(duration),
-		Executed:           false,
-	}
-
-	planet.UpdateResources(universe.Speed, ctx.Date.Unix(), account)
-
-	payable := planet.CanPay(upgradeCost)
-	if !payable {
-		return &abcitypes.ExecTxResult{
-			Code: types.InvalidTransactionError,
-		}
-
-	}
-
-	err = ctx.Db.Planets.Update(tx.Data.Universe, planet)
-	if err != nil {
-		return &abcitypes.ExecTxResult{
-			Code: types.InvalidTransactionError,
-		}
-	}
-
-	err = ctx.Db.Upgrades.Insert(upgrade)
+	err = ctx.Db.Planets.Update(tx.Data.UniverseId, planet)
 	if err != nil {
 		return &abcitypes.ExecTxResult{
 			Code: types.InvalidTransactionError,
@@ -214,29 +275,21 @@ func (tx *BuildDefensesTransaction) Execute(ctx TransactionContext) *abcitypes.E
 
 	events := []abcitypes.Event{
 		{
-			Type: "UpgradeStarted",
-			Attributes: []abcitypes.EventAttribute{
-				{Key: "account", Value: tx.From, Index: true},
-				{Key: "universe", Value: tx.Data.Universe, Index: true},
-				{Key: "planet", Value: tx.Data.Planet, Index: true},
-				{Key: "buildingId", Value: tx.Data.Building},
-				{Key: "upgradeType", Value: fmt.Sprint(types.OChainBuildingUpgrade)},
-				{Key: "upgradeId", Value: tx.Data.Building},
-				{Key: "level", Value: fmt.Sprint(upgradeToLevel)},
-			},
-		},
-		{
 			Type: "PlanetResourcesUpdated",
 			Attributes: []abcitypes.EventAttribute{
 				{Key: "account", Value: tx.From, Index: true},
-				{Key: "universe", Value: tx.Data.Universe, Index: true},
-				{Key: "planet", Value: tx.Data.Planet, Index: true},
+				{Key: "universe", Value: tx.Data.UniverseId, Index: true},
+				{Key: "planet", Value: tx.Data.PlanetCoordinateId, Index: true},
 				{Key: "oct", Value: fmt.Sprint(planet.Resources.OCT)},
 				{Key: "metal", Value: fmt.Sprint(planet.Resources.Metal)},
 				{Key: "crystal", Value: fmt.Sprint(planet.Resources.Crystal)},
 				{Key: "deuterium", Value: fmt.Sprint(planet.Resources.Deuterium)},
 			},
 		},
+	}
+
+	for i := 0; i < len(buildEvents); i++ {
+		events = append(events, buildEvents[i])
 	}
 
 	return &abcitypes.ExecTxResult{
@@ -248,15 +301,15 @@ func (tx *BuildDefensesTransaction) Execute(ctx TransactionContext) *abcitypes.E
 	}
 }
 
-func ParseBuildDefensesTransaction(tx Transaction) (BuildDefensesTransaction, error) {
-	var txData BuildDefensesTransactionData
+func ParseBuildTransaction(tx Transaction) (BuildTransaction, error) {
+	var txData BuildTransactionData
 	err := cbor.Unmarshal(tx.Data, &txData)
 
 	if err != nil {
-		return BuildDefensesTransaction{}, err
+		return BuildTransaction{}, err
 	}
 
-	return BuildDefensesTransaction{
+	return BuildTransaction{
 		Type:      tx.Type,
 		From:      tx.From,
 		Nonce:     tx.Nonce,

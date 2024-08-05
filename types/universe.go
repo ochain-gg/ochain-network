@@ -9,6 +9,27 @@ type OChainResources struct {
 	Deuterium uint64 `cbor:"4,keyasint"`
 }
 
+func (resource *OChainResources) Add(r OChainResources) {
+	resource.OCT += r.OCT
+	resource.Metal += r.Metal
+	resource.Crystal += r.Crystal
+	resource.Deuterium += r.Deuterium
+}
+
+func (resource *OChainResources) Sub(r OChainResources) {
+	resource.OCT -= r.OCT
+	resource.Metal -= r.Metal
+	resource.Crystal -= r.Crystal
+	resource.Deuterium -= r.Deuterium
+}
+
+func (resource *OChainResources) Mul(factor uint64) {
+	resource.OCT *= factor
+	resource.Metal *= factor
+	resource.Crystal *= factor
+	resource.Deuterium *= factor
+}
+
 type OChainCost struct {
 	Duration  uint64
 	Resources OChainResources
@@ -50,6 +71,26 @@ type OChainSpaceship struct {
 	Dependencies []OChainDependency   `cbor:"6,keyasint"`
 }
 
+func (spaceship *OChainSpaceship) MeetRequirements(planet OChainPlanet, acc OChainUniverseAccount) bool {
+
+	for i := 0; i < len(spaceship.Dependencies); i++ {
+		dep := spaceship.Dependencies[i]
+		if dep.DependencyType == OChainBuildingDependency {
+			if planet.BuildingLevel(OChainBuildingID(dep.DependencyId)) < dep.Level {
+				return false
+			}
+		}
+
+		if dep.DependencyType == OChainTechnologyDependency {
+			if acc.TechnologyLevel(OChainTechnologyID(dep.DependencyId)) < dep.Level {
+				return false
+			}
+		}
+	}
+
+	return true
+}
+
 type OChainDependencyType uint64
 
 const (
@@ -69,6 +110,26 @@ type OChainDefense struct {
 	FighterStats OChainFighterStats `cbor:"3,keyasint"`
 	Cost         OChainResources    `cbor:"4,keyasint"`
 	Dependencies []OChainDependency `cbor:"5,keyasint"`
+}
+
+func (defense *OChainDefense) MeetRequirements(planet OChainPlanet, acc OChainUniverseAccount) bool {
+
+	for i := 0; i < len(defense.Dependencies); i++ {
+		dep := defense.Dependencies[i]
+		if dep.DependencyType == OChainBuildingDependency {
+			if planet.BuildingLevel(OChainBuildingID(dep.DependencyId)) < dep.Level {
+				return false
+			}
+		}
+
+		if dep.DependencyType == OChainTechnologyDependency {
+			if acc.TechnologyLevel(OChainTechnologyID(dep.DependencyId)) < dep.Level {
+				return false
+			}
+		}
+	}
+
+	return true
 }
 
 type OChainAccountTechnologies struct {

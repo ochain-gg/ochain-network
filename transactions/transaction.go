@@ -23,60 +23,64 @@ type TransactionType uint16
 
 const (
 	MaxTransactionType uint64 = 31
-	//Unauthenticated transactions
-	OChainPortalInteraction TransactionType = 0 // handle NewValidator / RemoveValidator / OChainTokenDeposit / OChainTokenWithdrawal / OChainBonusSubscription
-	ExecutePendingUpgrade   TransactionType = 1 // handle BuildingUpgrade / TechnologyUpgrade / DefenseBuild / SpaceshipBuild / FleetMove
+	//System transactions (Unauthenticated)
+	NewValidator          TransactionType = 0
+	RemoveValidator       TransactionType = 1
+	OChainTokenDeposit    TransactionType = 2
+	OChainTokenWithdrawal TransactionType = 3
+	OChainCreditDeposit   TransactionType = 4
+	ExecutePendingUpgrade TransactionType = 5 // handle BuildingUpgrade / TechnologyUpgrade / DefenseBuild / SpaceshipBuild / FleetMove
 
 	//Authenticated transactions
 	//Global Account transactions
-	RegisterAccount  TransactionType = 5
-	ChangeAccountIAM TransactionType = 6
+	RegisterAccount  TransactionType = 6
+	ChangeAccountIAM TransactionType = 7
 
 	//Universe account
-	RegisterUniverseAccount TransactionType = 7
+	RegisterUniverseAccount TransactionType = 8
 
 	//Planet transactions
-	MintPlanet             TransactionType = 8
-	StartBuildingUpgrade   TransactionType = 9
-	StartTechnologyUpgrade TransactionType = 10
-	StartBuildDefenses     TransactionType = 11
-	StartBuildSpaceships   TransactionType = 12
+	MintPlanet             TransactionType = 9
+	StartBuildingUpgrade   TransactionType = 10
+	StartTechnologyUpgrade TransactionType = 11
+	StartBuildDefenses     TransactionType = 12
+	StartBuildSpaceships   TransactionType = 13
 
 	//Fleet transactions
-	FillCargo                    TransactionType = 13
-	UnfillCargo                  TransactionType = 14
-	SendFleetInOrbit             TransactionType = 15
-	LandingFleetInOrbit          TransactionType = 16
-	MergeFleets                  TransactionType = 17
-	SplitFleet                   TransactionType = 18
-	RecycleRemnant               TransactionType = 19
-	IntergalacticPortalFleetMove TransactionType = 20
-	ChangeFleetMode              TransactionType = 21
-	AcceptFleetMode              TransactionType = 22
-	MoveFleet                    TransactionType = 23
-	CancelFleetMove              TransactionType = 24
+	FillCargo                    TransactionType = 14
+	UnfillCargo                  TransactionType = 15
+	SendFleetInOrbit             TransactionType = 16
+	LandingFleetInOrbit          TransactionType = 17
+	MergeFleets                  TransactionType = 18
+	SplitFleet                   TransactionType = 19
+	RecycleRemnant               TransactionType = 20
+	IntergalacticPortalFleetMove TransactionType = 21
+	ChangeFleetMode              TransactionType = 22
+	AcceptFleetMode              TransactionType = 23
+	MoveFleet                    TransactionType = 24
+	CancelFleetMove              TransactionType = 25
 
 	//Fight transactions
-	Fight TransactionType = 25
+	Fight TransactionType = 26
 
 	//Alliance transactions
-	CreateAlliance  TransactionType = 26
-	StakeOnAlliance TransactionType = 27
+	CreateAlliance  TransactionType = 27
+	StakeOnAlliance TransactionType = 28
 
 	//Market transations
-	SwapResources TransactionType = 28
+	SwapResources TransactionType = 29
 
 	//Global <-> universes transations
-	UniverseOCTDeposit  TransactionType = 29
-	UniverseOCTWithdraw TransactionType = 30
+	UniverseOCTDeposit  TransactionType = 30
+	UniverseOCTWithdraw TransactionType = 31
 
 	//EVM <-> Global transations
-	AccountOCTWithdraw TransactionType = 31
+	AccountOCTWithdraw TransactionType = 32
 
 	//Governance
-	CreateGovernanceVote TransactionType = 32
-	GovernanceVote       TransactionType = 33
-	ExecuteVote          TransactionType = 34
+	CreateGovernanceVote TransactionType = 33
+	GovernanceVote       TransactionType = 34
+	ExecuteVote          TransactionType = 35
 )
 
 type TransactionContext struct {
@@ -130,13 +134,18 @@ func (tx *Transaction) IsValid() error {
 	}
 
 	switch tx.Type {
-	case OChainPortalInteraction:
-		_, err := ParseNewOChainPortalInteraction(*tx)
+	//System Txs
+	case NewValidator:
+		_, err := ParseNewValidatorTransaction(*tx)
+		return err
+	case RemoveValidator:
+		_, err := ParseRemoveValidatorTransaction(*tx)
 		return err
 
 	case ExecutePendingUpgrade:
 		return nil
 
+	//Authenticated Txs
 	case RegisterAccount:
 		_, err := ParseRegisterAccountTransaction(*tx)
 		return err

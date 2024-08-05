@@ -19,8 +19,32 @@ func CheckSystemTx(ctx transactions.TransactionContext, req *abcitypes.RequestCh
 	}
 
 	switch tx.Type {
-	case transactions.OChainPortalInteraction:
-		transaction, err := transactions.ParseNewOChainPortalInteraction(tx)
+	case transactions.NewValidator:
+		transaction, err := transactions.ParseNewValidatorTransaction(tx)
+		if err != nil {
+			return &abcitypes.ResponseCheckTx{Code: types.ParsingTransactionDataError, GasWanted: 0, GasUsed: 0}
+		}
+
+		return transaction.Check(ctx)
+
+	case transactions.RemoveValidator:
+		transaction, err := transactions.ParseRemoveValidatorTransaction(tx)
+		if err != nil {
+			return &abcitypes.ResponseCheckTx{Code: types.ParsingTransactionDataError, GasWanted: 0, GasUsed: 0}
+		}
+
+		return transaction.Check(ctx)
+
+	case transactions.OChainTokenDeposit:
+		transaction, err := transactions.ParseNewOChainTokenDepositTransaction(tx)
+		if err != nil {
+			return &abcitypes.ResponseCheckTx{Code: types.ParsingTransactionDataError, GasWanted: 0, GasUsed: 0}
+		}
+
+		return transaction.Check(ctx)
+
+	case transactions.OChainCreditDeposit:
+		transaction, err := transactions.ParseNewOChainCreditDepositTransaction(tx)
 		if err != nil {
 			return &abcitypes.ResponseCheckTx{Code: types.ParsingTransactionDataError, GasWanted: 0, GasUsed: 0}
 		}

@@ -200,7 +200,7 @@ func (app *OChainValidatorApplication) CheckTx(ctx context.Context, req *abcityp
 		Date:   time.Now(),
 	}
 
-	return engine.CheckTx(txCtx, req)
+	return engine.CheckTx(txCtx, req), nil
 }
 
 func (app *OChainValidatorApplication) FinalizeBlock(_ context.Context, req *abcitypes.RequestFinalizeBlock) (*abcitypes.ResponseFinalizeBlock, error) {

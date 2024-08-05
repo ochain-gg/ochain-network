@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"time"
 )
 
 type OChainUpgradeType uint64
@@ -32,12 +33,9 @@ type OChainUpgrade struct {
 }
 
 type OChainBuild struct {
-	UniverseId         string          `cbor:"1,keyasint"`
-	PlanetCoordinateId string          `cbor:"2,keyasint"`
-	BuildType          OChainBuildType `cbor:"3,keyasint"`
-	BuildId            string          `cbor:"4,keyasint"`
-	StartedAt          int64           `cbor:"5,keyasint"`
-	EndedAt            int64           `cbor:"6,keyasint"`
+	BuildType OChainBuildType `cbor:"1,keyasint"`
+	BuildId   string          `cbor:"2,keyasint"`
+	Count     uint64          `cbor:"3,keyasint"`
 }
 
 type OChainPlanetBuildings struct {
@@ -82,17 +80,11 @@ type OChainPlanetDefences struct {
 	DarkMatterCanon uint64 `cbor:"7,keyasint"`
 }
 
-type OChainBuild struct {
-	BuildType OChainBuildType `cbor:"1,keyasint"`
-	BuildId   string          `cbor:"2,keyasint"`
-	Count     uint64          `cbor:"3,keyasint"`
-}
-
 type OChainBuildQueueItem struct {
 	BuildType OChainBuildType `cbor:"1,keyasint"`
 	BuildId   string          `cbor:"2,keyasint"`
 	Count     uint64          `cbor:"3,keyasint"`
-	StartedAt uint64          `cbor:"4,keyasint"`
+	StartAt   uint64          `cbor:"4,keyasint"`
 	FinishAt  uint64          `cbor:"5,keyasint"`
 }
 
@@ -339,13 +331,40 @@ func (planet *OChainPlanet) Pay(cost OChainResources) error {
 	return nil
 }
 
+func (planet *OChainPlanet) AddItemToBuildQueue(item OChainBuild, duration uint64) OChainBuildQueueItem {
+	newState := []OChainBuildQueueItem{}
+	queueFinishingAt := uint64(time.Now().Unix())
+	for i := 0; i < len(planet.BuildQueue); i++ {
+		queueItem := planet.BuildQueue[i]
+		if queueFinishingAt < queueItem.FinishAt {
+			queueFinishingAt = queueItem.FinishAt
+		}
+
+		newState = append(newState, queueItem)
+	}
+
+	newItem := OChainBuildQueueItem{
+		BuildType: item.BuildType,
+		BuildId:   item.BuildId,
+		Count:     item.Count,
+		StartAt:   queueFinishingAt,
+		FinishAt:  queueFinishingAt + duration,
+	}
+
+	newState = append(newState, newItem)
+
+	planet.BuildQueue = newState
+
+	return newItem
+}
+
 func (planet *OChainPlanet) UpdateBuildQueue(timestamp uint64) {
 	newState := []OChainBuildQueueItem{}
 	for i := 0; i < len(planet.BuildQueue); i++ {
 		item := planet.BuildQueue[i]
 
 		//if currently processing or ended
-		if item.StartedAt > timestamp {
+		if item.StartAt > timestamp {
 
 			//if item in queue is finished
 			if item.FinishAt <= timestamp {
@@ -357,8 +376,8 @@ func (planet *OChainPlanet) UpdateBuildQueue(timestamp uint64) {
 				}
 			} else {
 				//if item isn't finished yet
-				itemDuration := (item.FinishAt - item.StartedAt) / item.Count
-				effectiveTime := timestamp - item.StartedAt
+				itemDuration := (item.FinishAt - item.StartAt) / item.Count
+				effectiveTime := timestamp - item.StartAt
 
 				itemsFinished := effectiveTime / itemDuration
 				if item.BuildType == OChainDefenseBuild {
@@ -369,7 +388,7 @@ func (planet *OChainPlanet) UpdateBuildQueue(timestamp uint64) {
 				}
 
 				item.Count -= itemsFinished
-				item.StartedAt = item.StartedAt + (itemsFinished * itemDuration)
+				item.StartAt = item.StartAt + (itemsFinished * itemDuration)
 
 				newState = append(newState, item)
 			}
