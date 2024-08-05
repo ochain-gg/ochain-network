@@ -172,6 +172,11 @@ func (tx *ExecuteUpgradeTransaction) Execute(ctx TransactionContext) *abcitypes.
 
 	planet.UpdateResources(universe.Speed, ctx.Date.Unix(), account)
 	err = ctx.Db.Planets.Update(universe.Id, planet)
+	if err != nil {
+		return &abcitypes.ExecTxResult{
+			Code: types.InvalidTransactionError,
+		}
+	}
 
 	events := []abcitypes.Event{
 		{
