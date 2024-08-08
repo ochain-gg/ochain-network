@@ -23,18 +23,36 @@ type TransactionType uint16
 
 const (
 	MaxTransactionType uint64 = 31
+
 	//System transactions (Unauthenticated)
 	NewValidator          TransactionType = 0
 	RemoveValidator       TransactionType = 1
+	SlashValidator        TransactionType = 1
+	NewEpoch              TransactionType = 2
 	OChainTokenDeposit    TransactionType = 2
-	OChainTokenWithdrawal TransactionType = 3
 	OChainCreditDeposit   TransactionType = 4
 	ExecutePendingUpgrade TransactionType = 5 // handle BuildingUpgrade / TechnologyUpgrade / DefenseBuild / SpaceshipBuild / FleetMove
 
 	//Authenticated transactions
-	//Global Account transactions
-	RegisterAccount  TransactionType = 6
-	ChangeAccountIAM TransactionType = 7
+
+	/**
+	 * Global Account transactions
+	 */
+	RegisterAccount          TransactionType = 6
+	ChangeAccountIAM         TransactionType = 7
+	ExecuteBridgeTransaction TransactionType = 7
+	OChainTokenWithdrawal    TransactionType = 3
+
+	/**
+	 * Governance transactions
+	 */
+	CreateGovernanceProposal TransactionType = 33
+	VoteOnProposal           TransactionType = 34
+	ExecuteProposal          TransactionType = 35
+
+	/**
+	 * Game transactions
+	 */
 
 	//Universe account
 	RegisterUniverseAccount TransactionType = 8
@@ -71,16 +89,8 @@ const (
 	SwapResources TransactionType = 29
 
 	//Global <-> universes transations
-	UniverseOCTDeposit  TransactionType = 30
-	UniverseOCTWithdraw TransactionType = 31
-
-	//EVM <-> Global transations
-	AccountOCTWithdraw TransactionType = 32
-
-	//Governance
-	CreateGovernanceVote TransactionType = 33
-	GovernanceVote       TransactionType = 34
-	ExecuteVote          TransactionType = 35
+	UniverseOChainTokenDeposit  TransactionType = 30
+	UniverseOChainTokenWithdraw TransactionType = 31
 )
 
 type TransactionContext struct {
@@ -136,10 +146,10 @@ func (tx *Transaction) IsValid() error {
 	switch tx.Type {
 	//System Txs
 	case NewValidator:
-		_, err := ParseNewValidatorTransaction(*tx)
+		_, err := ParseOChainBridgeNewValidatorTransaction(*tx)
 		return err
 	case RemoveValidator:
-		_, err := ParseRemoveValidatorTransaction(*tx)
+		_, err := ParseOChainBridgeRemoveValidatorTransaction(*tx)
 		return err
 
 	case ExecutePendingUpgrade:

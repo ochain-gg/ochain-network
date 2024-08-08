@@ -1,6 +1,6 @@
 module github.com/ochain-gg/ochain-network
 
-go 1.22.2
+go 1.22.5
 
 require (
 	github.com/cometbft/cometbft v0.38.7

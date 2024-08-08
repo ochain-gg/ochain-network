@@ -20,7 +20,7 @@ func CheckSystemTx(ctx transactions.TransactionContext, req *abcitypes.RequestCh
 
 	switch tx.Type {
 	case transactions.NewValidator:
-		transaction, err := transactions.ParseNewValidatorTransaction(tx)
+		transaction, err := transactions.ParseOChainBridgeNewValidatorTransaction(tx)
 		if err != nil {
 			return &abcitypes.ResponseCheckTx{Code: types.ParsingTransactionDataError, GasWanted: 0, GasUsed: 0}
 		}
@@ -28,7 +28,7 @@ func CheckSystemTx(ctx transactions.TransactionContext, req *abcitypes.RequestCh
 		return transaction.Check(ctx)
 
 	case transactions.RemoveValidator:
-		transaction, err := transactions.ParseRemoveValidatorTransaction(tx)
+		transaction, err := transactions.ParseOChainBridgeRemoveValidatorTransaction(tx)
 		if err != nil {
 			return &abcitypes.ResponseCheckTx{Code: types.ParsingTransactionDataError, GasWanted: 0, GasUsed: 0}
 		}
@@ -36,7 +36,7 @@ func CheckSystemTx(ctx transactions.TransactionContext, req *abcitypes.RequestCh
 		return transaction.Check(ctx)
 
 	case transactions.OChainTokenDeposit:
-		transaction, err := transactions.ParseNewOChainTokenDepositTransaction(tx)
+		transaction, err := transactions.ParseOChainBridgeTokenDepositTransaction(tx)
 		if err != nil {
 			return &abcitypes.ResponseCheckTx{Code: types.ParsingTransactionDataError, GasWanted: 0, GasUsed: 0}
 		}
@@ -44,7 +44,7 @@ func CheckSystemTx(ctx transactions.TransactionContext, req *abcitypes.RequestCh
 		return transaction.Check(ctx)
 
 	case transactions.OChainCreditDeposit:
-		transaction, err := transactions.ParseNewOChainCreditDepositTransaction(tx)
+		transaction, err := transactions.ParseOChainBridgeCreditDepositTransaction(tx)
 		if err != nil {
 			return &abcitypes.ResponseCheckTx{Code: types.ParsingTransactionDataError, GasWanted: 0, GasUsed: 0}
 		}

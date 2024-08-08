@@ -8,6 +8,8 @@ type OChainDatabase struct {
 	DB                         *badger.DB
 	CurrentTxn                 *badger.Txn
 	Validators                 *OChainValidatorTable
+	Epochs                     *OChainEpochTable
+	RewardPrograms             *OChainRewardProgramTable
 	BridgeTransactions         *OChainBridgeTransactionTable
 	Universes                  *OChainUniverseTable
 	GlobalsAccounts            *OChainGlobalAccountTable
@@ -42,6 +44,8 @@ func (db *OChainDatabase) Close() error {
 
 func (db *OChainDatabase) LoadTables() {
 	db.Validators = NewOChainValidatorTable(db.DB)
+	db.Epochs = NewOChainEpochTable(db.DB)
+	db.RewardPrograms = NewOChainRewardProgramTable(db.DB)
 	db.BridgeTransactions = NewOChainBridgeTransactionTable(db.DB)
 	db.Universes = NewOChainUniverseTable(db.DB)
 	db.GlobalsAccounts = NewOChainGlobalAccountTable(db.DB)
@@ -62,6 +66,8 @@ func (db *OChainDatabase) NewTransaction(ts uint64) {
 	db.CurrentTxn = db.DB.NewTransactionAt(ts, true)
 
 	db.Validators.SetCurrentTxn(db.CurrentTxn)
+	db.Epochs.SetCurrentTxn(db.CurrentTxn)
+	db.RewardPrograms.SetCurrentTxn(db.CurrentTxn)
 	db.BridgeTransactions.SetCurrentTxn(db.CurrentTxn)
 	db.Universes.SetCurrentTxn(db.CurrentTxn)
 	db.GlobalsAccounts.SetCurrentTxn(db.CurrentTxn)

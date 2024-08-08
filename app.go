@@ -192,7 +192,6 @@ func (app *OChainValidatorApplication) InitChain(_ context.Context, chain *abcit
 }
 
 func (app *OChainValidatorApplication) CheckTx(ctx context.Context, req *abcitypes.RequestCheckTx) (*abcitypes.ResponseCheckTx, error) {
-
 	txCtx := transactions.TransactionContext{
 		Config: app.config,
 		Db:     app.db,
@@ -229,12 +228,34 @@ func (app *OChainValidatorApplication) FinalizeBlock(_ context.Context, req *abc
 		app.state.IncSize()
 	}
 
+	//handle slashing system
+	if len(req.Misbehavior) > 0 {
+		for i := 0; i < len(req.Misbehavior); i++ {
+			misbehavior := req.Misbehavior[i]
+
+			validator, err := app.db.Validators.GetByAddressAt(string(misbehavior.Validator.Address), uint64(req.Time.Unix()))
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			validator.Power -= 10
+			if validator.Power < 5000 {
+				//handle full slashing
+			} else {
+
+			}
+
+			app.db.Validators.Update(validator)
+		}
+	}
+
 	app.state.SetHeight(req.Height)
 	log.Println(app.state)
 	return &abcitypes.ResponseFinalizeBlock{
 		TxResults:        txs,
 		ValidatorUpdates: app.ValUpdates,
-		AppHash:          app.Hash(),
+
+		AppHash: app.Hash(),
 	}, nil
 }
 

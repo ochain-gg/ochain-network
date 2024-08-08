@@ -1,0 +1,147 @@
+package transactions
+
+import (
+	abcitypes "github.com/cometbft/cometbft/abci/types"
+	"github.com/fxamacker/cbor/v2"
+	"github.com/ochain-gg/ochain-network/types"
+)
+
+type NewUniverseProposalPayload struct {
+	Id    uint64 `cbor:"1,keyasint"`
+	Name  string `cbor:"2,keyasint"`
+	Speed uint64 `cbor:"3,keyasint"`
+}
+
+type CreateGovernanceProposalTransactionData struct {
+	Type    string `cbor:"1,keyasint"`
+	Payload []byte `cbor:"2,keyasint"`
+}
+
+type CreateGovernanceProposalTransaction struct {
+	Type      TransactionType                         `cbor:"1,keyasint"`
+	From      string                                  `cbor:"2,keyasint"`
+	Nonce     uint64                                  `cbor:"3,keyasint"`
+	Data      CreateGovernanceProposalTransactionData `cbor:"4,keyasint"`
+	Signature []byte                                  `cbor:"5,keyasint"`
+}
+
+func (tx *CreateGovernanceProposalTransaction) Check(ctx TransactionContext) *abcitypes.ResponseCheckTx {
+	globalAccount, err := ctx.Db.GlobalsAccounts.Get(tx.From)
+	if err != nil {
+		return &abcitypes.ResponseCheckTx{
+			Code: types.InvalidTransactionError,
+		}
+	}
+
+	if globalAccount.StackedBalance < types.VotingPowerRequiredForProposalCreation {
+		return &abcitypes.ResponseCheckTx{
+			Code: types.InvalidTransactionError,
+		}
+	}
+
+	return &abcitypes.ResponseCheckTx{
+		Code: types.NoError,
+	}
+}
+
+func (tx *CreateGovernanceProposalTransaction) Execute(ctx TransactionContext) *abcitypes.ExecTxResult {
+	response := tx.Check(ctx)
+	if response.Code != types.NoError {
+		return &abcitypes.ExecTxResult{
+			Code: response.Code,
+		}
+	}
+
+	globalAccount, err := ctx.Db.GlobalsAccounts.Get(tx.From)
+	if err == nil {
+		return &abcitypes.ExecTxResult{
+			Code: types.InvalidTransactionError,
+		}
+	}
+
+	account, err := ctx.Db.UniverseAccounts.Get(tx.Data.Universe, tx.From)
+	if err == nil {
+		return &abcitypes.ExecTxResult{
+			Code: types.InvalidTransactionError,
+		}
+	}
+
+	globalAccount.CreditBalance -= types.TwoWeekCommanderPrice
+	account.SubscribeToCommander(ctx.Date.Unix(), tx.Data.Commander)
+
+	txGasCost, err := globalAccount.ApplyGasCost(uint64(ctx.Date.Unix()))
+	if err != nil {
+		return &abcitypes.ExecTxResult{
+			Code: types.GasCostHigherThanBalance,
+		}
+	}
+
+	err = ctx.Db.GlobalsAccounts.Update(globalAccount)
+	if err != nil {
+		return &abcitypes.ExecTxResult{
+			Code: types.InvalidTransactionError,
+		}
+	}
+
+	err = ctx.Db.UniverseAccounts.Update(account)
+	if err != nil {
+		return &abcitypes.ExecTxResult{
+			Code: types.InvalidTransactionError,
+		}
+	}
+
+	events := []abcitypes.Event{
+		{
+			Type: "CommanderSubscribed",
+			Attributes: []abcitypes.EventAttribute{
+				{Key: "account", Value: tx.From, Index: true},
+				{Key: "universe", Value: tx.Data.Universe, Index: true},
+				{Key: "commander", Value: string(tx.Data.Commander), Index: true},
+			},
+		},
+	}
+
+	receipt := TransactionReceipt{
+		GasCost: txGasCost,
+	}
+
+	return &abcitypes.ExecTxResult{
+		Code:      types.NoError,
+		Events:    events,
+		GasUsed:   100,
+		GasWanted: 100,
+		Data:      receipt.Bytes(),
+	}
+}
+
+func (tx *CreateGovernanceProposalTransaction) Transaction() (Transaction, error) {
+	txData, err := cbor.Marshal(tx.Data)
+	if err != nil {
+		return Transaction{}, err
+	}
+
+	return Transaction{
+		Type:      tx.Type,
+		From:      tx.From,
+		Nonce:     tx.Nonce,
+		Data:      txData,
+		Signature: tx.Signature,
+	}, nil
+}
+
+func ParseCreateGovernanceProposalTransaction(tx Transaction) (CreateGovernanceProposalTransaction, error) {
+	var txData CreateGovernanceProposalTransactionData
+	err := cbor.Unmarshal(tx.Data, &txData)
+
+	if err != nil {
+		return CreateGovernanceProposalTransaction{}, err
+	}
+
+	return CreateGovernanceProposalTransaction{
+		Type:      tx.Type,
+		From:      tx.From,
+		Nonce:     tx.Nonce,
+		Data:      txData,
+		Signature: tx.Signature,
+	}, nil
+}

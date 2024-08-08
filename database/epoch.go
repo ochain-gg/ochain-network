@@ -42,6 +42,31 @@ func (db *OChainEpochTable) ExistsAt(id uint64, at uint64) (bool, error) {
 	}
 }
 
+func (db *OChainEpochTable) GetCurrent() (types.OChainEpoch, error) {
+	var at uint64 = math.MaxUint64
+	return db.GetCurrentAt(at)
+}
+
+func (db *OChainEpochTable) GetCurrentAt(at uint64) (types.OChainEpoch, error) {
+
+	epochs, err := db.GetAllAt(at)
+	if err != nil {
+		return types.OChainEpoch{}, err
+	}
+
+	currentEpoch := types.OChainEpoch{
+		Id: 0,
+	}
+
+	for i := 0; i < len(epochs); i++ {
+		if epochs[i].Id >= currentEpoch.Id {
+			currentEpoch = epochs[i]
+		}
+	}
+
+	return currentEpoch, nil
+}
+
 func (db *OChainEpochTable) Get(id uint64) (types.OChainEpoch, error) {
 	var at uint64 = math.MaxUint64
 	return db.GetAt(id, at)

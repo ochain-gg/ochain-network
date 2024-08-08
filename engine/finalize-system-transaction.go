@@ -14,7 +14,7 @@ func FinalizeSystemTx(ctx transactions.TransactionContext, tx transactions.Trans
 	switch tx.Type {
 	case transactions.NewValidator:
 
-		transaction, err := transactions.ParseNewValidatorTransaction(tx)
+		transaction, err := transactions.ParseOChainBridgeNewValidatorTransaction(tx)
 		if err != nil {
 			return &abcitypes.ExecTxResult{Code: types.ParsingTransactionDataError, GasWanted: 0, GasUsed: 0}, valUpdates
 		}
@@ -38,7 +38,7 @@ func FinalizeSystemTx(ctx transactions.TransactionContext, tx transactions.Trans
 
 	case transactions.RemoveValidator:
 
-		transaction, err := transactions.ParseRemoveValidatorTransaction(tx)
+		transaction, err := transactions.ParseOChainBridgeRemoveValidatorTransaction(tx)
 		if err != nil {
 			return &abcitypes.ExecTxResult{Code: types.ParsingTransactionDataError, GasWanted: 0, GasUsed: 0}, valUpdates
 		}

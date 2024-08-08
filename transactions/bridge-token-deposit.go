@@ -12,18 +12,18 @@ import (
 	"github.com/ochain-gg/ochain-network/types"
 )
 
-type OChainTokenDepositTransactionData struct {
+type OChainBridgeTokenDepositTransactionData struct {
 	RemoteTransactionHash string `cbor:"1,keyasint"`
 	Account               string `cbor:"2,keyasint"`
 	Amount                uint64 `cbor:"3,keyasint"`
 }
 
-type OChainTokenDepositTransaction struct {
+type OChainBridgeTokenDepositTransaction struct {
 	Type TransactionType
-	Data OChainTokenDepositTransactionData
+	Data OChainBridgeTokenDepositTransactionData
 }
 
-func (tx OChainTokenDepositTransaction) Check(ctx TransactionContext) *abcitypes.ResponseCheckTx {
+func (tx OChainBridgeTokenDepositTransaction) Check(ctx TransactionContext) *abcitypes.ResponseCheckTx {
 
 	client, err := ethclient.Dial(ctx.Config.EVMRpc)
 	if err != nil {
@@ -88,7 +88,7 @@ func (tx OChainTokenDepositTransaction) Check(ctx TransactionContext) *abcitypes
 
 }
 
-func (tx OChainTokenDepositTransaction) Execute(ctx TransactionContext) *abcitypes.ExecTxResult {
+func (tx OChainBridgeTokenDepositTransaction) Execute(ctx TransactionContext) *abcitypes.ExecTxResult {
 	result := tx.Check(ctx)
 	if result.Code != types.NoError {
 		return &abcitypes.ExecTxResult{
@@ -148,15 +148,28 @@ func (tx OChainTokenDepositTransaction) Execute(ctx TransactionContext) *abcityp
 			continue
 		}
 
-		globalAccount, err := ctx.Db.GlobalsAccounts.GetAt(log.Receiver.Hex(), uint64(ctx.Date.Unix()))
-		if err != nil {
+		_, err = ctx.Db.BridgeTransactions.GetAt(tx.Data.RemoteTransactionHash, uint64(ctx.Date.Unix()))
+		if err == nil {
 			return &abcitypes.ExecTxResult{
-				Code: types.NoError,
+				Code: types.InvalidTransactionError,
 			}
 		}
 
-		globalAccount.TokenBalance += log.Amount.Uint64()
-		ctx.Db.GlobalsAccounts.Update(globalAccount)
+		creditDepositTx := types.OChainBridgeTransaction{
+			Type:     types.OChainBridgeTokenDepositTransaction,
+			Hash:     tx.Data.RemoteTransactionHash,
+			Account:  log.Receiver.Hex(),
+			Amount:   log.Amount.Uint64(),
+			Executed: false,
+			Canceled: false,
+		}
+
+		err = ctx.Db.BridgeTransactions.Insert(creditDepositTx)
+		if err != nil {
+			return &abcitypes.ExecTxResult{
+				Code: types.InvalidTransactionError,
+			}
+		}
 
 		return &abcitypes.ExecTxResult{
 			Code: types.NoError,
@@ -168,7 +181,7 @@ func (tx OChainTokenDepositTransaction) Execute(ctx TransactionContext) *abcityp
 	}
 }
 
-func (tx OChainTokenDepositTransaction) Transaction() (Transaction, error) {
+func (tx OChainBridgeTokenDepositTransaction) Transaction() (Transaction, error) {
 
 	txData, err := cbor.Marshal(tx.Data)
 	if err != nil {
@@ -181,15 +194,15 @@ func (tx OChainTokenDepositTransaction) Transaction() (Transaction, error) {
 	}, nil
 }
 
-func ParseNewOChainTokenDepositTransaction(tx Transaction) (OChainTokenDepositTransaction, error) {
-	var txData OChainTokenDepositTransactionData
+func ParseOChainBridgeTokenDepositTransaction(tx Transaction) (OChainBridgeTokenDepositTransaction, error) {
+	var txData OChainBridgeTokenDepositTransactionData
 	err := cbor.Unmarshal(tx.Data, &txData)
 
 	if err != nil {
-		return OChainTokenDepositTransaction{}, err
+		return OChainBridgeTokenDepositTransaction{}, err
 	}
 
-	return OChainTokenDepositTransaction{
+	return OChainBridgeTokenDepositTransaction{
 		Type: tx.Type,
 		Data: txData,
 	}, nil

@@ -1,15 +1,15 @@
 package types
 
-type OChainPortalTransactionType uint64
+type OChainBridgeTransactionType uint64
 
 const (
-	OChainBridgeDepositTransaction   OChainPortalTransactionType = 0
-	OChainBridgeWithdrawTransaction  OChainPortalTransactionType = 1
-	OChainBridgeSubscribeTransaction OChainPortalTransactionType = 2
+	OChainBridgeTokenDepositTransaction  OChainBridgeTransactionType = 0
+	OChainBridgeTokenWithdrawTransaction OChainBridgeTransactionType = 1
+	OChainBridgeCreditDepositTransaction OChainBridgeTransactionType = 2
 )
 
 type OChainBridgeTransaction struct {
-	Type     OChainPortalTransactionType `cbor:"1,keyasint"`
+	Type     OChainBridgeTransactionType `cbor:"1,keyasint"`
 	Hash     string                      `cbor:"2,keyasint"`
 	Account  string                      `cbor:"3,keyasint"`
 	Amount   uint64                      `cbor:"4,keyasint"`

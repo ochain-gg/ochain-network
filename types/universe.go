@@ -36,18 +36,21 @@ type OChainCost struct {
 }
 
 type OChainUniverse struct {
-	Id   string `cbor:"1,keyasint"`
-	Name string `cbor:"2,keyasint"`
+	Id                     string `cbor:"1,keyasint"`
+	Name                   string `cbor:"2,keyasint"`
+	Speed                  uint64 `cbor:"3,keyasint"`
+	ResourcesMarketEnabled bool   `cbor:"4,keyasint"`
+	IsStretchable          bool   `cbor:"5,keyasint"` // if true, max galaxy increase in function of colinized planets
 
-	Speed                   uint64 `cbor:"3,keyasint"`
-	MaxGalaxy               uint64 `cbor:"4,keyasint"`
-	MaxSolarSystemPerGalaxy uint64 `cbor:"5,keyasint"`
-	MaxPlanetPerSolarSystem uint64 `cbor:"6,keyasint"`
+	MaxGalaxy               uint64 `cbor:"6,keyasint"`
+	MaxSolarSystemPerGalaxy uint64 `cbor:"7,keyasint"`
+	MaxPlanetPerSolarSystem uint64 `cbor:"8,keyasint"`
 
-	Accounts         uint64 `cbor:"7,keyasint"`
-	ColonizedPlanets uint64 `cbor:"8,keyasint"`
+	Accounts         uint64 `cbor:"9,keyasint"`
+	ColonizedPlanets uint64 `cbor:"10,keyasint"`
 
-	CreatedAt uint64 `cbor:"9,keyasint"`
+	CreatedAt uint64 `cbor:"11,keyasint"`
+	EndingAt  uint64 `cbor:"12,keyasint"`
 }
 
 type OChainFighterStats struct {

@@ -13,18 +13,18 @@ import (
 	"github.com/ochain-gg/ochain-network/types"
 )
 
-type NewValidatorTransactionData struct {
+type OChainBridgeNewValidatorTransactionData struct {
 	ValidatorId           uint64 `cbor:"1,keyasint"`
 	RemoteTransactionHash string `cbor:"2,keyasint"`
 	PublicKey             string `cbor:"3,keyasint"`
 }
 
-type NewValidatorTransaction struct {
+type OChainBridgeNewValidatorTransaction struct {
 	Type TransactionType
-	Data NewValidatorTransactionData
+	Data OChainBridgeNewValidatorTransactionData
 }
 
-func (tx *NewValidatorTransaction) Check(ctx TransactionContext) *abcitypes.ResponseCheckTx {
+func (tx *OChainBridgeNewValidatorTransaction) Check(ctx TransactionContext) *abcitypes.ResponseCheckTx {
 
 	client, err := ethclient.Dial(ctx.Config.EVMRpc)
 	if err != nil {
@@ -79,7 +79,7 @@ func (tx *NewValidatorTransaction) Check(ctx TransactionContext) *abcitypes.Resp
 	}
 }
 
-func (tx *NewValidatorTransaction) FetchData(ctx TransactionContext) (contracts.OChainPortalOChainNewValidator, error) {
+func (tx *OChainBridgeNewValidatorTransaction) FetchData(ctx TransactionContext) (contracts.OChainPortalOChainNewValidator, error) {
 
 	client, err := ethclient.Dial(ctx.Config.EVMRpc)
 	if err != nil {
@@ -136,7 +136,7 @@ func (tx *NewValidatorTransaction) FetchData(ctx TransactionContext) (contracts.
 	return contracts.OChainPortalOChainNewValidator{}, errors.New("invalid tx")
 }
 
-func (tx *NewValidatorTransaction) Execute(ctx TransactionContext) *abcitypes.ExecTxResult {
+func (tx *OChainBridgeNewValidatorTransaction) Execute(ctx TransactionContext) *abcitypes.ExecTxResult {
 
 	event, err := tx.FetchData(ctx)
 	if err != nil {
@@ -156,6 +156,7 @@ func (tx *NewValidatorTransaction) Execute(ctx TransactionContext) *abcitypes.Ex
 		Id:        event.ValidatorId.Uint64(),
 		Stacker:   event.Stacker.Hex(),
 		Validator: event.Validator.Hex(),
+		Power:     10000,
 		PublicKey: event.PublicKey,
 		Enabled:   true,
 	})
@@ -175,7 +176,7 @@ func (tx *NewValidatorTransaction) Execute(ctx TransactionContext) *abcitypes.Ex
 	}
 }
 
-func (tx *NewValidatorTransaction) Transaction() (Transaction, error) {
+func (tx *OChainBridgeNewValidatorTransaction) Transaction() (Transaction, error) {
 
 	txData, err := cbor.Marshal(tx.Data)
 	if err != nil {
@@ -188,16 +189,16 @@ func (tx *NewValidatorTransaction) Transaction() (Transaction, error) {
 	}, nil
 }
 
-func ParseNewValidatorTransaction(tx Transaction) (NewValidatorTransaction, error) {
+func ParseOChainBridgeNewValidatorTransaction(tx Transaction) (OChainBridgeNewValidatorTransaction, error) {
 
-	var txData NewValidatorTransactionData
+	var txData OChainBridgeNewValidatorTransactionData
 	err := cbor.Unmarshal([]byte(tx.Data), &txData)
 
 	if err != nil {
-		return NewValidatorTransaction{}, err
+		return OChainBridgeNewValidatorTransaction{}, err
 	}
 
-	return NewValidatorTransaction{
+	return OChainBridgeNewValidatorTransaction{
 		Type: tx.Type,
 		Data: txData,
 	}, nil

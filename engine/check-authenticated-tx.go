@@ -17,7 +17,7 @@ func IsDeleguatedAuthorized(txType transactions.TransactionType) bool {
 	switch txType {
 	case transactions.RegisterAccount:
 		return false
-	case transactions.UniverseOCTDeposit:
+	case transactions.:
 		return false
 	case transactions.UniverseOCTWithdraw:
 		return false

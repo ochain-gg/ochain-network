@@ -1,10 +1,11 @@
 package types
 
 type OChainState struct {
-	Size               int64  `cbor:"1,keyasint"`
-	Height             int64  `cbor:"2,keyasint"`
-	Hash               []byte `cbor:"3,keyasint"`
-	LatestPortalUpdate uint64 `cbor:"4,keyasint"`
+	Size                      int64  `cbor:"1,keyasint"`
+	Height                    int64  `cbor:"2,keyasint"`
+	Hash                      []byte `cbor:"3,keyasint"`
+	LatestPortalUpdate        uint64 `cbor:"4,keyasint"`
+	AvailableTokensInTreasury uint64 `cbor:"5,keyasint"`
 }
 
 func (state *OChainState) SetHeight(height int64) {

@@ -13,17 +13,17 @@ import (
 	"github.com/ochain-gg/ochain-network/types"
 )
 
-type RemoveValidatorTransactionData struct {
+type OChainBridgeRemoveValidatorTransactionData struct {
 	ValidatorId           uint64 `cbor:"1,keyasint"`
 	RemoteTransactionHash string `cbor:"2,keyasint"`
 }
 
-type RemoveValidatorTransaction struct {
+type OChainBridgeRemoveValidatorTransaction struct {
 	Type TransactionType
-	Data RemoveValidatorTransactionData
+	Data OChainBridgeRemoveValidatorTransactionData
 }
 
-func (tx *RemoveValidatorTransaction) Check(ctx TransactionContext) *abcitypes.ResponseCheckTx {
+func (tx *OChainBridgeRemoveValidatorTransaction) Check(ctx TransactionContext) *abcitypes.ResponseCheckTx {
 
 	data, err := tx.FetchData(ctx)
 	if err != nil {
@@ -50,7 +50,7 @@ func (tx *RemoveValidatorTransaction) Check(ctx TransactionContext) *abcitypes.R
 	}
 }
 
-func (tx *RemoveValidatorTransaction) FetchData(ctx TransactionContext) (contracts.OChainPortalOChainRemoveValidator, error) {
+func (tx *OChainBridgeRemoveValidatorTransaction) FetchData(ctx TransactionContext) (contracts.OChainPortalOChainRemoveValidator, error) {
 
 	client, err := ethclient.Dial(ctx.Config.EVMRpc)
 	if err != nil {
@@ -102,7 +102,7 @@ func (tx *RemoveValidatorTransaction) FetchData(ctx TransactionContext) (contrac
 	return contracts.OChainPortalOChainRemoveValidator{}, errors.New("invalid tx")
 }
 
-func (tx *RemoveValidatorTransaction) Execute(ctx TransactionContext) *abcitypes.ExecTxResult {
+func (tx *OChainBridgeRemoveValidatorTransaction) Execute(ctx TransactionContext) *abcitypes.ExecTxResult {
 
 	result := tx.Check(ctx)
 	if result.Code != types.NoError {
@@ -142,7 +142,7 @@ func (tx *RemoveValidatorTransaction) Execute(ctx TransactionContext) *abcitypes
 	}
 }
 
-func (tx RemoveValidatorTransaction) Transaction() (Transaction, error) {
+func (tx OChainBridgeRemoveValidatorTransaction) Transaction() (Transaction, error) {
 
 	txData, err := cbor.Marshal(tx.Data)
 	if err != nil {
@@ -155,16 +155,16 @@ func (tx RemoveValidatorTransaction) Transaction() (Transaction, error) {
 	}, nil
 }
 
-func ParseRemoveValidatorTransaction(tx Transaction) (RemoveValidatorTransaction, error) {
+func ParseOChainBridgeRemoveValidatorTransaction(tx Transaction) (OChainBridgeRemoveValidatorTransaction, error) {
 
-	var txData RemoveValidatorTransactionData
+	var txData OChainBridgeRemoveValidatorTransactionData
 	err := cbor.Unmarshal(tx.Data, &txData)
 
 	if err != nil {
-		return RemoveValidatorTransaction{}, err
+		return OChainBridgeRemoveValidatorTransaction{}, err
 	}
 
-	return RemoveValidatorTransaction{
+	return OChainBridgeRemoveValidatorTransaction{
 		Type: tx.Type,
 		Data: txData,
 	}, nil
