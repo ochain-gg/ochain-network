@@ -1,4 +1,4 @@
-package transactions
+package validator_transactions
 
 import (
 	"context"
@@ -10,6 +10,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/fxamacker/cbor/v2"
 	"github.com/ochain-gg/ochain-network/contracts"
+	t "github.com/ochain-gg/ochain-network/transactions"
 	"github.com/ochain-gg/ochain-network/types"
 )
 
@@ -20,11 +21,11 @@ type OChainBridgeNewValidatorTransactionData struct {
 }
 
 type OChainBridgeNewValidatorTransaction struct {
-	Type TransactionType
+	Type t.TransactionType
 	Data OChainBridgeNewValidatorTransactionData
 }
 
-func (tx *OChainBridgeNewValidatorTransaction) Check(ctx TransactionContext) *abcitypes.ResponseCheckTx {
+func (tx *OChainBridgeNewValidatorTransaction) Check(ctx t.TransactionContext) *abcitypes.ResponseCheckTx {
 
 	client, err := ethclient.Dial(ctx.Config.EVMRpc)
 	if err != nil {
@@ -79,7 +80,7 @@ func (tx *OChainBridgeNewValidatorTransaction) Check(ctx TransactionContext) *ab
 	}
 }
 
-func (tx *OChainBridgeNewValidatorTransaction) FetchData(ctx TransactionContext) (contracts.OChainPortalOChainNewValidator, error) {
+func (tx *OChainBridgeNewValidatorTransaction) FetchData(ctx t.TransactionContext) (contracts.OChainPortalOChainNewValidator, error) {
 
 	client, err := ethclient.Dial(ctx.Config.EVMRpc)
 	if err != nil {
@@ -136,7 +137,7 @@ func (tx *OChainBridgeNewValidatorTransaction) FetchData(ctx TransactionContext)
 	return contracts.OChainPortalOChainNewValidator{}, errors.New("invalid tx")
 }
 
-func (tx *OChainBridgeNewValidatorTransaction) Execute(ctx TransactionContext) *abcitypes.ExecTxResult {
+func (tx *OChainBridgeNewValidatorTransaction) Execute(ctx t.TransactionContext) *abcitypes.ExecTxResult {
 
 	event, err := tx.FetchData(ctx)
 	if err != nil {
@@ -176,20 +177,20 @@ func (tx *OChainBridgeNewValidatorTransaction) Execute(ctx TransactionContext) *
 	}
 }
 
-func (tx *OChainBridgeNewValidatorTransaction) Transaction() (Transaction, error) {
+func (tx *OChainBridgeNewValidatorTransaction) Transaction() (t.Transaction, error) {
 
 	txData, err := cbor.Marshal(tx.Data)
 	if err != nil {
-		return Transaction{}, err
+		return t.Transaction{}, err
 	}
 
-	return Transaction{
+	return t.Transaction{
 		Type: tx.Type,
 		Data: txData,
 	}, nil
 }
 
-func ParseOChainBridgeNewValidatorTransaction(tx Transaction) (OChainBridgeNewValidatorTransaction, error) {
+func ParseOChainBridgeNewValidatorTransaction(tx t.Transaction) (OChainBridgeNewValidatorTransaction, error) {
 
 	var txData OChainBridgeNewValidatorTransactionData
 	err := cbor.Unmarshal([]byte(tx.Data), &txData)

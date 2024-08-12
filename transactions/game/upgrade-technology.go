@@ -1,35 +1,36 @@
-package transactions
+package game_transactions
 
 import (
 	"fmt"
-	"math"
 
 	abcitypes "github.com/cometbft/cometbft/abci/types"
 	"github.com/fxamacker/cbor/v2"
+
+	t "github.com/ochain-gg/ochain-network/transactions"
 	"github.com/ochain-gg/ochain-network/types"
 )
 
-type UpgradeBuildingTransactionData struct {
-	Universe string `cbor:"1,keyasint"`
-	Planet   string `cbor:"2,keyasint"`
-	Building string `cbor:"3,keyasint"`
+type UpgradeTechnologyTransactionData struct {
+	Universe   string `cbor:"1,keyasint"`
+	Planet     string `cbor:"2,keyasint"`
+	Technology string `cbor:"3,keyasint"`
 }
 
-type UpgradeBuildingTransaction struct {
-	Type      TransactionType                `cbor:"1,keyasint"`
-	From      string                         `cbor:"2,keyasint"`
-	Nonce     uint64                         `cbor:"3,keyasint"`
-	Data      UpgradeBuildingTransactionData `cbor:"4,keyasint"`
-	Signature []byte                         `cbor:"5,keyasint"`
+type UpgradeTechnologyTransaction struct {
+	Type      t.TransactionType                `cbor:"1,keyasint"`
+	From      string                           `cbor:"2,keyasint"`
+	Nonce     uint64                           `cbor:"3,keyasint"`
+	Data      UpgradeTechnologyTransactionData `cbor:"4,keyasint"`
+	Signature []byte                           `cbor:"5,keyasint"`
 }
 
-func (tx *UpgradeBuildingTransaction) Transaction() (Transaction, error) {
+func (tx *UpgradeTechnologyTransaction) Transaction() (t.Transaction, error) {
 	txData, err := cbor.Marshal(tx.Data)
 	if err != nil {
-		return Transaction{}, err
+		return t.Transaction{}, err
 	}
 
-	return Transaction{
+	return t.Transaction{
 		Type:      tx.Type,
 		From:      tx.From,
 		Nonce:     tx.Nonce,
@@ -38,7 +39,7 @@ func (tx *UpgradeBuildingTransaction) Transaction() (Transaction, error) {
 	}, nil
 }
 
-func (tx *UpgradeBuildingTransaction) Check(ctx TransactionContext) *abcitypes.ResponseCheckTx {
+func (tx *UpgradeTechnologyTransaction) Check(ctx t.TransactionContext) *abcitypes.ResponseCheckTx {
 	_, err := ctx.Db.GlobalsAccounts.GetAt(tx.From, uint64(ctx.Date.Unix()))
 	if err != nil {
 		return &abcitypes.ResponseCheckTx{
@@ -67,14 +68,14 @@ func (tx *UpgradeBuildingTransaction) Check(ctx TransactionContext) *abcitypes.R
 		}
 	}
 
-	building, err := ctx.Db.Buildings.GetAt(tx.Data.Building, uint64(ctx.Date.Unix()))
+	technology, err := ctx.Db.Technologies.GetAt(tx.Data.Technology, uint64(ctx.Date.Unix()))
 	if err != nil {
 		return &abcitypes.ResponseCheckTx{
 			Code: types.InvalidTransactionError,
 		}
 	}
 
-	ok := building.MeetRequirements(planet, account)
+	ok := technology.MeetRequirements(planet, account)
 	if !ok {
 		return &abcitypes.ResponseCheckTx{
 			Code: types.InvalidTransactionError,
@@ -83,8 +84,8 @@ func (tx *UpgradeBuildingTransaction) Check(ctx TransactionContext) *abcitypes.R
 
 	planet.UpdateResources(universe.Speed, int64(ctx.Date.Unix()), account)
 
-	level := planet.BuildingLevel(building.Id) + 1
-	cost := building.GetUpgradeCost(level)
+	level := account.TechnologyLevel(technology.Id) + 1
+	cost := technology.GetUpgradeCost(level)
 
 	payable := planet.CanPay(cost)
 	if !payable {
@@ -93,7 +94,7 @@ func (tx *UpgradeBuildingTransaction) Check(ctx TransactionContext) *abcitypes.R
 		}
 	}
 
-	pendingUpgrades, err := ctx.Db.Upgrades.GetPendingBuildingUpgradesByPlanetAt(universe.Id, planet.CoordinateId(), uint64(ctx.Date.Unix()))
+	pendingUpgrades, err := ctx.Db.Upgrades.GetPendingTechnologyUpgradesByPlanetAt(universe.Id, planet.CoordinateId(), uint64(ctx.Date.Unix()))
 	if err != nil {
 		return &abcitypes.ResponseCheckTx{
 			Code: types.InvalidTransactionError,
@@ -109,7 +110,7 @@ func (tx *UpgradeBuildingTransaction) Check(ctx TransactionContext) *abcitypes.R
 	return nil
 }
 
-func (tx *UpgradeBuildingTransaction) Execute(ctx TransactionContext) *abcitypes.ExecTxResult {
+func (tx *UpgradeTechnologyTransaction) Execute(ctx t.TransactionContext) *abcitypes.ExecTxResult {
 	result := tx.Check(ctx)
 	if result.Code != types.NoError {
 		return &abcitypes.ExecTxResult{
@@ -146,32 +147,33 @@ func (tx *UpgradeBuildingTransaction) Execute(ctx TransactionContext) *abcitypes
 		}
 	}
 
-	building, err := ctx.Db.Buildings.GetAt(tx.Data.Building, currentDate)
+	technology, err := ctx.Db.Technologies.GetAt(tx.Data.Technology, currentDate)
 	if err != nil {
 		return &abcitypes.ExecTxResult{
 			Code: types.InvalidTransactionError,
 		}
 	}
 
-	ok := building.MeetRequirements(planet, account)
+	ok := technology.MeetRequirements(planet, account)
 	if !ok {
 		return &abcitypes.ExecTxResult{
 			Code: types.InvalidTransactionError,
 		}
 	}
 
-	upgradeToLevel := planet.BuildingLevel(building.Id) + 1
-	upgradeCost := building.GetUpgradeCost(upgradeToLevel)
+	TechnologyId := types.OChainTechnologyID(tx.Data.Technology)
+	upgradeToLevel := account.TechnologyLevel(TechnologyId) + 1
+	upgradeCost := technology.GetUpgradeCost(upgradeToLevel)
 
 	duration := (upgradeCost.Metal + upgradeCost.Crystal) * 3600
-	duration /= (2500 * (1 + planet.BuildingLevel(types.RoboticFactoryID)) * uint64(math.Pow(float64(2), float64(planet.BuildingLevel(types.NaniteFactoryID)))) * universe.Speed)
+	duration /= (1000 * (1 + planet.BuildingLevel(types.ResearchLaboratoryID)) * universe.Speed)
 
 	upgrade := types.OChainUpgrade{
 		UniverseId:         universe.Id,
 		PlanetCoordinateId: planet.CoordinateId(),
-		UpgradeType:        types.OChainBuildingUpgrade,
-		UpgradeId:          tx.Data.Building,
-		Level:              planet.BuildingLevel(building.Id) + 1,
+		UpgradeType:        types.OChainTechnologyUpgrade,
+		UpgradeId:          tx.Data.Technology,
+		Level:              account.TechnologyLevel(TechnologyId) + 1,
 		StartedAt:          ctx.Date.Unix(),
 		EndedAt:            ctx.Date.Unix() + int64(duration),
 		Executed:           false,
@@ -184,7 +186,6 @@ func (tx *UpgradeBuildingTransaction) Execute(ctx TransactionContext) *abcitypes
 		return &abcitypes.ExecTxResult{
 			Code: types.InvalidTransactionError,
 		}
-
 	}
 
 	err = ctx.Db.Planets.Update(tx.Data.Universe, planet)
@@ -208,7 +209,7 @@ func (tx *UpgradeBuildingTransaction) Execute(ctx TransactionContext) *abcitypes
 		}
 	}
 
-	receipt := TransactionReceipt{
+	receipt := t.TransactionReceipt{
 		GasCost: txGasCost,
 	}
 
@@ -219,9 +220,8 @@ func (tx *UpgradeBuildingTransaction) Execute(ctx TransactionContext) *abcitypes
 				{Key: "account", Value: tx.From, Index: true},
 				{Key: "universe", Value: tx.Data.Universe, Index: true},
 				{Key: "planet", Value: tx.Data.Planet, Index: true},
-				{Key: "buildingId", Value: tx.Data.Building},
-				{Key: "upgradeType", Value: fmt.Sprint(types.OChainBuildingUpgrade)},
-				{Key: "upgradeId", Value: tx.Data.Building},
+				{Key: "upgradeType", Value: fmt.Sprint(types.OChainTechnologyUpgrade)},
+				{Key: "upgradeId", Value: tx.Data.Technology},
 				{Key: "level", Value: fmt.Sprint(upgradeToLevel)},
 			},
 		},
@@ -248,15 +248,15 @@ func (tx *UpgradeBuildingTransaction) Execute(ctx TransactionContext) *abcitypes
 	}
 }
 
-func ParseUpgradeBuildingTransaction(tx Transaction) (UpgradeBuildingTransaction, error) {
-	var txData UpgradeBuildingTransactionData
+func ParseUpgradeTechnologyTransaction(tx t.Transaction) (UpgradeTechnologyTransaction, error) {
+	var txData UpgradeTechnologyTransactionData
 	err := cbor.Unmarshal(tx.Data, &txData)
 
 	if err != nil {
-		return UpgradeBuildingTransaction{}, err
+		return UpgradeTechnologyTransaction{}, err
 	}
 
-	return UpgradeBuildingTransaction{
+	return UpgradeTechnologyTransaction{
 		Type:      tx.Type,
 		From:      tx.From,
 		Nonce:     tx.Nonce,

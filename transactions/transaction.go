@@ -137,36 +137,6 @@ func (tx *Transaction) UniqueID() ([]byte, error) {
 	return txhash.Bytes(), nil
 }
 
-func (tx *Transaction) IsValid() error {
-
-	if uint64(tx.Type) > MaxTransactionType {
-		return errors.New("bad transaction type")
-	}
-
-	switch tx.Type {
-	//System Txs
-	case NewValidator:
-		_, err := ParseOChainBridgeNewValidatorTransaction(*tx)
-		return err
-	case RemoveValidator:
-		_, err := ParseOChainBridgeRemoveValidatorTransaction(*tx)
-		return err
-
-	case ExecutePendingUpgrade:
-		return nil
-
-	//Authenticated Txs
-	case RegisterAccount:
-		_, err := ParseRegisterAccountTransaction(*tx)
-		return err
-	case RegisterUniverseAccount:
-		_, err := ParseRegisterUniverseAccountTransaction(*tx)
-		return err
-	}
-
-	return errors.New("unknown tx type")
-}
-
 func (tx *Transaction) GetSigner() (string, error) {
 	signer, err := tx.RecoverSignerAddress()
 	if err != nil {

@@ -1,4 +1,4 @@
-package transactions
+package account_transactions
 
 import (
 	"encoding/hex"
@@ -9,6 +9,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/fxamacker/cbor/v2"
 
+	t "github.com/ochain-gg/ochain-network/transactions"
 	"github.com/ochain-gg/ochain-network/types"
 )
 
@@ -17,20 +18,20 @@ type RegisterUniverseAccountTransactionData struct {
 }
 
 type RegisterUniverseAccountTransaction struct {
-	Type      TransactionType                        `cbor:"1,keyasint"`
+	Type      t.TransactionType                      `cbor:"1,keyasint"`
 	From      string                                 `cbor:"2,keyasint"`
 	Nonce     uint64                                 `cbor:"3,keyasint"`
 	Data      RegisterUniverseAccountTransactionData `cbor:"4,keyasint"`
 	Signature []byte                                 `cbor:"5,keyasint"`
 }
 
-func (tx *RegisterUniverseAccountTransaction) Transaction() (Transaction, error) {
+func (tx *RegisterUniverseAccountTransaction) Transaction() (t.Transaction, error) {
 	txData, err := cbor.Marshal(tx.Data)
 	if err != nil {
-		return Transaction{}, err
+		return t.Transaction{}, err
 	}
 
-	return Transaction{
+	return t.Transaction{
 		Type:      tx.Type,
 		From:      tx.From,
 		Nonce:     tx.Nonce,
@@ -39,7 +40,7 @@ func (tx *RegisterUniverseAccountTransaction) Transaction() (Transaction, error)
 	}, nil
 }
 
-func (tx *RegisterUniverseAccountTransaction) Check(ctx TransactionContext) *abcitypes.ResponseCheckTx {
+func (tx *RegisterUniverseAccountTransaction) Check(ctx t.TransactionContext) *abcitypes.ResponseCheckTx {
 	_, err := ctx.Db.GlobalsAccounts.Get(tx.From)
 	if err != nil {
 		return &abcitypes.ResponseCheckTx{
@@ -78,7 +79,7 @@ func (tx *RegisterUniverseAccountTransaction) Check(ctx TransactionContext) *abc
 	}
 }
 
-func (tx *RegisterUniverseAccountTransaction) Execute(ctx TransactionContext) *abcitypes.ExecTxResult {
+func (tx *RegisterUniverseAccountTransaction) Execute(ctx t.TransactionContext) *abcitypes.ExecTxResult {
 	result := tx.Check(ctx)
 	if result.Code != types.NoError {
 		return &abcitypes.ExecTxResult{
@@ -270,7 +271,7 @@ func (tx *RegisterUniverseAccountTransaction) Execute(ctx TransactionContext) *a
 		}
 	}
 
-	receipt := TransactionReceipt{
+	receipt := t.TransactionReceipt{
 		GasCost: txGasCost,
 	}
 
@@ -301,7 +302,7 @@ func (tx *RegisterUniverseAccountTransaction) Execute(ctx TransactionContext) *a
 	}
 }
 
-func ParseRegisterUniverseAccountTransaction(tx Transaction) (RegisterUniverseAccountTransaction, error) {
+func ParseRegisterUniverseAccountTransaction(tx t.Transaction) (RegisterUniverseAccountTransaction, error) {
 	var txData RegisterUniverseAccountTransactionData
 	err := cbor.Unmarshal(tx.Data, &txData)
 

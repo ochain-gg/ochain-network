@@ -1,4 +1,4 @@
-package transactions
+package game_transactions
 
 import (
 	"fmt"
@@ -6,6 +6,8 @@ import (
 
 	abcitypes "github.com/cometbft/cometbft/abci/types"
 	"github.com/fxamacker/cbor/v2"
+
+	t "github.com/ochain-gg/ochain-network/transactions"
 	"github.com/ochain-gg/ochain-network/types"
 )
 
@@ -16,20 +18,20 @@ type BuildTransactionData struct {
 }
 
 type BuildTransaction struct {
-	Type      TransactionType      `cbor:"1,keyasint"`
+	Type      t.TransactionType    `cbor:"1,keyasint"`
 	From      string               `cbor:"2,keyasint"`
 	Nonce     uint64               `cbor:"3,keyasint"`
 	Data      BuildTransactionData `cbor:"4,keyasint"`
 	Signature []byte               `cbor:"5,keyasint"`
 }
 
-func (tx *BuildTransaction) Transaction() (Transaction, error) {
+func (tx *BuildTransaction) Transaction() (t.Transaction, error) {
 	txData, err := cbor.Marshal(tx.Data)
 	if err != nil {
-		return Transaction{}, err
+		return t.Transaction{}, err
 	}
 
-	return Transaction{
+	return t.Transaction{
 		Type:      tx.Type,
 		From:      tx.From,
 		Nonce:     tx.Nonce,
@@ -38,7 +40,7 @@ func (tx *BuildTransaction) Transaction() (Transaction, error) {
 	}, nil
 }
 
-func (tx *BuildTransaction) Check(ctx TransactionContext) *abcitypes.ResponseCheckTx {
+func (tx *BuildTransaction) Check(ctx t.TransactionContext) *abcitypes.ResponseCheckTx {
 	_, err := ctx.Db.GlobalsAccounts.GetAt(tx.From, uint64(ctx.Date.Unix()))
 	if err != nil {
 		return &abcitypes.ResponseCheckTx{
@@ -131,7 +133,7 @@ func (tx *BuildTransaction) Check(ctx TransactionContext) *abcitypes.ResponseChe
 	}
 }
 
-func (tx *BuildTransaction) Execute(ctx TransactionContext) *abcitypes.ExecTxResult {
+func (tx *BuildTransaction) Execute(ctx t.TransactionContext) *abcitypes.ExecTxResult {
 	result := tx.Check(ctx)
 	if result.Code != types.NoError {
 		return &abcitypes.ExecTxResult{
@@ -269,7 +271,7 @@ func (tx *BuildTransaction) Execute(ctx TransactionContext) *abcitypes.ExecTxRes
 		}
 	}
 
-	receipt := TransactionReceipt{
+	receipt := t.TransactionReceipt{
 		GasCost: txGasCost,
 	}
 
@@ -301,7 +303,7 @@ func (tx *BuildTransaction) Execute(ctx TransactionContext) *abcitypes.ExecTxRes
 	}
 }
 
-func ParseBuildTransaction(tx Transaction) (BuildTransaction, error) {
+func ParseBuildTransaction(tx t.Transaction) (BuildTransaction, error) {
 	var txData BuildTransactionData
 	err := cbor.Unmarshal(tx.Data, &txData)
 

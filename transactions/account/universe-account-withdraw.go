@@ -1,34 +1,35 @@
-package transactions
+package account_transactions
 
 import (
 	"fmt"
 
 	abcitypes "github.com/cometbft/cometbft/abci/types"
 	"github.com/fxamacker/cbor/v2"
+	t "github.com/ochain-gg/ochain-network/transactions"
 	"github.com/ochain-gg/ochain-network/types"
 )
 
-type UpgradeTechnologyTransactionData struct {
-	Universe   string `cbor:"1,keyasint"`
-	Planet     string `cbor:"2,keyasint"`
-	Technology string `cbor:"3,keyasint"`
+type UniverseAccountWithdrawTransactionData struct {
+	Universe string `cbor:"1,keyasint"`
+	Planet   string `cbor:"2,keyasint"`
+	Amount   uint64 `cbor:"3,keyasint"`
 }
 
-type UpgradeTechnologyTransaction struct {
-	Type      TransactionType                  `cbor:"1,keyasint"`
-	From      string                           `cbor:"2,keyasint"`
-	Nonce     uint64                           `cbor:"3,keyasint"`
-	Data      UpgradeTechnologyTransactionData `cbor:"4,keyasint"`
-	Signature []byte                           `cbor:"5,keyasint"`
+type UniverseAccountWithdrawTransaction struct {
+	Type      t.TransactionType                      `cbor:"1,keyasint"`
+	From      string                                 `cbor:"2,keyasint"`
+	Nonce     uint64                                 `cbor:"3,keyasint"`
+	Data      UniverseAccountWithdrawTransactionData `cbor:"4,keyasint"`
+	Signature []byte                                 `cbor:"5,keyasint"`
 }
 
-func (tx *UpgradeTechnologyTransaction) Transaction() (Transaction, error) {
+func (tx *UniverseAccountWithdrawTransaction) Transaction() (t.Transaction, error) {
 	txData, err := cbor.Marshal(tx.Data)
 	if err != nil {
-		return Transaction{}, err
+		return t.Transaction{}, err
 	}
 
-	return Transaction{
+	return t.Transaction{
 		Type:      tx.Type,
 		From:      tx.From,
 		Nonce:     tx.Nonce,
@@ -37,7 +38,7 @@ func (tx *UpgradeTechnologyTransaction) Transaction() (Transaction, error) {
 	}, nil
 }
 
-func (tx *UpgradeTechnologyTransaction) Check(ctx TransactionContext) *abcitypes.ResponseCheckTx {
+func (tx *UniverseAccountWithdrawTransaction) Check(ctx t.TransactionContext) *abcitypes.ResponseCheckTx {
 	_, err := ctx.Db.GlobalsAccounts.GetAt(tx.From, uint64(ctx.Date.Unix()))
 	if err != nil {
 		return &abcitypes.ResponseCheckTx{
@@ -45,14 +46,7 @@ func (tx *UpgradeTechnologyTransaction) Check(ctx TransactionContext) *abcitypes
 		}
 	}
 
-	account, err := ctx.Db.UniverseAccounts.GetAt(tx.Data.Universe, tx.From, uint64(ctx.Date.Unix()))
-	if err != nil {
-		return &abcitypes.ResponseCheckTx{
-			Code: types.InvalidTransactionError,
-		}
-	}
-
-	universe, err := ctx.Db.Universes.GetAt(tx.Data.Universe, uint64(ctx.Date.Unix()))
+	_, err = ctx.Db.UniverseAccounts.GetAt(tx.Data.Universe, tx.From, uint64(ctx.Date.Unix()))
 	if err != nil {
 		return &abcitypes.ResponseCheckTx{
 			Code: types.InvalidTransactionError,
@@ -66,40 +60,21 @@ func (tx *UpgradeTechnologyTransaction) Check(ctx TransactionContext) *abcitypes
 		}
 	}
 
-	technology, err := ctx.Db.Technologies.GetAt(tx.Data.Technology, uint64(ctx.Date.Unix()))
+	year, week := ctx.Date.ISOWeek()
+	weeklyUsage, err := ctx.Db.UniverseAccountWeeklyUsage.GetAt(tx.Data.Universe, tx.From, year, week, uint64(ctx.Date.Unix()))
 	if err != nil {
 		return &abcitypes.ResponseCheckTx{
 			Code: types.InvalidTransactionError,
 		}
 	}
 
-	ok := technology.MeetRequirements(planet, account)
-	if !ok {
+	if weeklyUsage.WithdrawalsExecuted >= types.MaxWeeklyOCTWithdrawals {
 		return &abcitypes.ResponseCheckTx{
 			Code: types.InvalidTransactionError,
 		}
 	}
 
-	planet.UpdateResources(universe.Speed, int64(ctx.Date.Unix()), account)
-
-	level := account.TechnologyLevel(technology.Id) + 1
-	cost := technology.GetUpgradeCost(level)
-
-	payable := planet.CanPay(cost)
-	if !payable {
-		return &abcitypes.ResponseCheckTx{
-			Code: types.InvalidTransactionError,
-		}
-	}
-
-	pendingUpgrades, err := ctx.Db.Upgrades.GetPendingTechnologyUpgradesByPlanetAt(universe.Id, planet.CoordinateId(), uint64(ctx.Date.Unix()))
-	if err != nil {
-		return &abcitypes.ResponseCheckTx{
-			Code: types.InvalidTransactionError,
-		}
-	}
-
-	if len(pendingUpgrades) > 0 {
+	if planet.Resources.OCT < tx.Data.Amount {
 		return &abcitypes.ResponseCheckTx{
 			Code: types.InvalidTransactionError,
 		}
@@ -108,7 +83,7 @@ func (tx *UpgradeTechnologyTransaction) Check(ctx TransactionContext) *abcitypes
 	return nil
 }
 
-func (tx *UpgradeTechnologyTransaction) Execute(ctx TransactionContext) *abcitypes.ExecTxResult {
+func (tx *UniverseAccountWithdrawTransaction) Execute(ctx t.TransactionContext) *abcitypes.ExecTxResult {
 	result := tx.Check(ctx)
 	if result.Code != types.NoError {
 		return &abcitypes.ExecTxResult{
@@ -117,14 +92,15 @@ func (tx *UpgradeTechnologyTransaction) Execute(ctx TransactionContext) *abcityp
 	}
 
 	currentDate := uint64(ctx.Date.Unix())
-	universe, err := ctx.Db.Universes.GetAt(tx.Data.Universe, currentDate)
+
+	globalAccount, err := ctx.Db.GlobalsAccounts.GetAt(tx.From, currentDate)
 	if err != nil {
 		return &abcitypes.ExecTxResult{
 			Code: types.InvalidTransactionError,
 		}
 	}
 
-	globalAccount, err := ctx.Db.GlobalsAccounts.GetAt(tx.From, currentDate)
+	universe, err := ctx.Db.Universes.GetAt(tx.Data.Universe, currentDate)
 	if err != nil {
 		return &abcitypes.ExecTxResult{
 			Code: types.InvalidTransactionError,
@@ -145,42 +121,22 @@ func (tx *UpgradeTechnologyTransaction) Execute(ctx TransactionContext) *abcityp
 		}
 	}
 
-	technology, err := ctx.Db.Technologies.GetAt(tx.Data.Technology, currentDate)
+	year, week := ctx.Date.ISOWeek()
+	weeklyUsage, err := ctx.Db.UniverseAccountWeeklyUsage.GetAt(tx.Data.Universe, tx.From, year, week, uint64(ctx.Date.Unix()))
 	if err != nil {
 		return &abcitypes.ExecTxResult{
 			Code: types.InvalidTransactionError,
 		}
 	}
 
-	ok := technology.MeetRequirements(planet, account)
-	if !ok {
-		return &abcitypes.ExecTxResult{
-			Code: types.InvalidTransactionError,
-		}
-	}
+	weeklyUsage.WithdrawalsExecuted += 1
 
-	TechnologyId := types.OChainTechnologyID(tx.Data.Technology)
-	upgradeToLevel := account.TechnologyLevel(TechnologyId) + 1
-	upgradeCost := technology.GetUpgradeCost(upgradeToLevel)
-
-	duration := (upgradeCost.Metal + upgradeCost.Crystal) * 3600
-	duration /= (1000 * (1 + planet.BuildingLevel(types.ResearchLaboratoryID)) * universe.Speed)
-
-	upgrade := types.OChainUpgrade{
-		UniverseId:         universe.Id,
-		PlanetCoordinateId: planet.CoordinateId(),
-		UpgradeType:        types.OChainTechnologyUpgrade,
-		UpgradeId:          tx.Data.Technology,
-		Level:              account.TechnologyLevel(TechnologyId) + 1,
-		StartedAt:          ctx.Date.Unix(),
-		EndedAt:            ctx.Date.Unix() + int64(duration),
-		Executed:           false,
-	}
-
+	globalAccount.CreditBalance += tx.Data.Amount
+	planet.Resources.OCT -= tx.Data.Amount
 	planet.UpdateResources(universe.Speed, ctx.Date.Unix(), account)
 
-	payable := planet.CanPay(upgradeCost)
-	if !payable {
+	err = ctx.Db.GlobalsAccounts.Update(globalAccount)
+	if err != nil {
 		return &abcitypes.ExecTxResult{
 			Code: types.InvalidTransactionError,
 		}
@@ -193,7 +149,7 @@ func (tx *UpgradeTechnologyTransaction) Execute(ctx TransactionContext) *abcityp
 		}
 	}
 
-	err = ctx.Db.Upgrades.Insert(upgrade)
+	err = ctx.Db.UniverseAccountWeeklyUsage.Upsert(weeklyUsage)
 	if err != nil {
 		return &abcitypes.ExecTxResult{
 			Code: types.InvalidTransactionError,
@@ -207,20 +163,18 @@ func (tx *UpgradeTechnologyTransaction) Execute(ctx TransactionContext) *abcityp
 		}
 	}
 
-	receipt := TransactionReceipt{
+	receipt := t.TransactionReceipt{
 		GasCost: txGasCost,
 	}
 
 	events := []abcitypes.Event{
 		{
-			Type: "UpgradeStarted",
+			Type: "UniverseAccountWithdraw",
 			Attributes: []abcitypes.EventAttribute{
 				{Key: "account", Value: tx.From, Index: true},
 				{Key: "universe", Value: tx.Data.Universe, Index: true},
 				{Key: "planet", Value: tx.Data.Planet, Index: true},
-				{Key: "upgradeType", Value: fmt.Sprint(types.OChainTechnologyUpgrade)},
-				{Key: "upgradeId", Value: tx.Data.Technology},
-				{Key: "level", Value: fmt.Sprint(upgradeToLevel)},
+				{Key: "amount", Value: fmt.Sprint(tx.Data.Amount)},
 			},
 		},
 		{
@@ -246,15 +200,15 @@ func (tx *UpgradeTechnologyTransaction) Execute(ctx TransactionContext) *abcityp
 	}
 }
 
-func ParseUpgradeTechnologyTransaction(tx Transaction) (UpgradeTechnologyTransaction, error) {
-	var txData UpgradeTechnologyTransactionData
+func ParseUniverseAccountWithdrawTransaction(tx t.Transaction) (UniverseAccountWithdrawTransaction, error) {
+	var txData UniverseAccountWithdrawTransactionData
 	err := cbor.Unmarshal(tx.Data, &txData)
 
 	if err != nil {
-		return UpgradeTechnologyTransaction{}, err
+		return UniverseAccountWithdrawTransaction{}, err
 	}
 
-	return UpgradeTechnologyTransaction{
+	return UniverseAccountWithdrawTransaction{
 		Type:      tx.Type,
 		From:      tx.From,
 		Nonce:     tx.Nonce,

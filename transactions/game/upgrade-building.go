@@ -1,34 +1,37 @@
-package transactions
+package game_transactions
 
 import (
 	"fmt"
+	"math"
 
 	abcitypes "github.com/cometbft/cometbft/abci/types"
 	"github.com/fxamacker/cbor/v2"
+
+	t "github.com/ochain-gg/ochain-network/transactions"
 	"github.com/ochain-gg/ochain-network/types"
 )
 
-type UniverseAccountDepositTransactionData struct {
+type UpgradeBuildingTransactionData struct {
 	Universe string `cbor:"1,keyasint"`
 	Planet   string `cbor:"2,keyasint"`
-	Amount   uint64 `cbor:"3,keyasint"`
+	Building string `cbor:"3,keyasint"`
 }
 
-type UniverseAccountDepositTransaction struct {
-	Type      TransactionType                       `cbor:"1,keyasint"`
-	From      string                                `cbor:"2,keyasint"`
-	Nonce     uint64                                `cbor:"3,keyasint"`
-	Data      UniverseAccountDepositTransactionData `cbor:"4,keyasint"`
-	Signature []byte                                `cbor:"5,keyasint"`
+type UpgradeBuildingTransaction struct {
+	Type      t.TransactionType              `cbor:"1,keyasint"`
+	From      string                         `cbor:"2,keyasint"`
+	Nonce     uint64                         `cbor:"3,keyasint"`
+	Data      UpgradeBuildingTransactionData `cbor:"4,keyasint"`
+	Signature []byte                         `cbor:"5,keyasint"`
 }
 
-func (tx *UniverseAccountDepositTransaction) Transaction() (Transaction, error) {
+func (tx *UpgradeBuildingTransaction) Transaction() (t.Transaction, error) {
 	txData, err := cbor.Marshal(tx.Data)
 	if err != nil {
-		return Transaction{}, err
+		return t.Transaction{}, err
 	}
 
-	return Transaction{
+	return t.Transaction{
 		Type:      tx.Type,
 		From:      tx.From,
 		Nonce:     tx.Nonce,
@@ -37,46 +40,69 @@ func (tx *UniverseAccountDepositTransaction) Transaction() (Transaction, error) 
 	}, nil
 }
 
-func (tx *UniverseAccountDepositTransaction) Check(ctx TransactionContext) *abcitypes.ResponseCheckTx {
-	globalAccount, err := ctx.Db.GlobalsAccounts.GetAt(tx.From, uint64(ctx.Date.Unix()))
+func (tx *UpgradeBuildingTransaction) Check(ctx t.TransactionContext) *abcitypes.ResponseCheckTx {
+	_, err := ctx.Db.GlobalsAccounts.GetAt(tx.From, uint64(ctx.Date.Unix()))
 	if err != nil {
 		return &abcitypes.ResponseCheckTx{
 			Code: types.InvalidTransactionError,
 		}
 	}
 
-	_, err = ctx.Db.UniverseAccounts.GetAt(tx.Data.Universe, tx.From, uint64(ctx.Date.Unix()))
+	account, err := ctx.Db.UniverseAccounts.GetAt(tx.Data.Universe, tx.From, uint64(ctx.Date.Unix()))
 	if err != nil {
 		return &abcitypes.ResponseCheckTx{
 			Code: types.InvalidTransactionError,
 		}
 	}
 
-	_, err = ctx.Db.Planets.GetAt(tx.Data.Universe, tx.Data.Planet, uint64(ctx.Date.Unix()))
+	universe, err := ctx.Db.Universes.GetAt(tx.Data.Universe, uint64(ctx.Date.Unix()))
 	if err != nil {
 		return &abcitypes.ResponseCheckTx{
 			Code: types.InvalidTransactionError,
 		}
 	}
 
-	if globalAccount.TokenBalance < tx.Data.Amount {
-		return &abcitypes.ResponseCheckTx{
-			Code: types.InvalidTransactionError,
-		}
-	}
-
-	year, week := ctx.Date.ISOWeek()
-	weeklyUsage, err := ctx.Db.UniverseAccountWeeklyUsage.GetAt(tx.Data.Universe, tx.From, year, week, uint64(ctx.Date.Unix()))
+	planet, err := ctx.Db.Planets.GetAt(tx.Data.Universe, tx.Data.Planet, uint64(ctx.Date.Unix()))
 	if err != nil {
 		return &abcitypes.ResponseCheckTx{
 			Code: types.InvalidTransactionError,
 		}
 	}
 
-	newDepositWeeklyUsage := weeklyUsage.DepositedAmount + tx.Data.Amount
+	building, err := ctx.Db.Buildings.GetAt(tx.Data.Building, uint64(ctx.Date.Unix()))
+	if err != nil {
+		return &abcitypes.ResponseCheckTx{
+			Code: types.InvalidTransactionError,
+		}
+	}
 
-	//if account balance >= TwoWeekCommanderPrice
-	if newDepositWeeklyUsage > types.MaxWeeklyOCTDeposit {
+	ok := building.MeetRequirements(planet, account)
+	if !ok {
+		return &abcitypes.ResponseCheckTx{
+			Code: types.InvalidTransactionError,
+		}
+	}
+
+	planet.UpdateResources(universe.Speed, int64(ctx.Date.Unix()), account)
+
+	level := planet.BuildingLevel(building.Id) + 1
+	cost := building.GetUpgradeCost(level)
+
+	payable := planet.CanPay(cost)
+	if !payable {
+		return &abcitypes.ResponseCheckTx{
+			Code: types.InvalidTransactionError,
+		}
+	}
+
+	pendingUpgrades, err := ctx.Db.Upgrades.GetPendingBuildingUpgradesByPlanetAt(universe.Id, planet.CoordinateId(), uint64(ctx.Date.Unix()))
+	if err != nil {
+		return &abcitypes.ResponseCheckTx{
+			Code: types.InvalidTransactionError,
+		}
+	}
+
+	if len(pendingUpgrades) > 0 {
 		return &abcitypes.ResponseCheckTx{
 			Code: types.InvalidTransactionError,
 		}
@@ -85,7 +111,7 @@ func (tx *UniverseAccountDepositTransaction) Check(ctx TransactionContext) *abci
 	return nil
 }
 
-func (tx *UniverseAccountDepositTransaction) Execute(ctx TransactionContext) *abcitypes.ExecTxResult {
+func (tx *UpgradeBuildingTransaction) Execute(ctx t.TransactionContext) *abcitypes.ExecTxResult {
 	result := tx.Check(ctx)
 	if result.Code != types.NoError {
 		return &abcitypes.ExecTxResult{
@@ -94,15 +120,14 @@ func (tx *UniverseAccountDepositTransaction) Execute(ctx TransactionContext) *ab
 	}
 
 	currentDate := uint64(ctx.Date.Unix())
-
-	globalAccount, err := ctx.Db.GlobalsAccounts.GetAt(tx.From, currentDate)
+	universe, err := ctx.Db.Universes.GetAt(tx.Data.Universe, currentDate)
 	if err != nil {
 		return &abcitypes.ExecTxResult{
 			Code: types.InvalidTransactionError,
 		}
 	}
 
-	universe, err := ctx.Db.Universes.GetAt(tx.Data.Universe, currentDate)
+	globalAccount, err := ctx.Db.GlobalsAccounts.GetAt(tx.From, currentDate)
 	if err != nil {
 		return &abcitypes.ExecTxResult{
 			Code: types.InvalidTransactionError,
@@ -122,32 +147,46 @@ func (tx *UniverseAccountDepositTransaction) Execute(ctx TransactionContext) *ab
 			Code: types.InvalidTransactionError,
 		}
 	}
-	year, week := ctx.Date.ISOWeek()
-	weeklyUsage, err := ctx.Db.UniverseAccountWeeklyUsage.GetAt(tx.Data.Universe, tx.From, year, week, uint64(ctx.Date.Unix()))
+
+	building, err := ctx.Db.Buildings.GetAt(tx.Data.Building, currentDate)
 	if err != nil {
 		return &abcitypes.ExecTxResult{
 			Code: types.InvalidTransactionError,
 		}
 	}
 
-	newDepositWeeklyUsage := weeklyUsage.DepositedAmount + tx.Data.Amount
-	if newDepositWeeklyUsage > types.MaxWeeklyOCTDeposit {
+	ok := building.MeetRequirements(planet, account)
+	if !ok {
 		return &abcitypes.ExecTxResult{
 			Code: types.InvalidTransactionError,
 		}
 	}
 
-	weeklyUsage.DepositedAmount = newDepositWeeklyUsage
-	globalAccount.CreditBalance -= tx.Data.Amount
+	upgradeToLevel := planet.BuildingLevel(building.Id) + 1
+	upgradeCost := building.GetUpgradeCost(upgradeToLevel)
+
+	duration := (upgradeCost.Metal + upgradeCost.Crystal) * 3600
+	duration /= (2500 * (1 + planet.BuildingLevel(types.RoboticFactoryID)) * uint64(math.Pow(float64(2), float64(planet.BuildingLevel(types.NaniteFactoryID)))) * universe.Speed)
+
+	upgrade := types.OChainUpgrade{
+		UniverseId:         universe.Id,
+		PlanetCoordinateId: planet.CoordinateId(),
+		UpgradeType:        types.OChainBuildingUpgrade,
+		UpgradeId:          tx.Data.Building,
+		Level:              planet.BuildingLevel(building.Id) + 1,
+		StartedAt:          ctx.Date.Unix(),
+		EndedAt:            ctx.Date.Unix() + int64(duration),
+		Executed:           false,
+	}
 
 	planet.UpdateResources(universe.Speed, ctx.Date.Unix(), account)
-	planet.Resources.OCT += tx.Data.Amount
 
-	err = ctx.Db.GlobalsAccounts.Update(globalAccount)
-	if err != nil {
+	payable := planet.CanPay(upgradeCost)
+	if !payable {
 		return &abcitypes.ExecTxResult{
 			Code: types.InvalidTransactionError,
 		}
+
 	}
 
 	err = ctx.Db.Planets.Update(tx.Data.Universe, planet)
@@ -157,7 +196,7 @@ func (tx *UniverseAccountDepositTransaction) Execute(ctx TransactionContext) *ab
 		}
 	}
 
-	err = ctx.Db.UniverseAccountWeeklyUsage.Upsert(weeklyUsage)
+	err = ctx.Db.Upgrades.Insert(upgrade)
 	if err != nil {
 		return &abcitypes.ExecTxResult{
 			Code: types.InvalidTransactionError,
@@ -171,18 +210,21 @@ func (tx *UniverseAccountDepositTransaction) Execute(ctx TransactionContext) *ab
 		}
 	}
 
-	receipt := TransactionReceipt{
+	receipt := t.TransactionReceipt{
 		GasCost: txGasCost,
 	}
 
 	events := []abcitypes.Event{
 		{
-			Type: "UniverseAccountDeposit",
+			Type: "UpgradeStarted",
 			Attributes: []abcitypes.EventAttribute{
 				{Key: "account", Value: tx.From, Index: true},
 				{Key: "universe", Value: tx.Data.Universe, Index: true},
 				{Key: "planet", Value: tx.Data.Planet, Index: true},
-				{Key: "amount", Value: fmt.Sprint(tx.Data.Amount)},
+				{Key: "buildingId", Value: tx.Data.Building},
+				{Key: "upgradeType", Value: fmt.Sprint(types.OChainBuildingUpgrade)},
+				{Key: "upgradeId", Value: tx.Data.Building},
+				{Key: "level", Value: fmt.Sprint(upgradeToLevel)},
 			},
 		},
 		{
@@ -208,15 +250,15 @@ func (tx *UniverseAccountDepositTransaction) Execute(ctx TransactionContext) *ab
 	}
 }
 
-func ParseUniverseAccountDepositTransaction(tx Transaction) (UniverseAccountDepositTransaction, error) {
-	var txData UniverseAccountDepositTransactionData
+func ParseUpgradeBuildingTransaction(tx t.Transaction) (UpgradeBuildingTransaction, error) {
+	var txData UpgradeBuildingTransactionData
 	err := cbor.Unmarshal(tx.Data, &txData)
 
 	if err != nil {
-		return UniverseAccountDepositTransaction{}, err
+		return UpgradeBuildingTransaction{}, err
 	}
 
-	return UniverseAccountDepositTransaction{
+	return UpgradeBuildingTransaction{
 		Type:      tx.Type,
 		From:      tx.From,
 		Nonce:     tx.Nonce,

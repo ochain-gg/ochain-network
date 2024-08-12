@@ -1,31 +1,42 @@
-package transactions
+package game_transactions
 
 import (
 	abcitypes "github.com/cometbft/cometbft/abci/types"
 	"github.com/fxamacker/cbor/v2"
+
+	t "github.com/ochain-gg/ochain-network/transactions"
 	"github.com/ochain-gg/ochain-network/types"
 )
 
-type NewUniverseProposalPayload struct {
-	Id    uint64 `cbor:"1,keyasint"`
-	Name  string `cbor:"2,keyasint"`
-	Speed uint64 `cbor:"3,keyasint"`
+type BuyCommanderTransactionData struct {
+	Universe  string                  `cbor:"2,keyasint"`
+	Commander types.OChainCommanderID `cbor:"3,keyasint"`
 }
 
-type CreateGovernanceProposalTransactionData struct {
-	Type    string `cbor:"1,keyasint"`
-	Payload []byte `cbor:"2,keyasint"`
+type BuyCommanderTransaction struct {
+	Type      t.TransactionType           `cbor:"1,keyasint"`
+	From      string                      `cbor:"2,keyasint"`
+	Nonce     uint64                      `cbor:"3,keyasint"`
+	Data      BuyCommanderTransactionData `cbor:"4,keyasint"`
+	Signature []byte                      `cbor:"5,keyasint"`
 }
 
-type CreateGovernanceProposalTransaction struct {
-	Type      TransactionType                         `cbor:"1,keyasint"`
-	From      string                                  `cbor:"2,keyasint"`
-	Nonce     uint64                                  `cbor:"3,keyasint"`
-	Data      CreateGovernanceProposalTransactionData `cbor:"4,keyasint"`
-	Signature []byte                                  `cbor:"5,keyasint"`
+func (tx *BuyCommanderTransaction) Transaction() (t.Transaction, error) {
+	txData, err := cbor.Marshal(tx.Data)
+	if err != nil {
+		return t.Transaction{}, err
+	}
+
+	return t.Transaction{
+		Type:      tx.Type,
+		From:      tx.From,
+		Nonce:     tx.Nonce,
+		Data:      txData,
+		Signature: tx.Signature,
+	}, nil
 }
 
-func (tx *CreateGovernanceProposalTransaction) Check(ctx TransactionContext) *abcitypes.ResponseCheckTx {
+func (tx *BuyCommanderTransaction) Check(ctx t.TransactionContext) *abcitypes.ResponseCheckTx {
 	globalAccount, err := ctx.Db.GlobalsAccounts.Get(tx.From)
 	if err != nil {
 		return &abcitypes.ResponseCheckTx{
@@ -33,18 +44,31 @@ func (tx *CreateGovernanceProposalTransaction) Check(ctx TransactionContext) *ab
 		}
 	}
 
-	if globalAccount.StackedBalance < types.VotingPowerRequiredForProposalCreation {
+	txGasCost := globalAccount.GetGasCost(uint64(ctx.Date.Unix()))
+	if txGasCost > globalAccount.TokenBalance {
+		return &abcitypes.ResponseCheckTx{
+			Code: types.GasCostHigherThanBalance,
+		}
+	}
+
+	_, err = ctx.Db.UniverseAccounts.Get(tx.Data.Universe, tx.From)
+	if err == nil {
 		return &abcitypes.ResponseCheckTx{
 			Code: types.InvalidTransactionError,
 		}
 	}
 
-	return &abcitypes.ResponseCheckTx{
-		Code: types.NoError,
+	//if account balance >= TwoWeekCommanderPrice
+	if globalAccount.CreditBalance < types.TwoWeekCommanderPrice {
+		return &abcitypes.ResponseCheckTx{
+			Code: types.InvalidTransactionError,
+		}
 	}
+
+	return nil
 }
 
-func (tx *CreateGovernanceProposalTransaction) Execute(ctx TransactionContext) *abcitypes.ExecTxResult {
+func (tx *BuyCommanderTransaction) Execute(ctx t.TransactionContext) *abcitypes.ExecTxResult {
 	response := tx.Check(ctx)
 	if response.Code != types.NoError {
 		return &abcitypes.ExecTxResult{
@@ -101,7 +125,7 @@ func (tx *CreateGovernanceProposalTransaction) Execute(ctx TransactionContext) *
 		},
 	}
 
-	receipt := TransactionReceipt{
+	receipt := t.TransactionReceipt{
 		GasCost: txGasCost,
 	}
 
@@ -114,30 +138,15 @@ func (tx *CreateGovernanceProposalTransaction) Execute(ctx TransactionContext) *
 	}
 }
 
-func (tx *CreateGovernanceProposalTransaction) Transaction() (Transaction, error) {
-	txData, err := cbor.Marshal(tx.Data)
-	if err != nil {
-		return Transaction{}, err
-	}
-
-	return Transaction{
-		Type:      tx.Type,
-		From:      tx.From,
-		Nonce:     tx.Nonce,
-		Data:      txData,
-		Signature: tx.Signature,
-	}, nil
-}
-
-func ParseCreateGovernanceProposalTransaction(tx Transaction) (CreateGovernanceProposalTransaction, error) {
-	var txData CreateGovernanceProposalTransactionData
+func ParseBuyCommanderTransaction(tx t.Transaction) (BuyCommanderTransaction, error) {
+	var txData BuyCommanderTransactionData
 	err := cbor.Unmarshal(tx.Data, &txData)
 
 	if err != nil {
-		return CreateGovernanceProposalTransaction{}, err
+		return BuyCommanderTransaction{}, err
 	}
 
-	return CreateGovernanceProposalTransaction{
+	return BuyCommanderTransaction{
 		Type:      tx.Type,
 		From:      tx.From,
 		Nonce:     tx.Nonce,

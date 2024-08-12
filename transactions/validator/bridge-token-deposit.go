@@ -1,4 +1,4 @@
-package transactions
+package validator_transactions
 
 import (
 	"context"
@@ -9,21 +9,22 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/fxamacker/cbor/v2"
 	"github.com/ochain-gg/ochain-network/contracts"
+	t "github.com/ochain-gg/ochain-network/transactions"
 	"github.com/ochain-gg/ochain-network/types"
 )
 
-type OChainBridgeCreditDepositTransactionData struct {
+type OChainBridgeTokenDepositTransactionData struct {
 	RemoteTransactionHash string `cbor:"1,keyasint"`
 	Account               string `cbor:"2,keyasint"`
 	Amount                uint64 `cbor:"3,keyasint"`
 }
 
-type OChainBridgeCreditDepositTransaction struct {
-	Type TransactionType
-	Data OChainBridgeCreditDepositTransactionData
+type OChainBridgeTokenDepositTransaction struct {
+	Type t.TransactionType
+	Data OChainBridgeTokenDepositTransactionData
 }
 
-func (tx OChainBridgeCreditDepositTransaction) Check(ctx TransactionContext) *abcitypes.ResponseCheckTx {
+func (tx OChainBridgeTokenDepositTransaction) Check(ctx t.TransactionContext) *abcitypes.ResponseCheckTx {
 
 	client, err := ethclient.Dial(ctx.Config.EVMRpc)
 	if err != nil {
@@ -72,7 +73,7 @@ func (tx OChainBridgeCreditDepositTransaction) Check(ctx TransactionContext) *ab
 
 	for _, vLog := range remoteTxReceipt.Logs {
 
-		_, err := portal.ParseUSDDeposited(*vLog)
+		_, err := portal.ParseOChainTokenDeposited(*vLog)
 		if err != nil {
 			continue
 		}
@@ -88,7 +89,7 @@ func (tx OChainBridgeCreditDepositTransaction) Check(ctx TransactionContext) *ab
 
 }
 
-func (tx OChainBridgeCreditDepositTransaction) Execute(ctx TransactionContext) *abcitypes.ExecTxResult {
+func (tx OChainBridgeTokenDepositTransaction) Execute(ctx t.TransactionContext) *abcitypes.ExecTxResult {
 	result := tx.Check(ctx)
 	if result.Code != types.NoError {
 		return &abcitypes.ExecTxResult{
@@ -143,7 +144,7 @@ func (tx OChainBridgeCreditDepositTransaction) Execute(ctx TransactionContext) *
 
 	for _, vLog := range remoteTxReceipt.Logs {
 
-		log, err := portal.ParseUSDDeposited(*vLog)
+		log, err := portal.ParseOChainTokenDeposited(*vLog)
 		if err != nil {
 			continue
 		}
@@ -156,7 +157,7 @@ func (tx OChainBridgeCreditDepositTransaction) Execute(ctx TransactionContext) *
 		}
 
 		creditDepositTx := types.OChainBridgeTransaction{
-			Type:     types.OChainBridgeCreditDepositTransaction,
+			Type:     types.OChainBridgeTokenDepositTransaction,
 			Hash:     tx.Data.RemoteTransactionHash,
 			Account:  log.Receiver.Hex(),
 			Amount:   log.Amount.Uint64(),
@@ -181,15 +182,28 @@ func (tx OChainBridgeCreditDepositTransaction) Execute(ctx TransactionContext) *
 	}
 }
 
-func ParseOChainBridgeCreditDepositTransaction(tx Transaction) (OChainBridgeCreditDepositTransaction, error) {
-	var txData OChainBridgeCreditDepositTransactionData
+func (tx OChainBridgeTokenDepositTransaction) Transaction() (t.Transaction, error) {
+
+	txData, err := cbor.Marshal(tx.Data)
+	if err != nil {
+		return t.Transaction{}, err
+	}
+
+	return t.Transaction{
+		Type: tx.Type,
+		Data: txData,
+	}, nil
+}
+
+func ParseOChainBridgeTokenDepositTransaction(tx t.Transaction) (OChainBridgeTokenDepositTransaction, error) {
+	var txData OChainBridgeTokenDepositTransactionData
 	err := cbor.Unmarshal(tx.Data, &txData)
 
 	if err != nil {
-		return OChainBridgeCreditDepositTransaction{}, err
+		return OChainBridgeTokenDepositTransaction{}, err
 	}
 
-	return OChainBridgeCreditDepositTransaction{
+	return OChainBridgeTokenDepositTransaction{
 		Type: tx.Type,
 		Data: txData,
 	}, nil

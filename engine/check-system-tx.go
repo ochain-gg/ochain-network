@@ -2,49 +2,43 @@ package engine
 
 import (
 	abcitypes "github.com/cometbft/cometbft/abci/types"
-	"github.com/ochain-gg/ochain-network/transactions"
 	"github.com/ochain-gg/ochain-network/types"
 )
 
-func CheckSystemTx(ctx transactions.TransactionContext, req *abcitypes.RequestCheckTx, tx transactions.Transaction) *abcitypes.ResponseCheckTx {
+func CheckSystemTx(ctx types.TransactionContext, req *abcitypes.RequestCheckTx, tx types.Transaction) *abcitypes.ResponseCheckTx {
 
-	tx, err := transactions.ParseTransaction(req.Tx)
+	tx, err := types.ParseTransaction(req.Tx)
 	if err != nil {
 		return &abcitypes.ResponseCheckTx{Code: types.ParsingTransactionError, GasWanted: 0, GasUsed: 0}
 	}
 
-	err = tx.IsValid()
-	if err != nil {
-		return &abcitypes.ResponseCheckTx{Code: types.InvalidTransactionError, GasWanted: 0, GasUsed: 0}
-	}
-
 	switch tx.Type {
-	case transactions.NewValidator:
-		transaction, err := transactions.ParseOChainBridgeNewValidatorTransaction(tx)
+	case types.NewValidator:
+		transaction, err := types.ParseOChainBridgeNewValidatorTransaction(tx)
 		if err != nil {
 			return &abcitypes.ResponseCheckTx{Code: types.ParsingTransactionDataError, GasWanted: 0, GasUsed: 0}
 		}
 
 		return transaction.Check(ctx)
 
-	case transactions.RemoveValidator:
-		transaction, err := transactions.ParseOChainBridgeRemoveValidatorTransaction(tx)
+	case types.RemoveValidator:
+		transaction, err := types.ParseOChainBridgeRemoveValidatorTransaction(tx)
 		if err != nil {
 			return &abcitypes.ResponseCheckTx{Code: types.ParsingTransactionDataError, GasWanted: 0, GasUsed: 0}
 		}
 
 		return transaction.Check(ctx)
 
-	case transactions.OChainTokenDeposit:
-		transaction, err := transactions.ParseOChainBridgeTokenDepositTransaction(tx)
+	case types.OChainTokenDeposit:
+		transaction, err := types.ParseOChainBridgeTokenDepositTransaction(tx)
 		if err != nil {
 			return &abcitypes.ResponseCheckTx{Code: types.ParsingTransactionDataError, GasWanted: 0, GasUsed: 0}
 		}
 
 		return transaction.Check(ctx)
 
-	case transactions.OChainCreditDeposit:
-		transaction, err := transactions.ParseOChainBridgeCreditDepositTransaction(tx)
+	case types.OChainCreditDeposit:
+		transaction, err := types.ParseOChainBridgeCreditDepositTransaction(tx)
 		if err != nil {
 			return &abcitypes.ResponseCheckTx{Code: types.ParsingTransactionDataError, GasWanted: 0, GasUsed: 0}
 		}

@@ -1,10 +1,12 @@
-package transactions
+package game_transactions
 
 import (
 	"fmt"
 
 	abcitypes "github.com/cometbft/cometbft/abci/types"
 	"github.com/fxamacker/cbor/v2"
+
+	t "github.com/ochain-gg/ochain-network/transactions"
 	"github.com/ochain-gg/ochain-network/types"
 )
 
@@ -16,23 +18,23 @@ type ExecuteUpgradeTransactionData struct {
 }
 
 type ExecuteUpgradeTransaction struct {
-	Type TransactionType               `cbor:"1,keyasint"`
+	Type t.TransactionType             `cbor:"1,keyasint"`
 	Data ExecuteUpgradeTransactionData `cbor:"4,keyasint"`
 }
 
-func (tx *ExecuteUpgradeTransaction) Transaction() (Transaction, error) {
+func (tx *ExecuteUpgradeTransaction) Transaction() (t.Transaction, error) {
 	txData, err := cbor.Marshal(tx.Data)
 	if err != nil {
-		return Transaction{}, err
+		return t.Transaction{}, err
 	}
 
-	return Transaction{
+	return t.Transaction{
 		Type: tx.Type,
 		Data: txData,
 	}, nil
 }
 
-func (tx *ExecuteUpgradeTransaction) Check(ctx TransactionContext) *abcitypes.ResponseCheckTx {
+func (tx *ExecuteUpgradeTransaction) Check(ctx t.TransactionContext) *abcitypes.ResponseCheckTx {
 	currentDate := uint64(ctx.Date.Unix())
 	universe, err := ctx.Db.Universes.GetAt(tx.Data.Universe, currentDate)
 	if err != nil {
@@ -80,7 +82,7 @@ func (tx *ExecuteUpgradeTransaction) Check(ctx TransactionContext) *abcitypes.Re
 	}
 }
 
-func (tx *ExecuteUpgradeTransaction) Execute(ctx TransactionContext) *abcitypes.ExecTxResult {
+func (tx *ExecuteUpgradeTransaction) Execute(ctx t.TransactionContext) *abcitypes.ExecTxResult {
 	result := tx.Check(ctx)
 	if result.Code != types.NoError {
 		return &abcitypes.ExecTxResult{
@@ -212,7 +214,7 @@ func (tx *ExecuteUpgradeTransaction) Execute(ctx TransactionContext) *abcitypes.
 	}
 }
 
-func ParseExecuteUpgradeTransaction(tx Transaction) (ExecuteUpgradeTransaction, error) {
+func ParseExecuteUpgradeTransaction(tx t.Transaction) (ExecuteUpgradeTransaction, error) {
 	var txData ExecuteUpgradeTransactionData
 	err := cbor.Unmarshal(tx.Data, &txData)
 

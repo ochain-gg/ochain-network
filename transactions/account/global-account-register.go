@@ -1,4 +1,4 @@
-package transactions
+package account_transactions
 
 import (
 	"fmt"
@@ -10,6 +10,7 @@ import (
 	"github.com/ethereum/go-ethereum/signer/core/apitypes"
 	"github.com/fxamacker/cbor/v2"
 
+	t "github.com/ochain-gg/ochain-network/transactions"
 	"github.com/ochain-gg/ochain-network/types"
 )
 
@@ -22,20 +23,20 @@ type RegisterAccountTransactionData struct {
 }
 
 type RegisterAccountTransaction struct {
-	Type      TransactionType                `cbor:"1,keyasint"`
+	Type      t.TransactionType              `cbor:"1,keyasint"`
 	From      string                         `cbor:"2,keyasint"`
 	Nonce     uint64                         `cbor:"3,keyasint"`
 	Data      RegisterAccountTransactionData `cbor:"4,keyasint"`
 	Signature []byte                         `cbor:"5,keyasint"`
 }
 
-func (tx *RegisterAccountTransaction) Transaction() (Transaction, error) {
+func (tx *RegisterAccountTransaction) Transaction() (t.Transaction, error) {
 	txData, err := cbor.Marshal(tx.Data)
 	if err != nil {
-		return Transaction{}, err
+		return t.Transaction{}, err
 	}
 
-	return Transaction{
+	return t.Transaction{
 		Type:      tx.Type,
 		From:      tx.From,
 		Nonce:     tx.Nonce,
@@ -44,7 +45,7 @@ func (tx *RegisterAccountTransaction) Transaction() (Transaction, error) {
 	}, nil
 }
 
-func (tx *RegisterAccountTransaction) Check(ctx TransactionContext) *abcitypes.ResponseCheckTx {
+func (tx *RegisterAccountTransaction) Check(ctx t.TransactionContext) *abcitypes.ResponseCheckTx {
 	_, err := ctx.Db.GlobalsAccounts.Get(tx.Data.Address)
 	if err == nil {
 		return &abcitypes.ResponseCheckTx{
@@ -115,7 +116,7 @@ func (tx *RegisterAccountTransaction) Check(ctx TransactionContext) *abcitypes.R
 	return nil
 }
 
-func (tx *RegisterAccountTransaction) Execute(ctx TransactionContext) *abcitypes.ExecTxResult {
+func (tx *RegisterAccountTransaction) Execute(ctx t.TransactionContext) *abcitypes.ExecTxResult {
 	response := tx.Check(ctx)
 	if response.Code != types.NoError {
 		return &abcitypes.ExecTxResult{
@@ -152,7 +153,7 @@ func (tx *RegisterAccountTransaction) Execute(ctx TransactionContext) *abcitypes
 		},
 	}
 
-	receipt := TransactionReceipt{
+	receipt := t.TransactionReceipt{
 		GasCost: 0,
 	}
 
@@ -172,7 +173,7 @@ func (tx *RegisterAccountTransaction) Execute(ctx TransactionContext) *abcitypes
 	}
 }
 
-func ParseRegisterAccountTransaction(tx Transaction) (RegisterAccountTransaction, error) {
+func ParseRegisterAccountTransaction(tx t.Transaction) (RegisterAccountTransaction, error) {
 	var txData RegisterAccountTransactionData
 	err := cbor.Unmarshal(tx.Data, &txData)
 

@@ -1,34 +1,35 @@
-package transactions
+package account_transactions
 
 import (
 	"fmt"
 
 	abcitypes "github.com/cometbft/cometbft/abci/types"
 	"github.com/fxamacker/cbor/v2"
+	t "github.com/ochain-gg/ochain-network/transactions"
 	"github.com/ochain-gg/ochain-network/types"
 )
 
-type UniverseAccountWithdrawTransactionData struct {
+type UniverseAccountDepositTransactionData struct {
 	Universe string `cbor:"1,keyasint"`
 	Planet   string `cbor:"2,keyasint"`
 	Amount   uint64 `cbor:"3,keyasint"`
 }
 
-type UniverseAccountWithdrawTransaction struct {
-	Type      TransactionType                        `cbor:"1,keyasint"`
-	From      string                                 `cbor:"2,keyasint"`
-	Nonce     uint64                                 `cbor:"3,keyasint"`
-	Data      UniverseAccountWithdrawTransactionData `cbor:"4,keyasint"`
-	Signature []byte                                 `cbor:"5,keyasint"`
+type UniverseAccountDepositTransaction struct {
+	Type      t.TransactionType                     `cbor:"1,keyasint"`
+	From      string                                `cbor:"2,keyasint"`
+	Nonce     uint64                                `cbor:"3,keyasint"`
+	Data      UniverseAccountDepositTransactionData `cbor:"4,keyasint"`
+	Signature []byte                                `cbor:"5,keyasint"`
 }
 
-func (tx *UniverseAccountWithdrawTransaction) Transaction() (Transaction, error) {
+func (tx *UniverseAccountDepositTransaction) Transaction() (t.Transaction, error) {
 	txData, err := cbor.Marshal(tx.Data)
 	if err != nil {
-		return Transaction{}, err
+		return t.Transaction{}, err
 	}
 
-	return Transaction{
+	return t.Transaction{
 		Type:      tx.Type,
 		From:      tx.From,
 		Nonce:     tx.Nonce,
@@ -37,8 +38,8 @@ func (tx *UniverseAccountWithdrawTransaction) Transaction() (Transaction, error)
 	}, nil
 }
 
-func (tx *UniverseAccountWithdrawTransaction) Check(ctx TransactionContext) *abcitypes.ResponseCheckTx {
-	_, err := ctx.Db.GlobalsAccounts.GetAt(tx.From, uint64(ctx.Date.Unix()))
+func (tx *UniverseAccountDepositTransaction) Check(ctx t.TransactionContext) *abcitypes.ResponseCheckTx {
+	globalAccount, err := ctx.Db.GlobalsAccounts.GetAt(tx.From, uint64(ctx.Date.Unix()))
 	if err != nil {
 		return &abcitypes.ResponseCheckTx{
 			Code: types.InvalidTransactionError,
@@ -52,8 +53,14 @@ func (tx *UniverseAccountWithdrawTransaction) Check(ctx TransactionContext) *abc
 		}
 	}
 
-	planet, err := ctx.Db.Planets.GetAt(tx.Data.Universe, tx.Data.Planet, uint64(ctx.Date.Unix()))
+	_, err = ctx.Db.Planets.GetAt(tx.Data.Universe, tx.Data.Planet, uint64(ctx.Date.Unix()))
 	if err != nil {
+		return &abcitypes.ResponseCheckTx{
+			Code: types.InvalidTransactionError,
+		}
+	}
+
+	if globalAccount.TokenBalance < tx.Data.Amount {
 		return &abcitypes.ResponseCheckTx{
 			Code: types.InvalidTransactionError,
 		}
@@ -67,13 +74,10 @@ func (tx *UniverseAccountWithdrawTransaction) Check(ctx TransactionContext) *abc
 		}
 	}
 
-	if weeklyUsage.WithdrawalsExecuted >= types.MaxWeeklyOCTWithdrawals {
-		return &abcitypes.ResponseCheckTx{
-			Code: types.InvalidTransactionError,
-		}
-	}
+	newDepositWeeklyUsage := weeklyUsage.DepositedAmount + tx.Data.Amount
 
-	if planet.Resources.OCT < tx.Data.Amount {
+	//if account balance >= TwoWeekCommanderPrice
+	if newDepositWeeklyUsage > types.MaxWeeklyOCTDeposit {
 		return &abcitypes.ResponseCheckTx{
 			Code: types.InvalidTransactionError,
 		}
@@ -82,7 +86,7 @@ func (tx *UniverseAccountWithdrawTransaction) Check(ctx TransactionContext) *abc
 	return nil
 }
 
-func (tx *UniverseAccountWithdrawTransaction) Execute(ctx TransactionContext) *abcitypes.ExecTxResult {
+func (tx *UniverseAccountDepositTransaction) Execute(ctx t.TransactionContext) *abcitypes.ExecTxResult {
 	result := tx.Check(ctx)
 	if result.Code != types.NoError {
 		return &abcitypes.ExecTxResult{
@@ -119,7 +123,6 @@ func (tx *UniverseAccountWithdrawTransaction) Execute(ctx TransactionContext) *a
 			Code: types.InvalidTransactionError,
 		}
 	}
-
 	year, week := ctx.Date.ISOWeek()
 	weeklyUsage, err := ctx.Db.UniverseAccountWeeklyUsage.GetAt(tx.Data.Universe, tx.From, year, week, uint64(ctx.Date.Unix()))
 	if err != nil {
@@ -128,11 +131,18 @@ func (tx *UniverseAccountWithdrawTransaction) Execute(ctx TransactionContext) *a
 		}
 	}
 
-	weeklyUsage.WithdrawalsExecuted += 1
+	newDepositWeeklyUsage := weeklyUsage.DepositedAmount + tx.Data.Amount
+	if newDepositWeeklyUsage > types.MaxWeeklyOCTDeposit {
+		return &abcitypes.ExecTxResult{
+			Code: types.InvalidTransactionError,
+		}
+	}
 
-	globalAccount.CreditBalance += tx.Data.Amount
-	planet.Resources.OCT -= tx.Data.Amount
+	weeklyUsage.DepositedAmount = newDepositWeeklyUsage
+	globalAccount.CreditBalance -= tx.Data.Amount
+
 	planet.UpdateResources(universe.Speed, ctx.Date.Unix(), account)
+	planet.Resources.OCT += tx.Data.Amount
 
 	err = ctx.Db.GlobalsAccounts.Update(globalAccount)
 	if err != nil {
@@ -162,13 +172,13 @@ func (tx *UniverseAccountWithdrawTransaction) Execute(ctx TransactionContext) *a
 		}
 	}
 
-	receipt := TransactionReceipt{
+	receipt := t.TransactionReceipt{
 		GasCost: txGasCost,
 	}
 
 	events := []abcitypes.Event{
 		{
-			Type: "UniverseAccountWithdraw",
+			Type: "UniverseAccountDeposit",
 			Attributes: []abcitypes.EventAttribute{
 				{Key: "account", Value: tx.From, Index: true},
 				{Key: "universe", Value: tx.Data.Universe, Index: true},
@@ -199,15 +209,15 @@ func (tx *UniverseAccountWithdrawTransaction) Execute(ctx TransactionContext) *a
 	}
 }
 
-func ParseUniverseAccountWithdrawTransaction(tx Transaction) (UniverseAccountWithdrawTransaction, error) {
-	var txData UniverseAccountWithdrawTransactionData
+func ParseUniverseAccountDepositTransaction(tx t.Transaction) (UniverseAccountDepositTransaction, error) {
+	var txData UniverseAccountDepositTransactionData
 	err := cbor.Unmarshal(tx.Data, &txData)
 
 	if err != nil {
-		return UniverseAccountWithdrawTransaction{}, err
+		return UniverseAccountDepositTransaction{}, err
 	}
 
-	return UniverseAccountWithdrawTransaction{
+	return UniverseAccountDepositTransaction{
 		Type:      tx.Type,
 		From:      tx.From,
 		Nonce:     tx.Nonce,

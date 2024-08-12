@@ -5,22 +5,16 @@ import (
 	"log"
 
 	abcitypes "github.com/cometbft/cometbft/abci/types"
-	"github.com/ochain-gg/ochain-network/transactions"
 	"github.com/ochain-gg/ochain-network/types"
 )
 
-func CheckTx(ctx transactions.TransactionContext, req *abcitypes.RequestCheckTx) *abcitypes.ResponseCheckTx {
+func CheckTx(ctx types.TransactionContext, req *abcitypes.RequestCheckTx) *abcitypes.ResponseCheckTx {
 
 	log.Printf("Check tx: %s", hex.EncodeToString(req.Tx))
 
-	tx, err := transactions.ParseTransaction(req.Tx)
+	tx, err := types.ParseTransaction(req.Tx)
 	if err != nil {
 		return &abcitypes.ResponseCheckTx{Code: types.ParsingTransactionError}
-	}
-
-	err = tx.IsValid()
-	if err != nil {
-		return &abcitypes.ResponseCheckTx{Code: types.InvalidTransactionError}
 	}
 
 	isSystemTx := uint64(tx.Type) <= 5

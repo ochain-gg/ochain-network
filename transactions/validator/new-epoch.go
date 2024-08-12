@@ -1,19 +1,21 @@
-package transactions
+package validator_transactions
 
 import (
 	abcitypes "github.com/cometbft/cometbft/abci/types"
 	"github.com/fxamacker/cbor/v2"
+
+	t "github.com/ochain-gg/ochain-network/transactions"
 	"github.com/ochain-gg/ochain-network/types"
 )
 
 type OChainNewEpochTransactionData struct{}
 
 type OChainNewEpochTransaction struct {
-	Type TransactionType               `cbor:"1,keyasint"`
+	Type t.TransactionType             `cbor:"1,keyasint"`
 	Data OChainNewEpochTransactionData `cbor:"2,keyasint"`
 }
 
-func (tx OChainNewEpochTransaction) Check(ctx TransactionContext) *abcitypes.ResponseCheckTx {
+func (tx OChainNewEpochTransaction) Check(ctx t.TransactionContext) *abcitypes.ResponseCheckTx {
 
 	currentEpoch, err := ctx.Db.Epochs.GetCurrentAt(uint64(ctx.Date.Unix()))
 	if err != nil {
@@ -33,7 +35,7 @@ func (tx OChainNewEpochTransaction) Check(ctx TransactionContext) *abcitypes.Res
 	}
 }
 
-func (tx OChainNewEpochTransaction) Execute(ctx TransactionContext) *abcitypes.ExecTxResult {
+func (tx OChainNewEpochTransaction) Execute(ctx t.TransactionContext) *abcitypes.ExecTxResult {
 	result := tx.Check(ctx)
 	if result.Code != types.NoError {
 		return &abcitypes.ExecTxResult{
@@ -78,20 +80,20 @@ func (tx OChainNewEpochTransaction) Execute(ctx TransactionContext) *abcitypes.E
 	}
 }
 
-func (tx OChainNewEpochTransaction) Transaction() (Transaction, error) {
+func (tx OChainNewEpochTransaction) Transaction() (t.Transaction, error) {
 
 	txData, err := cbor.Marshal(tx.Data)
 	if err != nil {
-		return Transaction{}, err
+		return t.Transaction{}, err
 	}
 
-	return Transaction{
+	return t.Transaction{
 		Type: tx.Type,
 		Data: txData,
 	}, nil
 }
 
-func ParseOChainNewEpochTransaction(tx Transaction) (OChainNewEpochTransaction, error) {
+func ParseOChainNewEpochTransaction(tx t.Transaction) (OChainNewEpochTransaction, error) {
 	var txData OChainNewEpochTransactionData
 	err := cbor.Unmarshal(tx.Data, &txData)
 

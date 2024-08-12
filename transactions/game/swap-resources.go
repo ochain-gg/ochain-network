@@ -1,10 +1,12 @@
-package transactions
+package game_transactions
 
 import (
 	"fmt"
 
 	abcitypes "github.com/cometbft/cometbft/abci/types"
 	"github.com/fxamacker/cbor/v2"
+
+	t "github.com/ochain-gg/ochain-network/transactions"
 	"github.com/ochain-gg/ochain-network/types"
 )
 
@@ -17,20 +19,20 @@ type SwapResourcesTransactionData struct {
 }
 
 type SwapResourcesTransaction struct {
-	Type      TransactionType              `cbor:"1,keyasint"`
+	Type      t.TransactionType            `cbor:"1,keyasint"`
 	From      string                       `cbor:"2,keyasint"`
 	Nonce     uint64                       `cbor:"3,keyasint"`
 	Data      SwapResourcesTransactionData `cbor:"4,keyasint"`
 	Signature []byte                       `cbor:"5,keyasint"`
 }
 
-func (tx *SwapResourcesTransaction) Transaction() (Transaction, error) {
+func (tx *SwapResourcesTransaction) Transaction() (t.Transaction, error) {
 	txData, err := cbor.Marshal(tx.Data)
 	if err != nil {
-		return Transaction{}, err
+		return t.Transaction{}, err
 	}
 
-	return Transaction{
+	return t.Transaction{
 		Type:      tx.Type,
 		From:      tx.From,
 		Nonce:     tx.Nonce,
@@ -39,7 +41,7 @@ func (tx *SwapResourcesTransaction) Transaction() (Transaction, error) {
 	}, nil
 }
 
-func (tx *SwapResourcesTransaction) Check(ctx TransactionContext) *abcitypes.ResponseCheckTx {
+func (tx *SwapResourcesTransaction) Check(ctx t.TransactionContext) *abcitypes.ResponseCheckTx {
 
 	account, err := ctx.Db.UniverseAccounts.GetAt(tx.Data.Universe, tx.From, uint64(ctx.Date.Unix()))
 	if err != nil {
@@ -98,7 +100,7 @@ func (tx *SwapResourcesTransaction) Check(ctx TransactionContext) *abcitypes.Res
 	return nil
 }
 
-func (tx *SwapResourcesTransaction) Execute(ctx TransactionContext) *abcitypes.ExecTxResult {
+func (tx *SwapResourcesTransaction) Execute(ctx t.TransactionContext) *abcitypes.ExecTxResult {
 	result := tx.Check(ctx)
 	if result.Code != types.NoError {
 		return &abcitypes.ExecTxResult{
@@ -207,7 +209,7 @@ func (tx *SwapResourcesTransaction) Execute(ctx TransactionContext) *abcitypes.E
 		},
 	}
 
-	receipt := TransactionReceipt{
+	receipt := t.TransactionReceipt{
 		GasCost: txGasCost,
 	}
 
@@ -220,7 +222,7 @@ func (tx *SwapResourcesTransaction) Execute(ctx TransactionContext) *abcitypes.E
 	}
 }
 
-func ParseSwapResourcesTransaction(tx Transaction) (SwapResourcesTransaction, error) {
+func ParseSwapResourcesTransaction(tx t.Transaction) (SwapResourcesTransaction, error) {
 	var txData SwapResourcesTransactionData
 	err := cbor.Unmarshal(tx.Data, &txData)
 

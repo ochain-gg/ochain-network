@@ -1,8 +1,10 @@
-package transactions
+package validator_transactions
 
 import (
 	abcitypes "github.com/cometbft/cometbft/abci/types"
 	"github.com/fxamacker/cbor/v2"
+
+	t "github.com/ochain-gg/ochain-network/transactions"
 	"github.com/ochain-gg/ochain-network/types"
 )
 
@@ -11,14 +13,14 @@ type OChainBridgeExecuteTransactionData struct {
 }
 
 type OChainBridgeExecuteTransaction struct {
-	Type      TransactionType                    `cbor:"1,keyasint"`
+	Type      t.TransactionType                  `cbor:"1,keyasint"`
 	From      string                             `cbor:"2,keyasint"`
 	Nonce     uint64                             `cbor:"3,keyasint"`
 	Data      OChainBridgeExecuteTransactionData `cbor:"4,keyasint"`
 	Signature []byte                             `cbor:"5,keyasint"`
 }
 
-func (tx OChainBridgeExecuteTransaction) Check(ctx TransactionContext) *abcitypes.ResponseCheckTx {
+func (tx OChainBridgeExecuteTransaction) Check(ctx t.TransactionContext) *abcitypes.ResponseCheckTx {
 
 	transaction, err := ctx.Db.BridgeTransactions.GetAt(tx.Data.RemoteTransactionHash, uint64(ctx.Date.Unix()))
 	if err != nil || transaction.Executed || transaction.Canceled {
@@ -40,7 +42,7 @@ func (tx OChainBridgeExecuteTransaction) Check(ctx TransactionContext) *abcitype
 
 }
 
-func (tx OChainBridgeExecuteTransaction) Execute(ctx TransactionContext) *abcitypes.ExecTxResult {
+func (tx OChainBridgeExecuteTransaction) Execute(ctx t.TransactionContext) *abcitypes.ExecTxResult {
 	result := tx.Check(ctx)
 	if result.Code != types.NoError {
 		return &abcitypes.ExecTxResult{
@@ -97,20 +99,20 @@ func (tx OChainBridgeExecuteTransaction) Execute(ctx TransactionContext) *abcity
 	}
 }
 
-func (tx OChainBridgeExecuteTransaction) Transaction() (Transaction, error) {
+func (tx OChainBridgeExecuteTransaction) Transaction() (t.Transaction, error) {
 
 	txData, err := cbor.Marshal(tx.Data)
 	if err != nil {
-		return Transaction{}, err
+		return t.Transaction{}, err
 	}
 
-	return Transaction{
+	return t.Transaction{
 		Type: tx.Type,
 		Data: txData,
 	}, nil
 }
 
-func ParseOChainBridgeExecuteTransaction(tx Transaction) (OChainBridgeExecuteTransaction, error) {
+func ParseOChainBridgeExecuteTransaction(tx t.Transaction) (OChainBridgeExecuteTransaction, error) {
 	var txData OChainBridgeExecuteTransactionData
 	err := cbor.Unmarshal(tx.Data, &txData)
 
