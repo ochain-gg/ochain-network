@@ -18,11 +18,6 @@ func FinalizeTx(ctx transactions.TransactionContext, tx []byte) (*abcitypes.Exec
 		return &abcitypes.ExecTxResult{Code: types.ParsingTransactionError, GasWanted: 0, GasUsed: 0}, []abcitypes.ValidatorUpdate{}
 	}
 
-	err = transaction.IsValid()
-	if err != nil {
-		return &abcitypes.ExecTxResult{Code: types.InvalidTransactionError, GasWanted: 0, GasUsed: 0}, []abcitypes.ValidatorUpdate{}
-	}
-
 	isSystemTx := uint64(transaction.Type) <= 5
 	if isSystemTx {
 		return FinalizeSystemTx(ctx, transaction)

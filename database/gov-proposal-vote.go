@@ -23,13 +23,13 @@ func (db *OChainGovernanceProposalVoteTable) SetCurrentTxn(tx *badger.Txn) {
 	db.currentTxn = tx
 }
 
-func (db *OChainGovernanceProposalVoteTable) Exists(id uint64) (bool, error) {
+func (db *OChainGovernanceProposalVoteTable) Exists(id string) (bool, error) {
 	var at uint64 = math.MaxUint64
 	return db.ExistsAt(id, at)
 }
 
-func (db *OChainGovernanceProposalVoteTable) ExistsAt(id uint64, at uint64) (bool, error) {
-	key := []byte(OChainGovernanceProposalVotePrefix + fmt.Sprint(id))
+func (db *OChainGovernanceProposalVoteTable) ExistsAt(id string, at uint64) (bool, error) {
+	key := []byte(OChainGovernanceProposalVotePrefix + id)
 	txn := db.bdb.NewTransactionAt(at, false)
 	if _, err := txn.Get([]byte(key)); err != nil {
 		if errors.Is(err, badger.ErrKeyNotFound) {
@@ -70,10 +70,10 @@ func (db *OChainGovernanceProposalVoteTable) GetAt(id string, at uint64) (types.
 	return epoch, nil
 }
 
-func (db *OChainGovernanceProposalVoteTable) Insert(epoch types.OChainGovernanceProposalVote) error {
-	key := []byte(OChainGovernanceProposalVotePrefix + fmt.Sprint(epoch.Id))
+func (db *OChainGovernanceProposalVoteTable) Insert(vote types.OChainGovernanceProposalVote) error {
+	key := []byte(OChainGovernanceProposalVotePrefix + vote.Id)
 
-	exists, err := db.ExistsAt(epoch.Id, db.currentTxn.ReadTs())
+	exists, err := db.ExistsAt(vote.Id, db.currentTxn.ReadTs())
 	if err != nil {
 		return err
 	}
@@ -82,7 +82,7 @@ func (db *OChainGovernanceProposalVoteTable) Insert(epoch types.OChainGovernance
 		return errors.New("global epoch already exists")
 	}
 
-	value, err := cbor.Marshal(epoch)
+	value, err := cbor.Marshal(vote)
 	if err != nil {
 		return err
 	}

@@ -40,41 +40,41 @@ func (tx *RegisterUniverseAccountTransaction) Transaction() (t.Transaction, erro
 	}, nil
 }
 
-func (tx *RegisterUniverseAccountTransaction) Check(ctx t.TransactionContext) *abcitypes.ResponseCheckTx {
+func (tx *RegisterUniverseAccountTransaction) Check(ctx t.TransactionContext) *abcitypes.CheckTxResponse {
 	_, err := ctx.Db.GlobalsAccounts.Get(tx.From)
 	if err != nil {
-		return &abcitypes.ResponseCheckTx{
+		return &abcitypes.CheckTxResponse{
 			Code: types.InvalidTransactionError,
 		}
 	}
 
 	universeExists, err := ctx.Db.Universes.Exists(tx.Data.UniverseId)
 	if err != nil {
-		return &abcitypes.ResponseCheckTx{
+		return &abcitypes.CheckTxResponse{
 			Code: types.InvalidTransactionError,
 		}
 	}
 
 	if !universeExists {
-		return &abcitypes.ResponseCheckTx{
+		return &abcitypes.CheckTxResponse{
 			Code: types.InvalidTransactionError,
 		}
 	}
 
 	exists, err := ctx.Db.UniverseAccounts.Exists(tx.Data.UniverseId, tx.From)
 	if err != nil {
-		return &abcitypes.ResponseCheckTx{
+		return &abcitypes.CheckTxResponse{
 			Code: types.InvalidTransactionError,
 		}
 	}
 
 	if exists {
-		return &abcitypes.ResponseCheckTx{
+		return &abcitypes.CheckTxResponse{
 			Code: types.InvalidTransactionError,
 		}
 	}
 
-	return &abcitypes.ResponseCheckTx{
+	return &abcitypes.CheckTxResponse{
 		Code: types.NoError,
 	}
 }

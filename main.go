@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"log"
@@ -21,7 +22,9 @@ import (
 	cmtflags "github.com/cometbft/cometbft/libs/cli/flags"
 	cmtlog "github.com/cometbft/cometbft/libs/log"
 	nm "github.com/cometbft/cometbft/node"
+	"github.com/ochain-gg/ochain-network/application"
 	ochainCfg "github.com/ochain-gg/ochain-network/config"
+	"github.com/ochain-gg/ochain-network/database"
 	"github.com/ochain-gg/ochain-network/scheduler"
 	"github.com/spf13/viper"
 )
@@ -89,11 +92,6 @@ func main() {
 		config.PrivValidatorStateFile(),
 	)
 
-	app, err := NewOChainValidatorApplication(*ochainConfig, dbPath, privateKeyBytes)
-	if err != nil {
-		log.Fatalln(err)
-	}
-
 	logger := cmtlog.NewTMLogger(cmtlog.NewSyncWriter(os.Stdout))
 	logger, err = cmtflags.ParseLogLevel(config.LogLevel, logger, cfg.DefaultLogLevel)
 
@@ -101,7 +99,13 @@ func main() {
 		log.Fatalf("failed to parse log level: %v", err)
 	}
 
-	scheduler, err := scheduler.NewScheduler(app.config, app.db)
+	db := database.NewOChainDatabase(dbPath)
+	app, err := application.NewOChainApplication(*ochainConfig, db, privateKeyBytes)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	scheduler, err := scheduler.NewScheduler(*ochainConfig, db)
 	if err != nil {
 		log.Fatalf("Creating scheduler: %v", err)
 	}
@@ -109,6 +113,7 @@ func main() {
 	scheduler.Scheduler.Start()
 
 	node, err := nm.NewNode(
+		context.Background(),
 		config,
 		pv,
 		nodeKey,

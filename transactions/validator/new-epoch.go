@@ -15,22 +15,22 @@ type OChainNewEpochTransaction struct {
 	Data OChainNewEpochTransactionData `cbor:"2,keyasint"`
 }
 
-func (tx OChainNewEpochTransaction) Check(ctx t.TransactionContext) *abcitypes.ResponseCheckTx {
+func (tx OChainNewEpochTransaction) Check(ctx t.TransactionContext) *abcitypes.CheckTxResponse {
 
 	currentEpoch, err := ctx.Db.Epochs.GetCurrentAt(uint64(ctx.Date.Unix()))
 	if err != nil {
-		return &abcitypes.ResponseCheckTx{
+		return &abcitypes.CheckTxResponse{
 			Code: types.CheckTransactionFailure,
 		}
 	}
 
 	if currentEpoch.EndedAt < ctx.Date.Unix() {
-		return &abcitypes.ResponseCheckTx{
+		return &abcitypes.CheckTxResponse{
 			Code: types.CheckTransactionFailure,
 		}
 	}
 
-	return &abcitypes.ResponseCheckTx{
+	return &abcitypes.CheckTxResponse{
 		Code: types.NoError,
 	}
 }

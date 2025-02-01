@@ -3,6 +3,7 @@ package engine
 import (
 	abcitypes "github.com/cometbft/cometbft/abci/types"
 	"github.com/ochain-gg/ochain-network/transactions"
+	account_transactions "github.com/ochain-gg/ochain-network/transactions/account"
 	"github.com/ochain-gg/ochain-network/types"
 )
 
@@ -37,7 +38,7 @@ func FinalizeAuthenticatedTx(ctx transactions.TransactionContext, tx transaction
 	switch tx.Type {
 	case transactions.RegisterAccount:
 
-		transaction, err := transactions.ParseRegisterAccountTransaction(tx)
+		transaction, err := account_transactions.ParseRegisterAccountTransaction(tx)
 		if err != nil {
 			return &abcitypes.ExecTxResult{Code: types.ParsingTransactionDataError}, valUpdates
 		}
@@ -51,7 +52,7 @@ func FinalizeAuthenticatedTx(ctx transactions.TransactionContext, tx transaction
 
 	case transactions.RegisterUniverseAccount:
 
-		transaction, err := transactions.ParseRegisterUniverseAccountTransaction(tx)
+		transaction, err := account_transactions.ParseRegisterUniverseAccountTransaction(tx)
 		if err != nil {
 			return &abcitypes.ExecTxResult{Code: types.ParsingTransactionDataError}, valUpdates
 		}

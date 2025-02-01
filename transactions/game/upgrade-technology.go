@@ -39,45 +39,45 @@ func (tx *UpgradeTechnologyTransaction) Transaction() (t.Transaction, error) {
 	}, nil
 }
 
-func (tx *UpgradeTechnologyTransaction) Check(ctx t.TransactionContext) *abcitypes.ResponseCheckTx {
+func (tx *UpgradeTechnologyTransaction) Check(ctx t.TransactionContext) *abcitypes.CheckTxResponse {
 	_, err := ctx.Db.GlobalsAccounts.GetAt(tx.From, uint64(ctx.Date.Unix()))
 	if err != nil {
-		return &abcitypes.ResponseCheckTx{
+		return &abcitypes.CheckTxResponse{
 			Code: types.InvalidTransactionError,
 		}
 	}
 
 	account, err := ctx.Db.UniverseAccounts.GetAt(tx.Data.Universe, tx.From, uint64(ctx.Date.Unix()))
 	if err != nil {
-		return &abcitypes.ResponseCheckTx{
+		return &abcitypes.CheckTxResponse{
 			Code: types.InvalidTransactionError,
 		}
 	}
 
 	universe, err := ctx.Db.Universes.GetAt(tx.Data.Universe, uint64(ctx.Date.Unix()))
 	if err != nil {
-		return &abcitypes.ResponseCheckTx{
+		return &abcitypes.CheckTxResponse{
 			Code: types.InvalidTransactionError,
 		}
 	}
 
 	planet, err := ctx.Db.Planets.GetAt(tx.Data.Universe, tx.Data.Planet, uint64(ctx.Date.Unix()))
 	if err != nil {
-		return &abcitypes.ResponseCheckTx{
+		return &abcitypes.CheckTxResponse{
 			Code: types.InvalidTransactionError,
 		}
 	}
 
 	technology, err := ctx.Db.Technologies.GetAt(tx.Data.Technology, uint64(ctx.Date.Unix()))
 	if err != nil {
-		return &abcitypes.ResponseCheckTx{
+		return &abcitypes.CheckTxResponse{
 			Code: types.InvalidTransactionError,
 		}
 	}
 
 	ok := technology.MeetRequirements(planet, account)
 	if !ok {
-		return &abcitypes.ResponseCheckTx{
+		return &abcitypes.CheckTxResponse{
 			Code: types.InvalidTransactionError,
 		}
 	}
@@ -89,20 +89,20 @@ func (tx *UpgradeTechnologyTransaction) Check(ctx t.TransactionContext) *abcityp
 
 	payable := planet.CanPay(cost)
 	if !payable {
-		return &abcitypes.ResponseCheckTx{
+		return &abcitypes.CheckTxResponse{
 			Code: types.InvalidTransactionError,
 		}
 	}
 
 	pendingUpgrades, err := ctx.Db.Upgrades.GetPendingTechnologyUpgradesByPlanetAt(universe.Id, planet.CoordinateId(), uint64(ctx.Date.Unix()))
 	if err != nil {
-		return &abcitypes.ResponseCheckTx{
+		return &abcitypes.CheckTxResponse{
 			Code: types.InvalidTransactionError,
 		}
 	}
 
 	if len(pendingUpgrades) > 0 {
-		return &abcitypes.ResponseCheckTx{
+		return &abcitypes.CheckTxResponse{
 			Code: types.InvalidTransactionError,
 		}
 	}

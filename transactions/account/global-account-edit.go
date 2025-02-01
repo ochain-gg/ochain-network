@@ -21,16 +21,16 @@ type ChangeAccountIAMTransaction struct {
 	Signature string            `cbor:"5,keyasint"`
 }
 
-func (tx *ChangeAccountIAMTransaction) Check(ctx t.TransactionContext) *abcitypes.ResponseCheckTx {
+func (tx *ChangeAccountIAMTransaction) Check(ctx t.TransactionContext) *abcitypes.CheckTxResponse {
 	_, err := ctx.Db.GlobalsAccounts.Get(tx.From)
 	if err != nil {
-		return &abcitypes.ResponseCheckTx{
+		return &abcitypes.CheckTxResponse{
 			Code: types.InvalidTransactionError,
 		}
 	}
 
 	//TODO: verify authrorizer signature
-	return &abcitypes.ResponseCheckTx{
+	return &abcitypes.CheckTxResponse{
 		Code: types.NoError,
 	}
 }

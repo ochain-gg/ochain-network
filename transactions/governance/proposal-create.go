@@ -26,21 +26,21 @@ type CreateGovernanceProposalTransaction struct {
 	Signature []byte                                  `cbor:"5,keyasint"`
 }
 
-func (tx *CreateGovernanceProposalTransaction) Check(ctx t.TransactionContext) *abcitypes.ResponseCheckTx {
+func (tx *CreateGovernanceProposalTransaction) Check(ctx t.TransactionContext) *abcitypes.CheckTxResponse {
 	globalAccount, err := ctx.Db.GlobalsAccounts.Get(tx.From)
 	if err != nil {
-		return &abcitypes.ResponseCheckTx{
+		return &abcitypes.CheckTxResponse{
 			Code: types.InvalidTransactionError,
 		}
 	}
 
 	if globalAccount.StackedBalance < types.VotingPowerRequiredForProposalCreation {
-		return &abcitypes.ResponseCheckTx{
+		return &abcitypes.CheckTxResponse{
 			Code: types.InvalidTransactionError,
 		}
 	}
 
-	return &abcitypes.ResponseCheckTx{
+	return &abcitypes.CheckTxResponse{
 		Code: types.NoError,
 	}
 }

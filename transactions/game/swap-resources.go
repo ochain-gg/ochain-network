@@ -41,25 +41,25 @@ func (tx *SwapResourcesTransaction) Transaction() (t.Transaction, error) {
 	}, nil
 }
 
-func (tx *SwapResourcesTransaction) Check(ctx t.TransactionContext) *abcitypes.ResponseCheckTx {
+func (tx *SwapResourcesTransaction) Check(ctx t.TransactionContext) *abcitypes.CheckTxResponse {
 
 	account, err := ctx.Db.UniverseAccounts.GetAt(tx.Data.Universe, tx.From, uint64(ctx.Date.Unix()))
 	if err != nil {
-		return &abcitypes.ResponseCheckTx{
+		return &abcitypes.CheckTxResponse{
 			Code: types.InvalidTransactionError,
 		}
 	}
 
 	universe, err := ctx.Db.Universes.GetAt(tx.Data.Universe, uint64(ctx.Date.Unix()))
 	if err != nil {
-		return &abcitypes.ResponseCheckTx{
+		return &abcitypes.CheckTxResponse{
 			Code: types.InvalidTransactionError,
 		}
 	}
 
 	planet, err := ctx.Db.Planets.GetAt(tx.Data.Universe, tx.Data.Planet, uint64(ctx.Date.Unix()))
 	if err != nil {
-		return &abcitypes.ResponseCheckTx{
+		return &abcitypes.CheckTxResponse{
 			Code: types.InvalidTransactionError,
 		}
 	}
@@ -69,30 +69,30 @@ func (tx *SwapResourcesTransaction) Check(ctx t.TransactionContext) *abcitypes.R
 	switch tx.Data.From {
 	case types.OCTResourceID:
 		if planet.Resources.OCT < tx.Data.Amount {
-			return &abcitypes.ResponseCheckTx{
+			return &abcitypes.CheckTxResponse{
 				Code: types.InvalidTransactionError,
 			}
 		}
 	case types.MetalResourceID:
 		if planet.Resources.Metal < tx.Data.Amount {
-			return &abcitypes.ResponseCheckTx{
+			return &abcitypes.CheckTxResponse{
 				Code: types.InvalidTransactionError,
 			}
 		}
 	case types.CrystalResourceID:
 		if planet.Resources.Crystal < tx.Data.Amount {
-			return &abcitypes.ResponseCheckTx{
+			return &abcitypes.CheckTxResponse{
 				Code: types.InvalidTransactionError,
 			}
 		}
 	case types.DeuteriumResourceID:
 		if planet.Resources.Deuterium < tx.Data.Amount {
-			return &abcitypes.ResponseCheckTx{
+			return &abcitypes.CheckTxResponse{
 				Code: types.InvalidTransactionError,
 			}
 		}
 	default:
-		return &abcitypes.ResponseCheckTx{
+		return &abcitypes.CheckTxResponse{
 			Code: types.InvalidTransactionError,
 		}
 	}

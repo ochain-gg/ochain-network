@@ -34,31 +34,31 @@ func (tx *ExecuteUpgradeTransaction) Transaction() (t.Transaction, error) {
 	}, nil
 }
 
-func (tx *ExecuteUpgradeTransaction) Check(ctx t.TransactionContext) *abcitypes.ResponseCheckTx {
+func (tx *ExecuteUpgradeTransaction) Check(ctx t.TransactionContext) *abcitypes.CheckTxResponse {
 	currentDate := uint64(ctx.Date.Unix())
 	universe, err := ctx.Db.Universes.GetAt(tx.Data.Universe, currentDate)
 	if err != nil {
-		return &abcitypes.ResponseCheckTx{
+		return &abcitypes.CheckTxResponse{
 			Code: types.InvalidTransactionError,
 		}
 	}
 
 	planet, err := ctx.Db.Planets.GetAt(tx.Data.Universe, tx.Data.Planet, currentDate)
 	if err != nil {
-		return &abcitypes.ResponseCheckTx{
+		return &abcitypes.CheckTxResponse{
 			Code: types.InvalidTransactionError,
 		}
 	}
 
 	pendingUpgrades, err := ctx.Db.Upgrades.GetPendingTechnologyUpgradesByPlanetAt(universe.Id, planet.CoordinateId(), uint64(ctx.Date.Unix()))
 	if err != nil {
-		return &abcitypes.ResponseCheckTx{
+		return &abcitypes.CheckTxResponse{
 			Code: types.InvalidTransactionError,
 		}
 	}
 
 	if len(pendingUpgrades) == 0 {
-		return &abcitypes.ResponseCheckTx{
+		return &abcitypes.CheckTxResponse{
 			Code: types.InvalidTransactionError,
 		}
 	}
@@ -71,13 +71,13 @@ func (tx *ExecuteUpgradeTransaction) Check(ctx t.TransactionContext) *abcitypes.
 		}
 
 		if upgrade.EndedAt > ctx.Date.Unix() {
-			return &abcitypes.ResponseCheckTx{
+			return &abcitypes.CheckTxResponse{
 				Code: types.InvalidTransactionError,
 			}
 		}
 	}
 
-	return &abcitypes.ResponseCheckTx{
+	return &abcitypes.CheckTxResponse{
 		Code: types.NoError,
 	}
 }

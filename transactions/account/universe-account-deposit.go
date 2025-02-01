@@ -38,30 +38,30 @@ func (tx *UniverseAccountDepositTransaction) Transaction() (t.Transaction, error
 	}, nil
 }
 
-func (tx *UniverseAccountDepositTransaction) Check(ctx t.TransactionContext) *abcitypes.ResponseCheckTx {
+func (tx *UniverseAccountDepositTransaction) Check(ctx t.TransactionContext) *abcitypes.CheckTxResponse {
 	globalAccount, err := ctx.Db.GlobalsAccounts.GetAt(tx.From, uint64(ctx.Date.Unix()))
 	if err != nil {
-		return &abcitypes.ResponseCheckTx{
+		return &abcitypes.CheckTxResponse{
 			Code: types.InvalidTransactionError,
 		}
 	}
 
 	_, err = ctx.Db.UniverseAccounts.GetAt(tx.Data.Universe, tx.From, uint64(ctx.Date.Unix()))
 	if err != nil {
-		return &abcitypes.ResponseCheckTx{
+		return &abcitypes.CheckTxResponse{
 			Code: types.InvalidTransactionError,
 		}
 	}
 
 	_, err = ctx.Db.Planets.GetAt(tx.Data.Universe, tx.Data.Planet, uint64(ctx.Date.Unix()))
 	if err != nil {
-		return &abcitypes.ResponseCheckTx{
+		return &abcitypes.CheckTxResponse{
 			Code: types.InvalidTransactionError,
 		}
 	}
 
 	if globalAccount.TokenBalance < tx.Data.Amount {
-		return &abcitypes.ResponseCheckTx{
+		return &abcitypes.CheckTxResponse{
 			Code: types.InvalidTransactionError,
 		}
 	}
@@ -69,7 +69,7 @@ func (tx *UniverseAccountDepositTransaction) Check(ctx t.TransactionContext) *ab
 	year, week := ctx.Date.ISOWeek()
 	weeklyUsage, err := ctx.Db.UniverseAccountWeeklyUsage.GetAt(tx.Data.Universe, tx.From, year, week, uint64(ctx.Date.Unix()))
 	if err != nil {
-		return &abcitypes.ResponseCheckTx{
+		return &abcitypes.CheckTxResponse{
 			Code: types.InvalidTransactionError,
 		}
 	}
@@ -78,7 +78,7 @@ func (tx *UniverseAccountDepositTransaction) Check(ctx t.TransactionContext) *ab
 
 	//if account balance >= TwoWeekCommanderPrice
 	if newDepositWeeklyUsage > types.MaxWeeklyOCTDeposit {
-		return &abcitypes.ResponseCheckTx{
+		return &abcitypes.CheckTxResponse{
 			Code: types.InvalidTransactionError,
 		}
 	}

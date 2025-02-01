@@ -15,7 +15,7 @@ const (
 	GetLeaderboardPath = "ochain_getLeaderboard"
 )
 
-func GetQueryResponse(req *abcitypes.RequestQuery, db *database.OChainDatabase) ([]byte, error) {
+func GetQueryResponse(req *abcitypes.QueryRequest, db *database.OChainDatabase) ([]byte, error) {
 	switch req.Path {
 	case GetUniversesPath:
 		value, err := ResolveGetUniversesQuery(req.Data, db)

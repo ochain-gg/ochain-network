@@ -13,6 +13,7 @@ import (
 	"github.com/ochain-gg/ochain-network/contracts"
 	"github.com/ochain-gg/ochain-network/database"
 	"github.com/ochain-gg/ochain-network/transactions"
+	validator_transactions "github.com/ochain-gg/ochain-network/transactions/validator"
 
 	rpchttp "github.com/cometbft/cometbft/rpc/client/http"
 )
@@ -22,7 +23,7 @@ func CheckAndHandlePortalUpdate(cfg config.OChainConfig, db *database.OChainData
 	log.Println("CheckAndHandlePortalUpdate process start")
 
 	//skip if application not synced
-	client, err := rpchttp.New("http://127.0.0.1:26657", "/websocket")
+	client, err := rpchttp.New("http://127.0.0.1:26657")
 	if err != nil {
 		log.Println(err)
 	}
@@ -129,9 +130,9 @@ func CheckAndHandlePortalUpdate(cfg config.OChainConfig, db *database.OChainData
 		if err == nil {
 			log.Print("new validator evm log detected")
 
-			tx := transactions.NewValidatorTransaction{
+			tx := validator_transactions.OChainNewValidatorTransaction{
 				Type: transactions.NewValidator,
-				Data: transactions.NewValidatorTransactionData{
+				Data: validator_transactions.OChainNewValidatorTransactionData{
 					ValidatorId:           newValidatorLog.ValidatorId.Uint64(),
 					RemoteTransactionHash: l.TxHash.Hex(),
 					PublicKey:             newValidatorLog.PublicKey,
@@ -150,7 +151,7 @@ func CheckAndHandlePortalUpdate(cfg config.OChainConfig, db *database.OChainData
 				return
 			}
 
-			client, err := rpchttp.New("http://127.0.0.1:26657", "/websocket")
+			client, err := rpchttp.New("http://127.0.0.1:26657")
 			if err != nil {
 				log.Println(err)
 				return
@@ -179,9 +180,9 @@ func CheckAndHandlePortalUpdate(cfg config.OChainConfig, db *database.OChainData
 		if err == nil {
 			log.Print("remove validator evm log detected")
 
-			tx := transactions.RemoveValidatorTransaction{
+			tx := validator_transactions.OChainRemoveValidatorTransaction{
 				Type: transactions.RemoveValidator,
-				Data: transactions.RemoveValidatorTransactionData{
+				Data: validator_transactions.OChainRemoveValidatorTransactionData{
 					ValidatorId:           removeValidatorLog.ValidatorId.Uint64(),
 					RemoteTransactionHash: l.TxHash.Hex(),
 				},
@@ -211,9 +212,9 @@ func CheckAndHandlePortalUpdate(cfg config.OChainConfig, db *database.OChainData
 		if err == nil {
 			log.Print("token deposit evm log detected")
 
-			tx := transactions.OChainTokenDepositTransaction{
+			tx := validator_transactions.OChainTokenDepositTransaction{
 				Type: transactions.OChainTokenDeposit,
-				Data: transactions.OChainTokenDepositTransactionData{
+				Data: validator_transactions.OChainTokenDepositTransactionData{
 					RemoteTransactionHash: l.TxHash.Hex(),
 				},
 			}

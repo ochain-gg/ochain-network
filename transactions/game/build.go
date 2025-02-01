@@ -40,31 +40,31 @@ func (tx *BuildTransaction) Transaction() (t.Transaction, error) {
 	}, nil
 }
 
-func (tx *BuildTransaction) Check(ctx t.TransactionContext) *abcitypes.ResponseCheckTx {
+func (tx *BuildTransaction) Check(ctx t.TransactionContext) *abcitypes.CheckTxResponse {
 	_, err := ctx.Db.GlobalsAccounts.GetAt(tx.From, uint64(ctx.Date.Unix()))
 	if err != nil {
-		return &abcitypes.ResponseCheckTx{
+		return &abcitypes.CheckTxResponse{
 			Code: types.InvalidTransactionError,
 		}
 	}
 
 	account, err := ctx.Db.UniverseAccounts.GetAt(tx.Data.UniverseId, tx.From, uint64(ctx.Date.Unix()))
 	if err != nil {
-		return &abcitypes.ResponseCheckTx{
+		return &abcitypes.CheckTxResponse{
 			Code: types.InvalidTransactionError,
 		}
 	}
 
 	universe, err := ctx.Db.Universes.GetAt(tx.Data.UniverseId, uint64(ctx.Date.Unix()))
 	if err != nil {
-		return &abcitypes.ResponseCheckTx{
+		return &abcitypes.CheckTxResponse{
 			Code: types.InvalidTransactionError,
 		}
 	}
 
 	planet, err := ctx.Db.Planets.GetAt(tx.Data.UniverseId, tx.Data.PlanetCoordinateId, uint64(ctx.Date.Unix()))
 	if err != nil {
-		return &abcitypes.ResponseCheckTx{
+		return &abcitypes.CheckTxResponse{
 			Code: types.InvalidTransactionError,
 		}
 	}
@@ -82,14 +82,14 @@ func (tx *BuildTransaction) Check(ctx t.TransactionContext) *abcitypes.ResponseC
 
 			spaceship, err := ctx.Db.Spaceships.GetAt(build.BuildId, uint64(ctx.Date.Unix()))
 			if err != nil {
-				return &abcitypes.ResponseCheckTx{
+				return &abcitypes.CheckTxResponse{
 					Code: types.InvalidTransactionError,
 				}
 			}
 
 			ok := spaceship.MeetRequirements(planet, account)
 			if !ok {
-				return &abcitypes.ResponseCheckTx{
+				return &abcitypes.CheckTxResponse{
 					Code: types.InvalidTransactionError,
 				}
 			}
@@ -102,14 +102,14 @@ func (tx *BuildTransaction) Check(ctx t.TransactionContext) *abcitypes.ResponseC
 		if build.BuildType == types.OChainDefenseBuild {
 			defense, err := ctx.Db.Defenses.GetAt(build.BuildId, uint64(ctx.Date.Unix()))
 			if err != nil {
-				return &abcitypes.ResponseCheckTx{
+				return &abcitypes.CheckTxResponse{
 					Code: types.InvalidTransactionError,
 				}
 			}
 
 			ok := defense.MeetRequirements(planet, account)
 			if !ok {
-				return &abcitypes.ResponseCheckTx{
+				return &abcitypes.CheckTxResponse{
 					Code: types.InvalidTransactionError,
 				}
 			}
@@ -123,12 +123,12 @@ func (tx *BuildTransaction) Check(ctx t.TransactionContext) *abcitypes.ResponseC
 	planet.UpdateResources(universe.Speed, int64(ctx.Date.Unix()), account)
 	payable := planet.CanPay(totalCost)
 	if !payable {
-		return &abcitypes.ResponseCheckTx{
+		return &abcitypes.CheckTxResponse{
 			Code: types.InvalidTransactionError,
 		}
 	}
 
-	return &abcitypes.ResponseCheckTx{
+	return &abcitypes.CheckTxResponse{
 		Code: types.NoError,
 	}
 }

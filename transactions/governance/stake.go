@@ -19,21 +19,21 @@ type StakeOChainTokenTransaction struct {
 	Signature []byte                          `cbor:"5,keyasint"`
 }
 
-func (tx *StakeOChainTokenTransaction) Check(ctx t.TransactionContext) *abcitypes.ResponseCheckTx {
+func (tx *StakeOChainTokenTransaction) Check(ctx t.TransactionContext) *abcitypes.CheckTxResponse {
 	globalAccount, err := ctx.Db.GlobalsAccounts.Get(tx.From)
 	if err != nil {
-		return &abcitypes.ResponseCheckTx{
+		return &abcitypes.CheckTxResponse{
 			Code: types.InvalidTransactionError,
 		}
 	}
 
 	if globalAccount.TokenBalance < tx.Data.Amount {
-		return &abcitypes.ResponseCheckTx{
+		return &abcitypes.CheckTxResponse{
 			Code: types.InvalidTransactionError,
 		}
 	}
 
-	return &abcitypes.ResponseCheckTx{
+	return &abcitypes.CheckTxResponse{
 		Code: types.NoError,
 	}
 }

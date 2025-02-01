@@ -7,32 +7,32 @@ import (
 
 	"github.com/dgraph-io/badger/pb"
 	"github.com/dgraph-io/badger/v4"
-	"github.com/dgraph-io/ristretto/z"
+	"github.com/dgraph-io/ristretto/v2/z"
 	"github.com/fxamacker/cbor/v2"
 	"github.com/ochain-gg/ochain-network/types"
 )
 
 const (
-	OChainBridgeTransactionPrefix string = "bridge_txs_"
+	OChainTransactionPrefix string = "bridge_txs_"
 )
 
 // Global account side
-type OChainBridgeTransactionTable struct {
+type OChainTransactionTable struct {
 	bdb        *badger.DB
 	currentTxn *badger.Txn
 }
 
-func (db *OChainBridgeTransactionTable) SetCurrentTxn(tx *badger.Txn) {
+func (db *OChainTransactionTable) SetCurrentTxn(tx *badger.Txn) {
 	db.currentTxn = tx
 }
 
-func (db *OChainBridgeTransactionTable) Exists(hash string) (bool, error) {
+func (db *OChainTransactionTable) Exists(hash string) (bool, error) {
 	var at uint64 = math.MaxUint64
 	return db.ExistsAt(hash, at)
 }
 
-func (db *OChainBridgeTransactionTable) ExistsAt(hash string, at uint64) (bool, error) {
-	key := []byte(OChainBridgeTransactionPrefix + hash)
+func (db *OChainTransactionTable) ExistsAt(hash string, at uint64) (bool, error) {
+	key := []byte(OChainTransactionPrefix + hash)
 	txn := db.bdb.NewTransactionAt(at, false)
 	if _, err := txn.Get([]byte(key)); err != nil {
 		if errors.Is(err, badger.ErrKeyNotFound) {
@@ -45,36 +45,36 @@ func (db *OChainBridgeTransactionTable) ExistsAt(hash string, at uint64) (bool, 
 	}
 }
 
-func (db *OChainBridgeTransactionTable) Get(hash string) (types.OChainBridgeTransaction, error) {
+func (db *OChainTransactionTable) Get(hash string) (types.OChainTransaction, error) {
 	var at uint64 = math.MaxUint64
 	return db.GetAt(hash, at)
 }
 
-func (db *OChainBridgeTransactionTable) GetAt(hash string, at uint64) (types.OChainBridgeTransaction, error) {
-	var transaction types.OChainBridgeTransaction
-	key := []byte(OChainBridgeTransactionPrefix + hash)
+func (db *OChainTransactionTable) GetAt(hash string, at uint64) (types.OChainTransaction, error) {
+	var transaction types.OChainTransaction
+	key := []byte(OChainTransactionPrefix + hash)
 	txn := db.bdb.NewTransactionAt(at, false)
 
 	item, err := txn.Get([]byte(key))
 	if err != nil {
-		return types.OChainBridgeTransaction{}, err
+		return types.OChainTransaction{}, err
 	}
 
 	value, err := item.ValueCopy(nil)
 	if err != nil {
-		return types.OChainBridgeTransaction{}, err
+		return types.OChainTransaction{}, err
 	}
 
 	err = cbor.Unmarshal(value, &transaction)
 	if err != nil {
-		return types.OChainBridgeTransaction{}, err
+		return types.OChainTransaction{}, err
 	}
 
 	return transaction, nil
 }
 
-func (db *OChainBridgeTransactionTable) Insert(transaction types.OChainBridgeTransaction) error {
-	key := []byte(OChainBridgeTransactionPrefix + transaction.Hash)
+func (db *OChainTransactionTable) Insert(transaction types.OChainTransaction) error {
+	key := []byte(OChainTransactionPrefix + transaction.Hash)
 
 	exists, err := db.ExistsAt(transaction.Hash, db.currentTxn.ReadTs())
 	if err != nil {
@@ -93,8 +93,8 @@ func (db *OChainBridgeTransactionTable) Insert(transaction types.OChainBridgeTra
 	return db.currentTxn.Set(key, value)
 }
 
-func (db *OChainBridgeTransactionTable) Update(transaction types.OChainBridgeTransaction) error {
-	key := []byte(OChainBridgeTransactionPrefix + transaction.Hash)
+func (db *OChainTransactionTable) Update(transaction types.OChainTransaction) error {
+	key := []byte(OChainTransactionPrefix + transaction.Hash)
 
 	exists, err := db.ExistsAt(transaction.Hash, db.currentTxn.ReadTs())
 	if err != nil {
@@ -113,8 +113,8 @@ func (db *OChainBridgeTransactionTable) Update(transaction types.OChainBridgeTra
 	return db.currentTxn.Set(key, value)
 }
 
-func (db *OChainBridgeTransactionTable) Upsert(transaction types.OChainBridgeTransaction) error {
-	key := []byte(OChainBridgeTransactionPrefix + transaction.Hash)
+func (db *OChainTransactionTable) Upsert(transaction types.OChainTransaction) error {
+	key := []byte(OChainTransactionPrefix + transaction.Hash)
 	value, err := cbor.Marshal(transaction)
 	if err != nil {
 		return err
@@ -123,28 +123,28 @@ func (db *OChainBridgeTransactionTable) Upsert(transaction types.OChainBridgeTra
 	return db.currentTxn.Set(key, value)
 }
 
-func (db *OChainBridgeTransactionTable) Delete(address string) error {
-	key := []byte(OChainBridgeTransactionPrefix + address)
+func (db *OChainTransactionTable) Delete(address string) error {
+	key := []byte(OChainTransactionPrefix + address)
 	return db.currentTxn.Delete(key)
 }
 
-func (db *OChainBridgeTransactionTable) GetAll() ([]types.OChainBridgeTransaction, error) {
+func (db *OChainTransactionTable) GetAll() ([]types.OChainTransaction, error) {
 	var at uint64 = math.MaxUint64
 	return db.GetAllAt(at)
 }
 
-func (table *OChainBridgeTransactionTable) GetAllAt(at uint64) ([]types.OChainBridgeTransaction, error) {
-	var results []types.OChainBridgeTransaction
+func (table *OChainTransactionTable) GetAllAt(at uint64) ([]types.OChainTransaction, error) {
+	var results []types.OChainTransaction
 
 	stream := table.bdb.NewStreamAt(at)
 
 	stream.NumGo = 16                                        // Set number of goroutines to use for iteration.
-	stream.Prefix = []byte(OChainBridgeTransactionPrefix)    // Leave nil for iteration over the whole DB.
+	stream.Prefix = []byte(OChainTransactionPrefix)          // Leave nil for iteration over the whole DB.
 	stream.LogPrefix = "Badger.BridgeTransactions.Streaming" // For identifying stream logs. Outputs to Logger.
 	stream.Send = func(buf *z.Buffer) error {
 		err := buf.SliceIterate(func(s []byte) error {
 			var kv pb.KV
-			var tx types.OChainBridgeTransaction
+			var tx types.OChainTransaction
 			if err := kv.Unmarshal(s); err != nil {
 				return err
 			}
@@ -161,24 +161,24 @@ func (table *OChainBridgeTransactionTable) GetAllAt(at uint64) ([]types.OChainBr
 	}
 
 	if err := stream.Orchestrate(context.Background()); err != nil {
-		return []types.OChainBridgeTransaction{}, err
+		return []types.OChainTransaction{}, err
 	}
 
 	return results, nil
 }
 
-func (table *OChainBridgeTransactionTable) GetByAccountAt(address string, at uint64) ([]types.OChainBridgeTransaction, error) {
-	var results []types.OChainBridgeTransaction
+func (table *OChainTransactionTable) GetByAccountAt(address string, at uint64) ([]types.OChainTransaction, error) {
+	var results []types.OChainTransaction
 
 	stream := table.bdb.NewStreamAt(at)
 
 	stream.NumGo = 16                                        // Set number of goroutines to use for iteration.
-	stream.Prefix = []byte(OChainBridgeTransactionPrefix)    // Leave nil for iteration over the whole DB.
+	stream.Prefix = []byte(OChainTransactionPrefix)          // Leave nil for iteration over the whole DB.
 	stream.LogPrefix = "Badger.BridgeTransactions.Streaming" // For identifying stream logs. Outputs to Logger.
 	stream.Send = func(buf *z.Buffer) error {
 		err := buf.SliceIterate(func(s []byte) error {
 			var kv pb.KV
-			var tx types.OChainBridgeTransaction
+			var tx types.OChainTransaction
 			if err := kv.Unmarshal(s); err != nil {
 				return err
 			}
@@ -198,14 +198,14 @@ func (table *OChainBridgeTransactionTable) GetByAccountAt(address string, at uin
 	}
 
 	if err := stream.Orchestrate(context.Background()); err != nil {
-		return []types.OChainBridgeTransaction{}, err
+		return []types.OChainTransaction{}, err
 	}
 
 	return results, nil
 }
 
-func NewOChainBridgeTransactionTable(db *badger.DB) *OChainBridgeTransactionTable {
-	return &OChainBridgeTransactionTable{
+func NewOChainTransactionTable(db *badger.DB) *OChainTransactionTable {
+	return &OChainTransactionTable{
 		bdb: db,
 	}
 }

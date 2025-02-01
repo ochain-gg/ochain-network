@@ -10,7 +10,7 @@ type OChainDatabase struct {
 	Validators                 *OChainValidatorTable
 	Epochs                     *OChainEpochTable
 	RewardPrograms             *OChainRewardProgramTable
-	BridgeTransactions         *OChainBridgeTransactionTable
+	BridgeTransactions         *OChainTransactionTable
 	Universes                  *OChainUniverseTable
 	GlobalsAccounts            *OChainGlobalAccountTable
 	UniverseAccounts           *OChainUniverseAccountTable
@@ -46,7 +46,7 @@ func (db *OChainDatabase) LoadTables() {
 	db.Validators = NewOChainValidatorTable(db.DB)
 	db.Epochs = NewOChainEpochTable(db.DB)
 	db.RewardPrograms = NewOChainRewardProgramTable(db.DB)
-	db.BridgeTransactions = NewOChainBridgeTransactionTable(db.DB)
+	db.BridgeTransactions = NewOChainTransactionTable(db.DB)
 	db.Universes = NewOChainUniverseTable(db.DB)
 	db.GlobalsAccounts = NewOChainGlobalAccountTable(db.DB)
 	db.UniverseAccounts = NewOChainUniverseAccountTable(db.DB)

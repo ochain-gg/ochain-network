@@ -7,7 +7,7 @@ import (
 
 	"github.com/dgraph-io/badger/pb"
 	"github.com/dgraph-io/badger/v4"
-	"github.com/dgraph-io/ristretto/z"
+	"github.com/dgraph-io/ristretto/v2/z"
 	"github.com/fxamacker/cbor/v2"
 	"github.com/ochain-gg/ochain-network/types"
 )

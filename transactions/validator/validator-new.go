@@ -14,18 +14,18 @@ import (
 	"github.com/ochain-gg/ochain-network/types"
 )
 
-type OChainBridgeNewValidatorTransactionData struct {
+type OChainNewValidatorTransactionData struct {
 	ValidatorId           uint64 `cbor:"1,keyasint"`
 	RemoteTransactionHash string `cbor:"2,keyasint"`
 	PublicKey             string `cbor:"3,keyasint"`
 }
 
-type OChainBridgeNewValidatorTransaction struct {
+type OChainNewValidatorTransaction struct {
 	Type t.TransactionType
-	Data OChainBridgeNewValidatorTransactionData
+	Data OChainNewValidatorTransactionData
 }
 
-func (tx *OChainBridgeNewValidatorTransaction) Check(ctx t.TransactionContext) *abcitypes.ResponseCheckTx {
+func (tx *OChainNewValidatorTransaction) Check(ctx t.TransactionContext) *abcitypes.CheckTxResponse {
 
 	client, err := ethclient.Dial(ctx.Config.EVMRpc)
 	if err != nil {
@@ -34,7 +34,7 @@ func (tx *OChainBridgeNewValidatorTransaction) Check(ctx t.TransactionContext) *
 
 	remoteTx, _, err := client.TransactionByHash(context.Background(), common.HexToHash(tx.Data.RemoteTransactionHash))
 	if err != nil {
-		return &abcitypes.ResponseCheckTx{
+		return &abcitypes.CheckTxResponse{
 			Code: types.InvalidTransactionError,
 		}
 	}
@@ -44,43 +44,43 @@ func (tx *OChainBridgeNewValidatorTransaction) Check(ctx t.TransactionContext) *
 	}
 
 	if *remoteTx.To() != common.HexToAddress(ctx.Config.EVMPortalAddress) {
-		return &abcitypes.ResponseCheckTx{
+		return &abcitypes.CheckTxResponse{
 			Code: types.InvalidTransactionError,
 		}
 	}
 
 	remoteParsedTx, err := tx.FetchData(ctx)
 	if err != nil {
-		return &abcitypes.ResponseCheckTx{
+		return &abcitypes.CheckTxResponse{
 			Code: types.InvalidTransactionError,
 		}
 	}
 
 	if remoteParsedTx.PublicKey != tx.Data.PublicKey {
-		return &abcitypes.ResponseCheckTx{
+		return &abcitypes.CheckTxResponse{
 			Code: types.InvalidTransactionError,
 		}
 	}
 
 	validatorIsEnabled, err := ctx.Db.Validators.IsEnabled(remoteParsedTx.PublicKey)
 	if err != nil {
-		return &abcitypes.ResponseCheckTx{
+		return &abcitypes.CheckTxResponse{
 			Code: types.InvalidTransactionError,
 		}
 	}
 
 	if validatorIsEnabled {
-		return &abcitypes.ResponseCheckTx{
+		return &abcitypes.CheckTxResponse{
 			Code: types.InvalidTransactionError,
 		}
 	}
 
-	return &abcitypes.ResponseCheckTx{
+	return &abcitypes.CheckTxResponse{
 		Code: types.NoError,
 	}
 }
 
-func (tx *OChainBridgeNewValidatorTransaction) FetchData(ctx t.TransactionContext) (contracts.OChainPortalOChainNewValidator, error) {
+func (tx *OChainNewValidatorTransaction) FetchData(ctx t.TransactionContext) (contracts.OChainPortalOChainNewValidator, error) {
 
 	client, err := ethclient.Dial(ctx.Config.EVMRpc)
 	if err != nil {
@@ -137,7 +137,7 @@ func (tx *OChainBridgeNewValidatorTransaction) FetchData(ctx t.TransactionContex
 	return contracts.OChainPortalOChainNewValidator{}, errors.New("invalid tx")
 }
 
-func (tx *OChainBridgeNewValidatorTransaction) Execute(ctx t.TransactionContext) *abcitypes.ExecTxResult {
+func (tx *OChainNewValidatorTransaction) Execute(ctx t.TransactionContext) *abcitypes.ExecTxResult {
 
 	event, err := tx.FetchData(ctx)
 	if err != nil {
@@ -177,7 +177,7 @@ func (tx *OChainBridgeNewValidatorTransaction) Execute(ctx t.TransactionContext)
 	}
 }
 
-func (tx *OChainBridgeNewValidatorTransaction) Transaction() (t.Transaction, error) {
+func (tx *OChainNewValidatorTransaction) Transaction() (t.Transaction, error) {
 
 	txData, err := cbor.Marshal(tx.Data)
 	if err != nil {
@@ -190,16 +190,16 @@ func (tx *OChainBridgeNewValidatorTransaction) Transaction() (t.Transaction, err
 	}, nil
 }
 
-func ParseOChainBridgeNewValidatorTransaction(tx t.Transaction) (OChainBridgeNewValidatorTransaction, error) {
+func ParseOChainNewValidatorTransaction(tx t.Transaction) (OChainNewValidatorTransaction, error) {
 
-	var txData OChainBridgeNewValidatorTransactionData
+	var txData OChainNewValidatorTransactionData
 	err := cbor.Unmarshal([]byte(tx.Data), &txData)
 
 	if err != nil {
-		return OChainBridgeNewValidatorTransaction{}, err
+		return OChainNewValidatorTransaction{}, err
 	}
 
-	return OChainBridgeNewValidatorTransaction{
+	return OChainNewValidatorTransaction{
 		Type: tx.Type,
 		Data: txData,
 	}, nil

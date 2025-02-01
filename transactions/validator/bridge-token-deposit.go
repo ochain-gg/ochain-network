@@ -13,18 +13,18 @@ import (
 	"github.com/ochain-gg/ochain-network/types"
 )
 
-type OChainBridgeTokenDepositTransactionData struct {
+type OChainTokenDepositTransactionData struct {
 	RemoteTransactionHash string `cbor:"1,keyasint"`
 	Account               string `cbor:"2,keyasint"`
 	Amount                uint64 `cbor:"3,keyasint"`
 }
 
-type OChainBridgeTokenDepositTransaction struct {
+type OChainTokenDepositTransaction struct {
 	Type t.TransactionType
-	Data OChainBridgeTokenDepositTransactionData
+	Data OChainTokenDepositTransactionData
 }
 
-func (tx OChainBridgeTokenDepositTransaction) Check(ctx t.TransactionContext) *abcitypes.ResponseCheckTx {
+func (tx OChainTokenDepositTransaction) Check(ctx t.TransactionContext) *abcitypes.CheckTxResponse {
 
 	client, err := ethclient.Dial(ctx.Config.EVMRpc)
 	if err != nil {
@@ -33,32 +33,32 @@ func (tx OChainBridgeTokenDepositTransaction) Check(ctx t.TransactionContext) *a
 
 	remoteTx, _, err := client.TransactionByHash(context.Background(), common.HexToHash(tx.Data.RemoteTransactionHash))
 	if err != nil {
-		return &abcitypes.ResponseCheckTx{
+		return &abcitypes.CheckTxResponse{
 			Code: types.InvalidTransactionError,
 		}
 	}
 
 	if remoteTx.ChainId().Uint64() != ctx.Config.EVMChainId {
-		return &abcitypes.ResponseCheckTx{
+		return &abcitypes.CheckTxResponse{
 			Code: types.InvalidTransactionError,
 		}
 	}
 
 	if *remoteTx.To() != common.HexToAddress(ctx.Config.EVMPortalAddress) {
-		return &abcitypes.ResponseCheckTx{
+		return &abcitypes.CheckTxResponse{
 			Code: types.InvalidTransactionError,
 		}
 	}
 
 	remoteTxReceipt, err := client.TransactionReceipt(context.Background(), common.HexToHash(tx.Data.RemoteTransactionHash))
 	if err != nil {
-		return &abcitypes.ResponseCheckTx{
+		return &abcitypes.CheckTxResponse{
 			Code: types.InvalidTransactionError,
 		}
 	}
 
 	if remoteTxReceipt.Status != 1 {
-		return &abcitypes.ResponseCheckTx{
+		return &abcitypes.CheckTxResponse{
 			Code: types.InvalidTransactionError,
 		}
 	}
@@ -66,7 +66,7 @@ func (tx OChainBridgeTokenDepositTransaction) Check(ctx t.TransactionContext) *a
 	address := common.HexToAddress(ctx.Config.EVMPortalAddress)
 	portal, err := contracts.NewOChainPortal(address, client)
 	if err != nil {
-		return &abcitypes.ResponseCheckTx{
+		return &abcitypes.CheckTxResponse{
 			Code: types.InvalidTransactionError,
 		}
 	}
@@ -78,18 +78,18 @@ func (tx OChainBridgeTokenDepositTransaction) Check(ctx t.TransactionContext) *a
 			continue
 		}
 
-		return &abcitypes.ResponseCheckTx{
+		return &abcitypes.CheckTxResponse{
 			Code: types.NoError,
 		}
 	}
 
-	return &abcitypes.ResponseCheckTx{
+	return &abcitypes.CheckTxResponse{
 		Code: types.InvalidTransactionError,
 	}
 
 }
 
-func (tx OChainBridgeTokenDepositTransaction) Execute(ctx t.TransactionContext) *abcitypes.ExecTxResult {
+func (tx OChainTokenDepositTransaction) Execute(ctx t.TransactionContext) *abcitypes.ExecTxResult {
 	result := tx.Check(ctx)
 	if result.Code != types.NoError {
 		return &abcitypes.ExecTxResult{
@@ -156,8 +156,8 @@ func (tx OChainBridgeTokenDepositTransaction) Execute(ctx t.TransactionContext) 
 			}
 		}
 
-		creditDepositTx := types.OChainBridgeTransaction{
-			Type:     types.OChainBridgeTokenDepositTransaction,
+		creditDepositTx := types.OChainTransaction{
+			Type:     types.OChainTokenDepositTransaction,
 			Hash:     tx.Data.RemoteTransactionHash,
 			Account:  log.Receiver.Hex(),
 			Amount:   log.Amount.Uint64(),
@@ -182,7 +182,7 @@ func (tx OChainBridgeTokenDepositTransaction) Execute(ctx t.TransactionContext) 
 	}
 }
 
-func (tx OChainBridgeTokenDepositTransaction) Transaction() (t.Transaction, error) {
+func (tx OChainTokenDepositTransaction) Transaction() (t.Transaction, error) {
 
 	txData, err := cbor.Marshal(tx.Data)
 	if err != nil {
@@ -195,15 +195,15 @@ func (tx OChainBridgeTokenDepositTransaction) Transaction() (t.Transaction, erro
 	}, nil
 }
 
-func ParseOChainBridgeTokenDepositTransaction(tx t.Transaction) (OChainBridgeTokenDepositTransaction, error) {
-	var txData OChainBridgeTokenDepositTransactionData
+func ParseOChainTokenDepositTransaction(tx t.Transaction) (OChainTokenDepositTransaction, error) {
+	var txData OChainTokenDepositTransactionData
 	err := cbor.Unmarshal(tx.Data, &txData)
 
 	if err != nil {
-		return OChainBridgeTokenDepositTransaction{}, err
+		return OChainTokenDepositTransaction{}, err
 	}
 
-	return OChainBridgeTokenDepositTransaction{
+	return OChainTokenDepositTransaction{
 		Type: tx.Type,
 		Data: txData,
 	}, nil

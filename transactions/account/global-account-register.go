@@ -45,10 +45,10 @@ func (tx *RegisterAccountTransaction) Transaction() (t.Transaction, error) {
 	}, nil
 }
 
-func (tx *RegisterAccountTransaction) Check(ctx t.TransactionContext) *abcitypes.ResponseCheckTx {
+func (tx *RegisterAccountTransaction) Check(ctx t.TransactionContext) *abcitypes.CheckTxResponse {
 	_, err := ctx.Db.GlobalsAccounts.Get(tx.Data.Address)
 	if err == nil {
-		return &abcitypes.ResponseCheckTx{
+		return &abcitypes.CheckTxResponse{
 			Code: types.InvalidTransactionError,
 		}
 	}
@@ -79,14 +79,14 @@ func (tx *RegisterAccountTransaction) Check(ctx t.TransactionContext) *abcitypes
 	// EIP-712 typed data marshalling
 	domainSeparator, err := typedData.HashStruct("EIP712Domain", typedData.Domain.Map())
 	if err != nil {
-		return &abcitypes.ResponseCheckTx{
+		return &abcitypes.CheckTxResponse{
 			Code: types.InvalidTransactionError,
 		}
 	}
 
 	typedDataHash, err := typedData.HashStruct(typedData.PrimaryType, typedData.Message)
 	if err != nil {
-		return &abcitypes.ResponseCheckTx{
+		return &abcitypes.CheckTxResponse{
 			Code: types.InvalidTransactionError,
 		}
 	}
@@ -101,14 +101,14 @@ func (tx *RegisterAccountTransaction) Check(ctx t.TransactionContext) *abcitypes
 
 	sigPubkey, err := crypto.SigToPub(sighash, signature)
 	if err != nil {
-		return &abcitypes.ResponseCheckTx{
+		return &abcitypes.CheckTxResponse{
 			Code: types.InvalidTransactionError,
 		}
 	}
 
 	address := crypto.PubkeyToAddress(*sigPubkey)
 	if address != common.HexToAddress("0x190144001306820e9BdF6eB2dB8d747B4fCE7980") {
-		return &abcitypes.ResponseCheckTx{
+		return &abcitypes.CheckTxResponse{
 			Code: types.InvalidTransactionError,
 		}
 	}

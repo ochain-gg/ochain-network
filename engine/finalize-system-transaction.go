@@ -5,6 +5,7 @@ import (
 
 	abcitypes "github.com/cometbft/cometbft/abci/types"
 	"github.com/ochain-gg/ochain-network/transactions"
+	validator_transactions "github.com/ochain-gg/ochain-network/transactions/validator"
 	"github.com/ochain-gg/ochain-network/types"
 )
 
@@ -14,7 +15,7 @@ func FinalizeSystemTx(ctx transactions.TransactionContext, tx transactions.Trans
 	switch tx.Type {
 	case transactions.NewValidator:
 
-		transaction, err := transactions.ParseOChainBridgeNewValidatorTransaction(tx)
+		transaction, err := validator_transactions.ParseOChainNewValidatorTransaction(tx)
 		if err != nil {
 			return &abcitypes.ExecTxResult{Code: types.ParsingTransactionDataError, GasWanted: 0, GasUsed: 0}, valUpdates
 		}
@@ -34,11 +35,15 @@ func FinalizeSystemTx(ctx transactions.TransactionContext, tx transactions.Trans
 			return &abcitypes.ExecTxResult{Code: types.ParsingTransactionDataError, GasWanted: 0, GasUsed: 0}, valUpdates
 		}
 
-		valUpdates = append(valUpdates, abcitypes.UpdateValidator(pubkeyBytes, 10000, "ed25519"))
+		valUpdates = append(valUpdates, abcitypes.ValidatorUpdate{
+			PubKeyType:  "tendermint/PubKeyEd25519",
+			PubKeyBytes: pubkeyBytes,
+			Power:       10000,
+		})
 
 	case transactions.RemoveValidator:
 
-		transaction, err := transactions.ParseOChainBridgeRemoveValidatorTransaction(tx)
+		transaction, err := validator_transactions.ParseOChainRemoveValidatorTransaction(tx)
 		if err != nil {
 			return &abcitypes.ExecTxResult{Code: types.ParsingTransactionDataError, GasWanted: 0, GasUsed: 0}, valUpdates
 		}
@@ -63,7 +68,11 @@ func FinalizeSystemTx(ctx transactions.TransactionContext, tx transactions.Trans
 			return &abcitypes.ExecTxResult{Code: types.ParsingTransactionDataError, GasWanted: 0, GasUsed: 0}, valUpdates
 		}
 
-		valUpdates = append(valUpdates, abcitypes.UpdateValidator(pubkeyBytes, 0, "ed25519"))
+		valUpdates = append(valUpdates, abcitypes.ValidatorUpdate{
+			PubKeyType:  "tendermint/PubKeyEd25519",
+			PubKeyBytes: pubkeyBytes,
+			Power:       0,
+		})
 	}
 
 	return &abcitypes.ExecTxResult{Code: types.NoError, GasWanted: 0, GasUsed: 0}, valUpdates

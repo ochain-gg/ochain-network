@@ -8,41 +8,41 @@ import (
 	"github.com/ochain-gg/ochain-network/types"
 )
 
-type OChainBridgeExecuteTransactionData struct {
+type OChainExecuteTransactionData struct {
 	RemoteTransactionHash string `cbor:"1,keyasint"`
 }
 
-type OChainBridgeExecuteTransaction struct {
-	Type      t.TransactionType                  `cbor:"1,keyasint"`
-	From      string                             `cbor:"2,keyasint"`
-	Nonce     uint64                             `cbor:"3,keyasint"`
-	Data      OChainBridgeExecuteTransactionData `cbor:"4,keyasint"`
-	Signature []byte                             `cbor:"5,keyasint"`
+type OChainExecuteTransaction struct {
+	Type      t.TransactionType            `cbor:"1,keyasint"`
+	From      string                       `cbor:"2,keyasint"`
+	Nonce     uint64                       `cbor:"3,keyasint"`
+	Data      OChainExecuteTransactionData `cbor:"4,keyasint"`
+	Signature []byte                       `cbor:"5,keyasint"`
 }
 
-func (tx OChainBridgeExecuteTransaction) Check(ctx t.TransactionContext) *abcitypes.ResponseCheckTx {
+func (tx OChainExecuteTransaction) Check(ctx t.TransactionContext) *abcitypes.CheckTxResponse {
 
 	transaction, err := ctx.Db.BridgeTransactions.GetAt(tx.Data.RemoteTransactionHash, uint64(ctx.Date.Unix()))
 	if err != nil || transaction.Executed || transaction.Canceled {
-		return &abcitypes.ResponseCheckTx{
+		return &abcitypes.CheckTxResponse{
 			Code: types.InvalidTransactionError,
 		}
 	}
 
 	_, err = ctx.Db.GlobalsAccounts.GetAt(tx.From, uint64(ctx.Date.Unix()))
 	if err != nil {
-		return &abcitypes.ResponseCheckTx{
+		return &abcitypes.CheckTxResponse{
 			Code: types.InvalidTransactionError,
 		}
 	}
 
-	return &abcitypes.ResponseCheckTx{
+	return &abcitypes.CheckTxResponse{
 		Code: types.NoError,
 	}
 
 }
 
-func (tx OChainBridgeExecuteTransaction) Execute(ctx t.TransactionContext) *abcitypes.ExecTxResult {
+func (tx OChainExecuteTransaction) Execute(ctx t.TransactionContext) *abcitypes.ExecTxResult {
 	result := tx.Check(ctx)
 	if result.Code != types.NoError {
 		return &abcitypes.ExecTxResult{
@@ -66,10 +66,10 @@ func (tx OChainBridgeExecuteTransaction) Execute(ctx t.TransactionContext) *abci
 
 	switch transaction.Type {
 
-	case types.OChainBridgeTokenDepositTransaction:
+	case types.OChainTokenDepositTransaction:
 		globalAccount.TokenBalance += transaction.Amount
 
-	case types.OChainBridgeCreditDepositTransaction:
+	case types.OChainCreditDepositTransaction:
 		globalAccount.CreditBalance += transaction.Amount
 
 	default:
@@ -99,7 +99,7 @@ func (tx OChainBridgeExecuteTransaction) Execute(ctx t.TransactionContext) *abci
 	}
 }
 
-func (tx OChainBridgeExecuteTransaction) Transaction() (t.Transaction, error) {
+func (tx OChainExecuteTransaction) Transaction() (t.Transaction, error) {
 
 	txData, err := cbor.Marshal(tx.Data)
 	if err != nil {
@@ -112,15 +112,15 @@ func (tx OChainBridgeExecuteTransaction) Transaction() (t.Transaction, error) {
 	}, nil
 }
 
-func ParseOChainBridgeExecuteTransaction(tx t.Transaction) (OChainBridgeExecuteTransaction, error) {
-	var txData OChainBridgeExecuteTransactionData
+func ParseOChainExecuteTransaction(tx t.Transaction) (OChainExecuteTransaction, error) {
+	var txData OChainExecuteTransactionData
 	err := cbor.Unmarshal(tx.Data, &txData)
 
 	if err != nil {
-		return OChainBridgeExecuteTransaction{}, err
+		return OChainExecuteTransaction{}, err
 	}
 
-	return OChainBridgeExecuteTransaction{
+	return OChainExecuteTransaction{
 		Type: tx.Type,
 		Data: txData,
 	}, nil

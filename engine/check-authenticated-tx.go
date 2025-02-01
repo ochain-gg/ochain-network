@@ -3,6 +3,7 @@ package engine
 import (
 	abcitypes "github.com/cometbft/cometbft/abci/types"
 	"github.com/ochain-gg/ochain-network/transactions"
+	account_transactions "github.com/ochain-gg/ochain-network/transactions/account"
 	"github.com/ochain-gg/ochain-network/types"
 )
 
@@ -17,63 +18,63 @@ func IsDeleguatedAuthorized(txType transactions.TransactionType) bool {
 	switch txType {
 	case transactions.RegisterAccount:
 		return false
-	case transactions.:
+	case transactions.RegisterUniverseAccount:
 		return false
-	case transactions.UniverseOCTWithdraw:
+	case transactions.UniverseOChainTokenWithdraw:
 		return false
-	case transactions.AccountOCTWithdraw:
+	case transactions.OChainTokenWithdrawal:
 		return false
 	default:
 		return true
 	}
 }
 
-func CheckAuthenticatedTx(ctx transactions.TransactionContext, req *abcitypes.RequestCheckTx, tx transactions.Transaction) *abcitypes.ResponseCheckTx {
+func CheckAuthenticatedTx(ctx transactions.TransactionContext, req *abcitypes.CheckTxRequest, tx transactions.Transaction) *abcitypes.CheckTxResponse {
 
 	signer, err := tx.GetSigner()
 	if err != nil {
-		return &abcitypes.ResponseCheckTx{Code: types.InvalidTransactionSignature, GasWanted: 0, GasUsed: 0}
+		return &abcitypes.CheckTxResponse{Code: types.InvalidTransactionSignature, GasWanted: 0, GasUsed: 0}
 	}
 
 	if tx.Type != transactions.RegisterAccount {
 		account, err := ctx.Db.GlobalsAccounts.Get(tx.From)
 		if err != nil {
-			return &abcitypes.ResponseCheckTx{Code: types.InvalidTransactionSignature, GasWanted: 0, GasUsed: 0}
+			return &abcitypes.CheckTxResponse{Code: types.InvalidTransactionSignature, GasWanted: 0, GasUsed: 0}
 		}
 
 		if !account.IsAllowedSigner(signer, IsDeleguatedAuthorized(tx.Type)) {
-			return &abcitypes.ResponseCheckTx{Code: types.InvalidTransactionSignature, GasWanted: 0, GasUsed: 0}
+			return &abcitypes.CheckTxResponse{Code: types.InvalidTransactionSignature, GasWanted: 0, GasUsed: 0}
 		}
 
 		//verify nonce
 		if tx.Nonce != account.Nonce {
-			return &abcitypes.ResponseCheckTx{Code: types.InvalidTransactionSignature, GasWanted: 0, GasUsed: 0}
+			return &abcitypes.CheckTxResponse{Code: types.InvalidTransactionSignature, GasWanted: 0, GasUsed: 0}
 		}
 	} else {
 		if signer != tx.From || tx.Nonce != 0 {
-			return &abcitypes.ResponseCheckTx{Code: types.InvalidTransactionSignature, GasWanted: 0, GasUsed: 0}
+			return &abcitypes.CheckTxResponse{Code: types.InvalidTransactionSignature, GasWanted: 0, GasUsed: 0}
 		}
 	}
 
 	switch tx.Type {
 	case transactions.RegisterAccount:
 
-		transaction, err := transactions.ParseRegisterAccountTransaction(tx)
+		transaction, err := account_transactions.ParseRegisterAccountTransaction(tx)
 		if err != nil {
-			return &abcitypes.ResponseCheckTx{Code: types.ParsingTransactionDataError, GasWanted: 0, GasUsed: 0}
+			return &abcitypes.CheckTxResponse{Code: types.ParsingTransactionDataError, GasWanted: 0, GasUsed: 0}
 		}
 
 		return transaction.Check(ctx)
 
 	case transactions.RegisterUniverseAccount:
 
-		transaction, err := transactions.ParseRegisterUniverseAccountTransaction(tx)
+		transaction, err := account_transactions.ParseRegisterUniverseAccountTransaction(tx)
 		if err != nil {
-			return &abcitypes.ResponseCheckTx{Code: types.ParsingTransactionDataError, GasWanted: 0, GasUsed: 0}
+			return &abcitypes.CheckTxResponse{Code: types.ParsingTransactionDataError, GasWanted: 0, GasUsed: 0}
 		}
 
 		return transaction.Check(ctx)
 	}
 
-	return &abcitypes.ResponseCheckTx{Code: types.NotImplemented, GasWanted: 0, GasUsed: 0}
+	return &abcitypes.CheckTxResponse{Code: types.NotImplemented, GasWanted: 0, GasUsed: 0}
 }

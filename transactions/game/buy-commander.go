@@ -36,31 +36,31 @@ func (tx *BuyCommanderTransaction) Transaction() (t.Transaction, error) {
 	}, nil
 }
 
-func (tx *BuyCommanderTransaction) Check(ctx t.TransactionContext) *abcitypes.ResponseCheckTx {
+func (tx *BuyCommanderTransaction) Check(ctx t.TransactionContext) *abcitypes.CheckTxResponse {
 	globalAccount, err := ctx.Db.GlobalsAccounts.Get(tx.From)
 	if err != nil {
-		return &abcitypes.ResponseCheckTx{
+		return &abcitypes.CheckTxResponse{
 			Code: types.InvalidTransactionError,
 		}
 	}
 
 	txGasCost := globalAccount.GetGasCost(uint64(ctx.Date.Unix()))
 	if txGasCost > globalAccount.TokenBalance {
-		return &abcitypes.ResponseCheckTx{
+		return &abcitypes.CheckTxResponse{
 			Code: types.GasCostHigherThanBalance,
 		}
 	}
 
 	_, err = ctx.Db.UniverseAccounts.Get(tx.Data.Universe, tx.From)
 	if err == nil {
-		return &abcitypes.ResponseCheckTx{
+		return &abcitypes.CheckTxResponse{
 			Code: types.InvalidTransactionError,
 		}
 	}
 
 	//if account balance >= TwoWeekCommanderPrice
 	if globalAccount.CreditBalance < types.TwoWeekCommanderPrice {
-		return &abcitypes.ResponseCheckTx{
+		return &abcitypes.CheckTxResponse{
 			Code: types.InvalidTransactionError,
 		}
 	}
