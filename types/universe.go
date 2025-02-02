@@ -169,6 +169,9 @@ const (
 	IntergalacticPortalID OChainBuildingID = "INTERGALACTIC_PORTAL"
 	ResearchLaboratoryID  OChainBuildingID = "RESEARCH_LABORATORY"
 	ShieldDomeID          OChainBuildingID = "SHIELD_DOME"
+	MetalStorageID        OChainBuildingID = "METAL_STORAGE"
+	CrystalStorageID      OChainBuildingID = "CRYSTAL_STORAGE"
+	DeuteriumStorageID    OChainBuildingID = "DEUTERIUM_STORAGE"
 )
 
 type OChainTechnologyID string

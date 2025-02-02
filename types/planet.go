@@ -51,6 +51,10 @@ type OChainPlanetBuildings struct {
 	IntergalacticPortal uint64 `cbor:"8,keyasint"`
 	ResearchLaboratory  uint64 `cbor:"9,keyasint"`
 	ShieldDome          uint64 `cbor:"10,keyasint"`
+
+	MetalStorage     uint64 `cbor:"11,keyasint"`
+	CrystalStorage   uint64 `cbor:"12,keyasint"`
+	DeuteriumStorage uint64 `cbor:"13,keyasint"`
 }
 
 type OChainFleetSpaceships struct {
@@ -105,8 +109,45 @@ type OChainPlanet struct {
 	LastResourceUpdate int64 `cbor:"11,keyasint"`
 }
 
+type OChainPlanetStatistics struct {
+	MetalHourlyProduction     float64 `cbor:"1,keyasint"`
+	CrystalHourlyProduction   float64 `cbor:"2,keyasint"`
+	DeutereumHourlyProduction float64 `cbor:"3,keyasint"`
+
+	MetalMaxStorageCapacity     uint64 `cbor:"4,keyasint"`
+	CrystalMaxStorageCapacity   uint64 `cbor:"5,keyasint"`
+	DeutereumMaxStorageCapacity uint64 `cbor:"6,keyasint"`
+
+	EnergyProduction int64 `cbor:"7,keyasint"`
+	EnergyConsumtion int64 `cbor:"8,keyasint"`
+}
+
 func (planet *OChainPlanet) CoordinateId() string {
 	return fmt.Sprint(planet.Galaxy) + "_" + fmt.Sprint(planet.SolarSystem) + "_" + fmt.Sprint(planet.Planet)
+}
+
+func (planet *OChainPlanet) PlanetStatistics(speed uint64, timestamp int64, account OChainUniverseAccount) OChainPlanetStatistics {
+
+	var totalConsumption int64 = planet.computeEnergyConsumtion()
+	var totalProducedEnergy int64 = planet.computeTotalEnergy(account)
+
+	var energyRate float64 = float64(totalProducedEnergy) / float64(totalConsumption)
+	if energyRate > 1 {
+		energyRate = 1
+	}
+
+	return OChainPlanetStatistics{
+		MetalHourlyProduction:     planet.getMetalProduction(energyRate, timestamp, speed, account),
+		CrystalHourlyProduction:   planet.getCrystalProduction(energyRate, timestamp, speed, account),
+		DeutereumHourlyProduction: planet.getDeuteriumProduction(energyRate, timestamp, speed, account),
+
+		MetalMaxStorageCapacity:     planet.getMetalStorageCapacity(),
+		CrystalMaxStorageCapacity:   planet.getCrystalStorageCapacity(),
+		DeutereumMaxStorageCapacity: planet.getDeuteriumStorageCapacity(),
+
+		EnergyProduction: totalProducedEnergy,
+		EnergyConsumtion: totalConsumption,
+	}
 }
 
 func (planet *OChainPlanet) BuildingLevel(id OChainBuildingID) uint64 {
@@ -411,9 +452,26 @@ func (planet *OChainPlanet) UpdateResources(speed uint64, timestamp int64, accou
 		energyRate = 1
 	}
 
-	planet.Resources.Metal = planet.computeMetalProduction(energyRate, timestamp, speed, account)
-	planet.Resources.Crystal = planet.computeCrystalProduction(energyRate, timestamp, speed, account)
-	planet.Resources.Deuterium = planet.computeDeuteriumProduction(energyRate, timestamp, speed, account)
+	if planet.Resources.Metal < planet.getMetalStorageCapacity() {
+		planet.Resources.Metal += planet.computeMetalProductionFromLastUpdate(energyRate, timestamp, speed, account)
+		if planet.Resources.Metal > planet.getMetalStorageCapacity() {
+			planet.Resources.Metal = planet.getMetalStorageCapacity()
+		}
+	}
+
+	if planet.Resources.Crystal < planet.getCrystalStorageCapacity() {
+		planet.Resources.Crystal += planet.computeCrystalProductionFromLastUpdate(energyRate, timestamp, speed, account)
+		if planet.Resources.Crystal > planet.getCrystalStorageCapacity() {
+			planet.Resources.Crystal = planet.getCrystalStorageCapacity()
+		}
+	}
+	if planet.Resources.Deuterium < planet.getDeuteriumStorageCapacity() {
+		planet.Resources.Deuterium += planet.computeDeuteriumProductionFromLastUpdate(energyRate, timestamp, speed, account)
+		if planet.Resources.Deuterium > planet.getDeuteriumStorageCapacity() {
+			planet.Resources.Deuterium = planet.getDeuteriumStorageCapacity()
+		}
+	}
+
 	planet.LastResourceUpdate = timestamp
 }
 
@@ -431,56 +489,91 @@ func (planet *OChainPlanet) computeEnergyConsumtion() int64 {
 }
 
 func (planet *OChainPlanet) computeTotalEnergy(account OChainUniverseAccount) int64 {
-	var solarPlantEnergy float64 = 20 * float64(planet.Buildings.SolarPowerPlant) * math.Pow(float64(1.1), float64(planet.Buildings.SolarPowerPlant))
+	var solarPlantEnergy float64 = 20 + (20 * float64(planet.Buildings.SolarPowerPlant) * math.Pow(float64(1.1), float64(planet.Buildings.SolarPowerPlant)))
 	return int64(solarPlantEnergy * math.Pow(1.05, float64(account.Technologies.Energy)))
 }
 
-func (planet *OChainPlanet) computeMetalProduction(energyRate float64, timestamp int64, speed uint64, account OChainUniverseAccount) uint64 {
+func (planet *OChainPlanet) getMetalStorageCapacity() uint64 {
+	return uint64(float64(5000) * float64(2.5) * math.Pow(float64(2.71828), float64(20*planet.Buildings.MetalStorage/33)))
+}
+
+func (planet *OChainPlanet) getMetalProduction(energyRate float64, timestamp int64, speed uint64, account OChainUniverseAccount) float64 {
 	baseProductionPerHour := 30 * speed
 	var factor float64 = math.Pow(float64(1.1), float64(planet.Buildings.MetalMine-1))
 	var mineProductionPerHour float64 = 30 * float64(speed) * float64(planet.Buildings.MetalMine) * factor * (1 + (float64(account.Technologies.Plasma) / 100))
 
-	secondsSinceLastUpdate := timestamp - planet.LastResourceUpdate
-	metalEarnedSinceLastUpdate := (baseProductionPerHour + uint64(mineProductionPerHour)) * uint64(secondsSinceLastUpdate) / 60
-
-	currentTotalMetal := planet.Resources.Metal + metalEarnedSinceLastUpdate
+	productionPerHour := float64(baseProductionPerHour) + mineProductionPerHour
 
 	if account.HasGeologistCommander(timestamp) {
-		currentTotalMetal = currentTotalMetal * 110 / 100
+		productionPerHour = productionPerHour * 110 / 100
 	}
 
-	return uint64(float64(currentTotalMetal) * energyRate)
+	return float64(productionPerHour) * energyRate
 }
 
-func (planet *OChainPlanet) computeCrystalProduction(energyRate float64, timestamp int64, speed uint64, account OChainUniverseAccount) uint64 {
+func (planet *OChainPlanet) computeMetalProductionFromLastUpdate(energyRate float64, timestamp int64, speed uint64, account OChainUniverseAccount) uint64 {
+
+	hourlyProduction := planet.getMetalProduction(energyRate, timestamp, speed, account)
+
+	secondsSinceLastUpdate := timestamp - planet.LastResourceUpdate
+	metalEarnedSinceLastUpdate := hourlyProduction * float64(secondsSinceLastUpdate) / 3600
+
+	return uint64(metalEarnedSinceLastUpdate)
+}
+
+func (planet *OChainPlanet) getCrystalStorageCapacity() uint64 {
+	return uint64(float64(5000) * float64(2.5) * math.Pow(float64(2.71828), float64(20*planet.Buildings.CrystalStorage/33)))
+}
+
+func (planet *OChainPlanet) getCrystalProduction(energyRate float64, timestamp int64, speed uint64, account OChainUniverseAccount) float64 {
 	baseProductionPerHour := 15 * speed
 	var factor float64 = math.Pow(float64(1.1), float64(planet.Buildings.CrystalMine))
 	var mineProductionPerHour float64 = 20 * float64(speed) * float64(planet.Buildings.CrystalMine) * factor * (1 + (float64(account.Technologies.Plasma) * 0.0066))
 
-	secondsSinceLastUpdate := timestamp - planet.LastResourceUpdate
-	crystalEarnedSinceLastUpdate := (baseProductionPerHour + uint64(mineProductionPerHour)) * uint64(secondsSinceLastUpdate) / 60
-
-	currentTotalCrystal := planet.Resources.Metal + crystalEarnedSinceLastUpdate
+	productionPerHour := float64(baseProductionPerHour) + mineProductionPerHour
 
 	if account.HasGeologistCommander(timestamp) {
-		currentTotalCrystal = currentTotalCrystal * 110 / 100
+		productionPerHour = productionPerHour * 110 / 100
 	}
 
-	return uint64(float64(currentTotalCrystal) * energyRate)
+	return float64(productionPerHour) * energyRate
 }
 
-func (planet *OChainPlanet) computeDeuteriumProduction(energyRate float64, timestamp int64, speed uint64, account OChainUniverseAccount) uint64 {
+func (planet *OChainPlanet) computeCrystalProductionFromLastUpdate(energyRate float64, timestamp int64, speed uint64, account OChainUniverseAccount) uint64 {
+	hourlyProduction := planet.getCrystalProduction(energyRate, timestamp, speed, account)
+
+	secondsSinceLastUpdate := timestamp - planet.LastResourceUpdate
+	crystalEarnedSinceLastUpdate := hourlyProduction * float64(secondsSinceLastUpdate) / 3600
+
+	if account.HasGeologistCommander(timestamp) {
+		crystalEarnedSinceLastUpdate = crystalEarnedSinceLastUpdate * 110 / 100
+	}
+
+	return uint64(crystalEarnedSinceLastUpdate)
+}
+
+func (planet *OChainPlanet) getDeuteriumStorageCapacity() uint64 {
+	return uint64(float64(5000) * float64(2.5) * math.Pow(float64(2.71828), float64(20*planet.Buildings.DeuteriumStorage/33)))
+}
+
+func (planet *OChainPlanet) getDeuteriumProduction(energyRate float64, timestamp int64, speed uint64, account OChainUniverseAccount) float64 {
 	var factor float64 = math.Pow(float64(1.1), float64(planet.Buildings.DeuteriumMine))
 	var mineProductionPerHour float64 = 20 * float64(speed) * float64(planet.Buildings.DeuteriumMine) * factor
 
-	secondsSinceLastUpdate := timestamp - planet.LastResourceUpdate
-	deuteriumEarnedSinceLastUpdate := uint64(mineProductionPerHour) * uint64(secondsSinceLastUpdate) / 60
-
 	if account.HasGeologistCommander(timestamp) {
-		deuteriumEarnedSinceLastUpdate = deuteriumEarnedSinceLastUpdate * 110 / 100
+		mineProductionPerHour = mineProductionPerHour * 110 / 100
 	}
 
-	return uint64(float64(deuteriumEarnedSinceLastUpdate) * energyRate)
+	return float64(mineProductionPerHour) * energyRate
+}
+
+func (planet *OChainPlanet) computeDeuteriumProductionFromLastUpdate(energyRate float64, timestamp int64, speed uint64, account OChainUniverseAccount) uint64 {
+	var productionPerHour float64 = planet.getDeuteriumProduction(energyRate, timestamp, speed, account)
+
+	secondsSinceLastUpdate := timestamp - planet.LastResourceUpdate
+	deuteriumEarnedSinceLastUpdate := uint64(productionPerHour) * uint64(secondsSinceLastUpdate) / 3600
+
+	return uint64(deuteriumEarnedSinceLastUpdate)
 }
 
 func CoordinateId(galaxy uint64, solarSystem uint64, planet uint64) string {

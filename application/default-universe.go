@@ -155,6 +155,40 @@ var DefaultBuildings []types.OChainBuilding = []types.OChainBuilding{
 		},
 		Dependencies: []types.OChainDependency{},
 	},
+	{
+		//https://ogame.fandom.com/fr/wiki/Hangar_de_m%C3%A9tal
+		Id:   types.MetalStorageID,
+		Name: "Metal storage",
+		BaseCost: types.OChainResources{
+			OCT:       0,
+			Metal:     2_000,
+			Crystal:   0,
+			Deuterium: 0,
+		},
+		Dependencies: []types.OChainDependency{},
+	},
+	{
+		Id:   types.CrystalStorageID,
+		Name: "Crystal storage",
+		BaseCost: types.OChainResources{
+			OCT:       0,
+			Metal:     2_000,
+			Crystal:   1_000,
+			Deuterium: 0,
+		},
+		Dependencies: []types.OChainDependency{},
+	},
+	{
+		Id:   types.DeuteriumStorageID,
+		Name: "Deutereum storage",
+		BaseCost: types.OChainResources{
+			OCT:       0,
+			Metal:     2_000,
+			Crystal:   2_000,
+			Deuterium: 0,
+		},
+		Dependencies: []types.OChainDependency{},
+	},
 }
 
 var DefaultTechnologies []types.OChainTechnology = []types.OChainTechnology{

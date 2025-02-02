@@ -16,11 +16,6 @@ type GetUniverseAccountsQueryParameters struct {
 	Address string `cbor:"address"`
 }
 
-type GetPlanetQueryParameters struct {
-	UniverseId   string `cbor:"universeId"`
-	CoordinateId string `cbor:"coordinateId"`
-}
-
 func ResolveGetUniversesQuery(q []byte, db *database.OChainDatabase) ([]byte, error) {
 	log.Println("ResolveGetUniversesQuery ")
 
@@ -50,26 +45,6 @@ func ResolveGetUniverseQuery(q []byte, db *database.OChainDatabase) ([]byte, err
 	}
 
 	result, err := cbor.Marshal(universes)
-	if err != nil {
-		return []byte(""), err
-	}
-
-	return result, nil
-}
-
-func ResolveGetPlanetQuery(q []byte, db *database.OChainDatabase) ([]byte, error) {
-	var parameters GetPlanetQueryParameters
-	err := cbor.Unmarshal(q, &parameters)
-	if err != nil {
-		return []byte(""), err
-	}
-
-	accounts, err := db.Planets.Get(parameters.UniverseId, parameters.CoordinateId)
-	if err != nil {
-		return []byte(""), err
-	}
-
-	result, err := cbor.Marshal(accounts)
 	if err != nil {
 		return []byte(""), err
 	}

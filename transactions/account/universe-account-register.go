@@ -202,6 +202,10 @@ func (tx *RegisterUniverseAccountTransaction) Execute(ctx t.TransactionContext) 
 			IntergalacticPortal: 0,
 			ResearchLaboratory:  0,
 			ShieldDome:          0,
+
+			MetalStorage:     0,
+			CrystalStorage:   0,
+			DeuteriumStorage: 0,
 		},
 
 		Spaceships: types.OChainFleetSpaceships{
