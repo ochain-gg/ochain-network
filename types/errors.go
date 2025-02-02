@@ -7,10 +7,11 @@ const (
 	ParsingTransactionDataError uint32 = 2
 	InvalidTransactionError     uint32 = 3
 	InvalidTransactionSignature uint32 = 4
-	CheckTransactionFailure     uint32 = 5
-	ExecuteTransactionFailure   uint32 = 6
-	NotImplemented              uint32 = 7
-	GasCostHigherThanBalance    uint32 = 8
+	InvalidNonce                uint32 = 5
+	CheckTransactionFailure     uint32 = 6
+	ExecuteTransactionFailure   uint32 = 7
+	NotImplemented              uint32 = 8
+	GasCostHigherThanBalance    uint32 = 9
 )
 
 type OChainError struct {

@@ -18,8 +18,6 @@ func IsDeleguatedAuthorized(txType transactions.TransactionType) bool {
 	switch txType {
 	case transactions.RegisterAccount:
 		return false
-	case transactions.RegisterUniverseAccount:
-		return false
 	case transactions.UniverseOChainTokenWithdraw:
 		return false
 	case transactions.OChainTokenWithdrawal:
@@ -48,7 +46,7 @@ func CheckAuthenticatedTx(ctx transactions.TransactionContext, req *abcitypes.Ch
 
 		//verify nonce
 		if tx.Nonce != account.Nonce {
-			return &abcitypes.CheckTxResponse{Code: types.InvalidTransactionSignature, GasWanted: 0, GasUsed: 0}
+			return &abcitypes.CheckTxResponse{Code: types.InvalidNonce, GasWanted: 0, GasUsed: 0}
 		}
 	} else {
 		if signer != tx.From || tx.Nonce != 0 {

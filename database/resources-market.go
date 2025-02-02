@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	OChainResourcesMarketPrefix string = "universe_account_"
+	OChainResourcesMarketPrefix string = "market_"
 )
 
 type OChainResourcesMarketTable struct {

@@ -2,6 +2,7 @@ package database
 
 import (
 	"errors"
+	"log"
 	"math"
 
 	"github.com/dgraph-io/badger/v4"
@@ -141,11 +142,15 @@ func (db *OChainUniverseTable) GetAllAt(at uint64) ([]types.OChainUniverse, erro
 	for it.Seek(prefix); it.ValidForPrefix(prefix); it.Next() {
 		item := it.Item()
 
+		log.Println(item)
+
 		var universe types.OChainUniverse
 		value, err := item.ValueCopy(nil)
 		if err != nil {
 			return []types.OChainUniverse{}, err
 		}
+
+		log.Println(cbor.ByteString(value))
 
 		err = cbor.Unmarshal(value, &universe)
 		if err != nil {

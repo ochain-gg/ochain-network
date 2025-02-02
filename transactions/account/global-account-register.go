@@ -2,6 +2,7 @@ package account_transactions
 
 import (
 	"fmt"
+	"log"
 
 	abcitypes "github.com/cometbft/cometbft/abci/types"
 	"github.com/ethereum/go-ethereum/common"
@@ -46,6 +47,9 @@ func (tx *RegisterAccountTransaction) Transaction() (t.Transaction, error) {
 }
 
 func (tx *RegisterAccountTransaction) Check(ctx t.TransactionContext) *abcitypes.CheckTxResponse {
+
+	log.Println("[RegisterAccountTransaction] Check")
+
 	_, err := ctx.Db.GlobalsAccounts.Get(tx.Data.Address)
 	if err == nil {
 		return &abcitypes.CheckTxResponse{
@@ -84,12 +88,16 @@ func (tx *RegisterAccountTransaction) Check(ctx t.TransactionContext) *abcitypes
 		}
 	}
 
+	log.Println("[RegisterAccountTransaction] Domain separator: " + domainSeparator.String())
+
 	typedDataHash, err := typedData.HashStruct(typedData.PrimaryType, typedData.Message)
 	if err != nil {
 		return &abcitypes.CheckTxResponse{
 			Code: types.InvalidTransactionError,
 		}
 	}
+
+	log.Println("[RegisterAccountTransaction] typedDataHash: " + typedDataHash.String())
 
 	typedDataHashSigned := []byte(fmt.Sprintf("\x19\x01%s%s", string(domainSeparator), string(typedDataHash)))
 	sighash := crypto.Keccak256(typedDataHashSigned)
@@ -107,13 +115,16 @@ func (tx *RegisterAccountTransaction) Check(ctx t.TransactionContext) *abcitypes
 	}
 
 	address := crypto.PubkeyToAddress(*sigPubkey)
+	log.Println("[RegisterAccountTransaction] signer address: " + address.String())
 	if address != common.HexToAddress("0x190144001306820e9BdF6eB2dB8d747B4fCE7980") {
 		return &abcitypes.CheckTxResponse{
 			Code: types.InvalidTransactionError,
 		}
 	}
 
-	return nil
+	return &abcitypes.CheckTxResponse{
+		Code: types.NoError,
+	}
 }
 
 func (tx *RegisterAccountTransaction) Execute(ctx t.TransactionContext) *abcitypes.ExecTxResult {

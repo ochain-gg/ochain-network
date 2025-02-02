@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	OChainPlanetPrefix string = "_planet_"
+	OChainPlanetPrefix string = "planet_"
 )
 
 type OChainPlanetTable struct {
@@ -19,7 +19,7 @@ type OChainPlanetTable struct {
 }
 
 func (db *OChainPlanetTable) KeyOf(universeId string, planet types.OChainPlanet) []byte {
-	return []byte(OChainUniversePrefix + universeId + OChainPlanetPrefix + planet.CoordinateId())
+	return []byte(OChainPlanetPrefix + universeId + "_" + planet.CoordinateId())
 }
 
 func (db *OChainPlanetTable) SetCurrentTxn(tx *badger.Txn) {
@@ -32,7 +32,7 @@ func (db *OChainPlanetTable) Exists(universeId string, coordinateId string) (boo
 }
 
 func (db *OChainPlanetTable) ExistsAt(universeId string, coordinateId string, at uint64) (bool, error) {
-	key := []byte(OChainUniversePrefix + universeId + OChainPlanetPrefix + coordinateId)
+	key := []byte(OChainPlanetPrefix + universeId + "_" + coordinateId)
 
 	txn := db.bdb.NewTransactionAt(at, false)
 	if _, err := txn.Get([]byte(key)); err != nil {
@@ -53,7 +53,7 @@ func (db *OChainPlanetTable) Get(universeId string, coordinateId string) (types.
 
 func (db *OChainPlanetTable) GetAt(universeId string, coordinateId string, at uint64) (types.OChainPlanet, error) {
 	var planet types.OChainPlanet
-	key := []byte(OChainUniversePrefix + universeId + OChainPlanetPrefix + coordinateId)
+	key := []byte(OChainPlanetPrefix + universeId + "_" + coordinateId)
 	txn := db.bdb.NewTransactionAt(at, false)
 
 	item, err := txn.Get([]byte(key))
@@ -125,7 +125,8 @@ func (db *OChainPlanetTable) Upsert(universeId string, planet types.OChainPlanet
 }
 
 func (db *OChainPlanetTable) Delete(universeId string, coordinateId string) error {
-	key := []byte(OChainUniversePrefix + universeId + OChainPlanetPrefix + coordinateId)
+
+	key := []byte(OChainPlanetPrefix + universeId + "_" + coordinateId)
 	return db.currentTxn.Delete(key)
 }
 
@@ -141,7 +142,7 @@ func (db *OChainPlanetTable) GetAllAt(universeId string, at uint64) ([]types.OCh
 	it := txn.NewIterator(badger.DefaultIteratorOptions)
 	defer it.Close()
 
-	prefix := []byte(OChainUniversePrefix + universeId + OChainPlanetPrefix)
+	prefix := []byte(OChainPlanetPrefix + universeId)
 
 	for it.Seek(prefix); it.ValidForPrefix(prefix); it.Next() {
 		item := it.Item()
@@ -174,8 +175,7 @@ func (db *OChainPlanetTable) GetAllInGalaxyAt(universeId string, galaxy string, 
 	txn := db.bdb.NewTransactionAt(at, false)
 	it := txn.NewIterator(badger.DefaultIteratorOptions)
 	defer it.Close()
-
-	prefix := []byte(OChainUniversePrefix + universeId + OChainPlanetPrefix + galaxy)
+	prefix := []byte(OChainPlanetPrefix + universeId + "_" + galaxy)
 
 	for it.Seek(prefix); it.ValidForPrefix(prefix); it.Next() {
 		item := it.Item()
@@ -208,8 +208,7 @@ func (db *OChainPlanetTable) GetAllInSolarSystemAt(universeId string, galaxy str
 	txn := db.bdb.NewTransactionAt(at, false)
 	it := txn.NewIterator(badger.DefaultIteratorOptions)
 	defer it.Close()
-
-	prefix := []byte(OChainUniversePrefix + universeId + OChainPlanetPrefix + galaxy + "_" + solarSystem)
+	prefix := []byte(OChainPlanetPrefix + universeId + "_" + galaxy + "_" + solarSystem)
 
 	for it.Seek(prefix); it.ValidForPrefix(prefix); it.Next() {
 		item := it.Item()

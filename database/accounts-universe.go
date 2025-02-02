@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	OChainUniverseAccountPrefix string = "universe_account_"
+	OChainUniverseAccountPrefix string = "account_"
 )
 
 type OChainUniverseAccountTable struct {
@@ -82,9 +82,9 @@ func (db *OChainUniverseAccountTable) GetByAddressAt(address string, at uint64) 
 
 	stream := db.bdb.NewStreamAt(at)
 
-	stream.NumGo = 16                               // Set number of goroutines to use for iteration.
-	stream.Prefix = []byte(OChainValidatorPrefix)   // Leave nil for iteration over the whole DB.
-	stream.LogPrefix = "Badger.Validator.Streaming" // For identifying stream logs. Outputs to Logger.
+	stream.NumGo = 16                                     // Set number of goroutines to use for iteration.
+	stream.Prefix = []byte(OChainUniverseAccountPrefix)   // Leave nil for iteration over the whole DB.
+	stream.LogPrefix = "Badger.UniverseAccount.Streaming" // For identifying stream logs. Outputs to Logger.
 	stream.Send = func(buf *z.Buffer) error {
 		err := buf.SliceIterate(func(s []byte) error {
 			var kv pb.KV
@@ -93,7 +93,7 @@ func (db *OChainUniverseAccountTable) GetByAddressAt(address string, at uint64) 
 				return err
 			}
 
-			if err := cbor.Unmarshal(kv.Value, acc); err != nil {
+			if err := cbor.Unmarshal(kv.Value, &acc); err != nil {
 				return err
 			}
 
