@@ -499,8 +499,12 @@ func (planet *OChainPlanet) getMetalStorageCapacity() uint64 {
 
 func (planet *OChainPlanet) getMetalProduction(energyRate float64, timestamp int64, speed uint64, account OChainUniverseAccount) float64 {
 	baseProductionPerHour := 30 * speed
-	var factor float64 = math.Pow(float64(1.1), float64(planet.Buildings.MetalMine-1))
-	var mineProductionPerHour float64 = 30 * float64(speed) * float64(planet.Buildings.MetalMine) * factor * (1 + (float64(account.Technologies.Plasma) / 100))
+
+	var mineProductionPerHour float64 = 0
+	if planet.Buildings.MetalMine > 0 {
+		var factor float64 = math.Pow(float64(1.1), float64(planet.Buildings.MetalMine-1))
+		mineProductionPerHour = 30 * float64(speed) * float64(planet.Buildings.MetalMine) * factor * (1 + (float64(account.Technologies.Plasma) / 100))
+	}
 
 	productionPerHour := float64(baseProductionPerHour) + mineProductionPerHour
 
