@@ -11,6 +11,12 @@ type OChainGlobalAccountIAM struct {
 	DeleguatedTo   []string `cbor:"3,keyasint"`
 }
 
+type OChainGlobalAccountIAMWithAttributes struct {
+	GuardianQuorum uint64   `cbor:"guardianQuorum"`
+	Guardians      []string `cbor:"guardians"`
+	DeleguatedTo   []string `cbor:"deleguatedTo"`
+}
+
 type OChainGlobalAccount struct {
 	Address                 string                 `cbor:"1,keyasint"`
 	IAM                     OChainGlobalAccountIAM `cbor:"2,keyasint"`
@@ -25,6 +31,38 @@ type OChainGlobalAccount struct {
 
 	LastTransactionHour  uint64 `cbor:"9,keyasint"`
 	LastTransactionCount uint64 `cbor:"10,keyasint"`
+}
+
+type OChainGlobalAccountWithAttributes struct {
+	Address                 string                               `cbor:"address"`
+	IAM                     OChainGlobalAccountIAMWithAttributes `cbor:"iam"`
+	Nonce                   uint64                               `cbor:"nonce"`
+	TokenBalance            uint64                               `cbor:"tokenBalance"`
+	StackedBalance          uint64                               `cbor:"stackedBalance"`
+	VotingPowerDeleguated   bool                                 `cbor:"votingPowerDeleguated"`
+	VotingPowerDeleguatedTo string                               `cbor:"votingPowerDeleguatedTo"`
+	CreditBalance           uint64                               `cbor:"creditBalance"`
+	LastDailyClaim          int64                                `cbor:"lastDailyClaim"`
+	CreatedAt               int64                                `cbor:"createdAt"`
+	LastTransactionHour     uint64                               `cbor:"lastTransactionHour"`
+	LastTransactionCount    uint64                               `cbor:"lastTransactionCount"`
+}
+
+func (acc *OChainGlobalAccount) WithAttributes() OChainGlobalAccountWithAttributes {
+	return OChainGlobalAccountWithAttributes{
+		Address:                 acc.Address,
+		IAM:                     OChainGlobalAccountIAMWithAttributes(acc.IAM),
+		Nonce:                   acc.Nonce,
+		TokenBalance:            acc.TokenBalance,
+		StackedBalance:          acc.StackedBalance,
+		VotingPowerDeleguated:   acc.VotingPowerDeleguated,
+		VotingPowerDeleguatedTo: acc.VotingPowerDeleguatedTo,
+		CreditBalance:           acc.CreditBalance,
+		LastDailyClaim:          acc.LastDailyClaim,
+		CreatedAt:               acc.CreatedAt,
+		LastTransactionHour:     acc.LastTransactionHour,
+		LastTransactionCount:    acc.LastTransactionCount,
+	}
 }
 
 func (acc *OChainGlobalAccount) GetGasCost(timestamp uint64) uint64 {
@@ -94,9 +132,32 @@ const (
 	FleetAdmiralID OChainCommanderID = "FLEET_ADMIRAL"
 )
 
+type OChainCommanderBonusWithAttributes struct {
+	CommanderId OChainCommanderID `cbor:"1,keyasint"`
+	EndedAt     int64             `cbor:"2,keyasint"`
+}
+
 type OChainCommanderBonus struct {
 	CommanderId OChainCommanderID `cbor:"1,keyasint"`
 	EndedAt     int64             `cbor:"2,keyasint"`
+}
+
+func (bonus *OChainCommanderBonus) WithAttributes() OChainCommanderBonusWithAttributes {
+	return OChainCommanderBonusWithAttributes{
+		CommanderId: bonus.CommanderId,
+		EndedAt:     bonus.EndedAt,
+	}
+}
+
+type OChainUniverseAccountWithAttributes struct {
+	Address             string                                  `cbor:"address"`
+	UniverseId          string                                  `cbor:"universeId"`
+	Points              uint64                                  `cbor:"points"`
+	PlanetsCoordinates  []string                                `cbor:"planetsCoordinates"`
+	Technologies        OChainAccountTechnologiesWithAttributes `cbor:"technologies"`
+	Commanders          []OChainCommanderBonusWithAttributes    `cbor:"commanders"`
+	CreatedAt           int64                                   `cbor:"createdAt"`
+	LastOCTWithdrawalAt int64                                   `cbor:"lastOCTWithdrawalAt"`
 }
 
 type OChainUniverseAccount struct {
@@ -121,6 +182,24 @@ type OChainUniverseAccountWeeklyUsage struct {
 
 	WithdrawalsExecuted uint64 `cbor:"5,keyasint"`
 	DepositedAmount     uint64 `cbor:"6,keyasint"`
+}
+
+func (acc *OChainUniverseAccount) WithAttribute() OChainUniverseAccountWithAttributes {
+	var commanders []OChainCommanderBonusWithAttributes
+	for i := range acc.Commanders {
+		commanders = append(commanders, acc.Commanders[i].WithAttributes())
+	}
+
+	return OChainUniverseAccountWithAttributes{
+		Address:             acc.Address,
+		UniverseId:          acc.UniverseId,
+		Points:              acc.Points,
+		PlanetsCoordinates:  acc.PlanetsCoordinates,
+		Technologies:        acc.Technologies.WithAttributes(),
+		Commanders:          commanders,
+		CreatedAt:           acc.CreatedAt,
+		LastOCTWithdrawalAt: acc.LastOCTWithdrawalAt,
+	}
 }
 
 func (acc *OChainUniverseAccount) TechnologyLevel(id OChainTechnologyID) uint64 {

@@ -2,11 +2,27 @@ package types
 
 import "math"
 
+type OChainResourcesWithAttributes struct {
+	OCT       uint64 `cbor:"OCT"`
+	Metal     uint64 `cbor:"metal"`
+	Crystal   uint64 `cbor:"crystal"`
+	Deuterium uint64 `cbor:"deuterium"`
+}
+
 type OChainResources struct {
 	OCT       uint64 `cbor:"1,keyasint"`
 	Metal     uint64 `cbor:"2,keyasint"`
 	Crystal   uint64 `cbor:"3,keyasint"`
 	Deuterium uint64 `cbor:"4,keyasint"`
+}
+
+func (resource *OChainResources) WithAttributes() OChainResourcesWithAttributes {
+	return OChainResourcesWithAttributes{
+		OCT:       resource.OCT,
+		Metal:     resource.Metal,
+		Crystal:   resource.Crystal,
+		Deuterium: resource.Deuterium,
+	}
 }
 
 func (resource *OChainResources) Add(r OChainResources) {
@@ -35,6 +51,21 @@ type OChainCost struct {
 	Resources OChainResources
 }
 
+type OChainUniverseWithAttributes struct {
+	Id                      string `cbor:"id"`
+	Name                    string `cbor:"name"`
+	Speed                   uint64 `cbor:"speed"`
+	ResourcesMarketEnabled  bool   `cbor:"resourcesMarketEnabled"`
+	IsStretchable           bool   `cbor:"isStretchable"` // if true, max galaxy increase in function of colinized planets
+	MaxGalaxy               uint64 `cbor:"maxGalaxy"`
+	MaxSolarSystemPerGalaxy uint64 `cbor:"maxSolarSystemPerGalaxy"`
+	MaxPlanetPerSolarSystem uint64 `cbor:"maxPlanetPerSolarSystem"`
+	Accounts                uint64 `cbor:"accounts"`
+	ColonizedPlanets        uint64 `cbor:"colonizedPlanetst"`
+	CreatedAt               uint64 `cbor:"createdAtt"`
+	EndingAt                uint64 `cbor:"endingAtt"`
+}
+
 type OChainUniverse struct {
 	Id                     string `cbor:"1,keyasint"`
 	Name                   string `cbor:"2,keyasint"`
@@ -53,16 +84,70 @@ type OChainUniverse struct {
 	EndingAt  uint64 `cbor:"12,keyasint"`
 }
 
+func (universe *OChainUniverse) WithAttributes() OChainUniverseWithAttributes {
+	return OChainUniverseWithAttributes{
+		Id:                      universe.Id,
+		Name:                    universe.Name,
+		Speed:                   universe.Speed,
+		ResourcesMarketEnabled:  universe.ResourcesMarketEnabled,
+		IsStretchable:           universe.IsStretchable,
+		MaxGalaxy:               universe.MaxGalaxy,
+		MaxSolarSystemPerGalaxy: universe.MaxSolarSystemPerGalaxy,
+		MaxPlanetPerSolarSystem: universe.MaxPlanetPerSolarSystem,
+		Accounts:                universe.Accounts,
+		ColonizedPlanets:        universe.ColonizedPlanets,
+		CreatedAt:               universe.CreatedAt,
+		EndingAt:                universe.EndingAt,
+	}
+}
+
+type OChainFighterStatsWithAttributes struct {
+	Armor  uint64 `cbor:"armor"`
+	Shield uint64 `cbor:"shield"`
+	Attack uint64 `cbor:"attack"`
+}
+
+type OChainSpaceshipStatsWithAttributes struct {
+	Capacity   uint64 `cbor:"capacity"`
+	Speed      uint64 `cbor:"speed"`
+	Consumtion uint64 `cbor:"consumtion"`
+}
+
+type OChainSpaceshipWithAttributes struct {
+	Id           OChainSpaceshipID                `cbor:"id"`
+	Name         string                           `cbor:"name"`
+	FighterStats OChainFighterStats               `cbor:"fighterStats"`
+	Stats        OChainSpaceshipStats             `cbor:"stats"`
+	Cost         OChainResources                  `cbor:"cost"`
+	Dependencies []OChainDependencyWithAttributes `cbor:"dependencies"`
+}
+
 type OChainFighterStats struct {
 	Armor  uint64 `cbor:"1,keyasint"`
 	Shield uint64 `cbor:"2,keyasint"`
 	Attack uint64 `cbor:"3,keyasint"`
 }
 
+func (stat *OChainFighterStats) WithAttributes() OChainFighterStatsWithAttributes {
+	return OChainFighterStatsWithAttributes{
+		Armor:  stat.Armor,
+		Shield: stat.Shield,
+		Attack: stat.Attack,
+	}
+}
+
 type OChainSpaceshipStats struct {
 	Capacity   uint64 `cbor:"1,keyasint"`
 	Speed      uint64 `cbor:"2,keyasint"`
 	Consumtion uint64 `cbor:"3,keyasint"`
+}
+
+func (stat *OChainSpaceshipStats) WithAttributes() OChainSpaceshipStatsWithAttributes {
+	return OChainSpaceshipStatsWithAttributes{
+		Capacity:   stat.Capacity,
+		Speed:      stat.Speed,
+		Consumtion: stat.Consumtion,
+	}
 }
 
 type OChainSpaceship struct {
@@ -72,6 +157,22 @@ type OChainSpaceship struct {
 	Stats        OChainSpaceshipStats `cbor:"4,keyasint"`
 	Cost         OChainResources      `cbor:"5,keyasint"`
 	Dependencies []OChainDependency   `cbor:"6,keyasint"`
+}
+
+func (spaceship *OChainSpaceship) WithAttributes() OChainSpaceshipWithAttributes {
+	var dependencies []OChainDependencyWithAttributes
+	for i := range spaceship.Dependencies {
+		dependencies = append(dependencies, spaceship.Dependencies[i].WithAttributes())
+	}
+
+	return OChainSpaceshipWithAttributes{
+		Id:           spaceship.Id,
+		Name:         spaceship.Name,
+		FighterStats: spaceship.FighterStats,
+		Stats:        spaceship.Stats,
+		Cost:         spaceship.Cost,
+		Dependencies: dependencies,
+	}
 }
 
 func (spaceship *OChainSpaceship) MeetRequirements(planet OChainPlanet, acc OChainUniverseAccount) bool {
@@ -101,10 +202,32 @@ const (
 	OChainTechnologyDependency OChainDependencyType = 1
 )
 
+type OChainDependencyWithAttributes struct {
+	DependencyType OChainDependencyType `cbor:"dependencyType"`
+	DependencyId   string               `cbor:"dependencyId"`
+	Level          uint64               `cbor:"level"`
+}
+
 type OChainDependency struct {
 	DependencyType OChainDependencyType `cbor:"1,keyasint"`
 	DependencyId   string               `cbor:"2,keyasint"`
 	Level          uint64               `cbor:"3,keyasint"`
+}
+
+func (dep *OChainDependency) WithAttributes() OChainDependencyWithAttributes {
+	return OChainDependencyWithAttributes{
+		DependencyType: dep.DependencyType,
+		DependencyId:   dep.DependencyId,
+		Level:          dep.Level,
+	}
+}
+
+type OChainDefenseWithAttributes struct {
+	Id           OChainDefenseID                  `cbor:"id"`
+	Name         string                           `cbor:"name"`
+	FighterStats OChainFighterStats               `cbor:"fighterStats"`
+	Cost         OChainResources                  `cbor:"cost"`
+	Dependencies []OChainDependencyWithAttributes `cbor:"dependencies"`
 }
 
 type OChainDefense struct {
@@ -113,6 +236,21 @@ type OChainDefense struct {
 	FighterStats OChainFighterStats `cbor:"3,keyasint"`
 	Cost         OChainResources    `cbor:"4,keyasint"`
 	Dependencies []OChainDependency `cbor:"5,keyasint"`
+}
+
+func (def *OChainDefense) WithAttributes() OChainDefenseWithAttributes {
+	var dependencies []OChainDependencyWithAttributes
+	for i := range def.Dependencies {
+		dependencies = append(dependencies, def.Dependencies[i].WithAttributes())
+	}
+
+	return OChainDefenseWithAttributes{
+		Id:           def.Id,
+		Name:         def.Name,
+		FighterStats: def.FighterStats,
+		Cost:         def.Cost,
+		Dependencies: dependencies,
+	}
 }
 
 func (defense *OChainDefense) MeetRequirements(planet OChainPlanet, acc OChainUniverseAccount) bool {
@@ -135,6 +273,24 @@ func (defense *OChainDefense) MeetRequirements(planet OChainPlanet, acc OChainUn
 	return true
 }
 
+type OChainAccountTechnologiesWithAttributes struct {
+	Computer                     uint64 `cbor:"computer"`
+	Weapon                       uint64 `cbor:"weapon"`
+	Shielding                    uint64 `cbor:"shielding"`
+	Armor                        uint64 `cbor:"armor"`
+	Energy                       uint64 `cbor:"energy"`
+	CombustionDrive              uint64 `cbor:"combustionDrive"`
+	ImpulseDrive                 uint64 `cbor:"impulseDrive"`
+	HyperspaceDrive              uint64 `cbor:"hyperspaceDrive"`
+	Hyperspace                   uint64 `cbor:"hyperspace"`
+	Laser                        uint64 `cbor:"laser"`
+	Ion                          uint64 `cbor:"ion"`
+	Plasma                       uint64 `cbor:"plasma"`
+	IntergalacticResearchNetwork uint64 `cbor:"intergalacticResearchNetwork"`
+	Astrophysics                 uint64 `cbor:"astrophysics"`
+	Graviton                     uint64 `cbor:"graviton"`
+}
+
 type OChainAccountTechnologies struct {
 	Computer  uint64 `cbor:"1,keyasint"`
 	Weapon    uint64 `cbor:"2,keyasint"`
@@ -154,6 +310,26 @@ type OChainAccountTechnologies struct {
 	IntergalacticResearchNetwork uint64 `cbor:"13,keyasint"`
 	Astrophysics                 uint64 `cbor:"14,keyasint"`
 	Graviton                     uint64 `cbor:"15,keyasint"`
+}
+
+func (tech *OChainAccountTechnologies) WithAttributes() OChainAccountTechnologiesWithAttributes {
+	return OChainAccountTechnologiesWithAttributes{
+		Computer:                     tech.Computer,
+		Weapon:                       tech.Weapon,
+		Shielding:                    tech.Shielding,
+		Armor:                        tech.Armor,
+		Energy:                       tech.Energy,
+		CombustionDrive:              tech.CombustionDrive,
+		ImpulseDrive:                 tech.ImpulseDrive,
+		HyperspaceDrive:              tech.HyperspaceDrive,
+		Hyperspace:                   tech.Hyperspace,
+		Laser:                        tech.Laser,
+		Ion:                          tech.Ion,
+		Plasma:                       tech.Plasma,
+		IntergalacticResearchNetwork: tech.IntergalacticResearchNetwork,
+		Astrophysics:                 tech.Astrophysics,
+		Graviton:                     tech.Graviton,
+	}
 }
 
 type OChainBuildingID string
@@ -223,11 +399,32 @@ const (
 	DarkMatterCanonID OChainDefenseID = "DARK_MATTER_CANON"
 )
 
+type OChainBuildingWithAttributes struct {
+	Id           OChainBuildingID                 `cbor:"id"`
+	Name         string                           `cbor:"name"`
+	BaseCost     OChainResourcesWithAttributes    `cbor:"baseCost"`
+	Dependencies []OChainDependencyWithAttributes `cbor:"dependencies"`
+}
+
 type OChainBuilding struct {
 	Id           OChainBuildingID   `cbor:"1,keyasint"`
 	Name         string             `cbor:"2,keyasint"`
 	BaseCost     OChainResources    `cbor:"3,keyasint"`
 	Dependencies []OChainDependency `cbor:"4,keyasint"`
+}
+
+func (def *OChainBuilding) WithAttributes() OChainBuildingWithAttributes {
+	var dependencies []OChainDependencyWithAttributes
+	for i := range def.Dependencies {
+		dependencies = append(dependencies, def.Dependencies[i].WithAttributes())
+	}
+
+	return OChainBuildingWithAttributes{
+		Id:           def.Id,
+		Name:         def.Name,
+		BaseCost:     def.BaseCost.WithAttributes(),
+		Dependencies: dependencies,
+	}
 }
 
 func (building *OChainBuilding) GetUpgradeCost(level uint64) OChainResources {
@@ -259,11 +456,32 @@ func (building *OChainBuilding) MeetRequirements(planet OChainPlanet, acc OChain
 	return true
 }
 
+type OChainTechnologyWithAttributes struct {
+	Id           OChainTechnologyID               `cbor:"id"`
+	Name         string                           `cbor:"name"`
+	BaseCost     OChainResourcesWithAttributes    `cbor:"baseCost"`
+	Dependencies []OChainDependencyWithAttributes `cbor:"dependencies"`
+}
+
 type OChainTechnology struct {
 	Id           OChainTechnologyID `cbor:"1,keyasint"`
 	Name         string             `cbor:"2,keyasint"`
 	BaseCost     OChainResources    `cbor:"3,keyasint"`
 	Dependencies []OChainDependency `cbor:"4,keyasint"`
+}
+
+func (tech *OChainTechnology) WithAttributes() OChainTechnologyWithAttributes {
+	var dependencies []OChainDependencyWithAttributes
+	for i := range tech.Dependencies {
+		dependencies = append(dependencies, tech.Dependencies[i].WithAttributes())
+	}
+
+	return OChainTechnologyWithAttributes{
+		Id:           tech.Id,
+		Name:         tech.Name,
+		BaseCost:     tech.BaseCost.WithAttributes(),
+		Dependencies: dependencies,
+	}
 }
 
 func (technology *OChainTechnology) GetUpgradeCost(level uint64) OChainResources {

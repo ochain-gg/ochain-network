@@ -18,8 +18,8 @@ type PlanetStatistics struct {
 }
 
 type GetPlanetQueryResponse struct {
-	Planet types.OChainPlanet           `cbor:"planet"`
-	Stats  types.OChainPlanetStatistics `cbor:"stats"`
+	Planet types.OChainPlanetWithAttributes `cbor:"planet"`
+	Stats  types.OChainPlanetStatistics     `cbor:"stats"`
 }
 
 func ResolveGetPlanetQuery(q []byte, db *database.OChainDatabase) ([]byte, error) {
@@ -47,7 +47,7 @@ func ResolveGetPlanetQuery(q []byte, db *database.OChainDatabase) ([]byte, error
 	planet.UpdateResources(universe.Speed, time.Now().Unix(), account)
 
 	result, err := cbor.Marshal(GetPlanetQueryResponse{
-		Planet: planet,
+		Planet: planet.WithAttributes(),
 		Stats:  planet.PlanetStatistics(universe.Speed, time.Now().Unix(), account),
 	})
 	if err != nil {

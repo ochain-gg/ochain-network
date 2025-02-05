@@ -14,8 +14,8 @@ type GetAccountQueryParameters struct {
 }
 
 type GetAccountQueryResponse struct {
-	Account          types.OChainGlobalAccount     `cbor:"account"`
-	UniverseAccounts []types.OChainUniverseAccount `cbor:"universeAccounts"`
+	Account          types.OChainGlobalAccountWithAttributes     `cbor:"account"`
+	UniverseAccounts []types.OChainUniverseAccountWithAttributes `cbor:"universeAccounts"`
 }
 
 func ResolveGetAccountQuery(q []byte, db *database.OChainDatabase) ([]byte, error) {
@@ -35,7 +35,7 @@ func ResolveGetAccountQuery(q []byte, db *database.OChainDatabase) ([]byte, erro
 		}
 	}
 
-	result.Account = relatedGlobalAccount
+	result.Account = relatedGlobalAccount.WithAttributes()
 
 	universeAccounts, err := db.UniverseAccounts.GetByAddress(result.Account.Address)
 	if err != nil {
@@ -43,7 +43,7 @@ func ResolveGetAccountQuery(q []byte, db *database.OChainDatabase) ([]byte, erro
 	}
 
 	for i := 0; i < len(universeAccounts); i++ {
-		result.UniverseAccounts = append(result.UniverseAccounts, universeAccounts[i])
+		result.UniverseAccounts = append(result.UniverseAccounts, universeAccounts[i].WithAttribute())
 	}
 
 	response, err := cbor.Marshal(result)

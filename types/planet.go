@@ -21,6 +21,17 @@ const (
 	OChainDefenseBuild   OChainBuildType = 1
 )
 
+type OChainUpgradeWithAttributes struct {
+	UniverseId         string            `cbor:"universeId"`
+	PlanetCoordinateId string            `cbor:"planetCoordinateId"`
+	UpgradeType        OChainUpgradeType `cbor:"upgradeType"`
+	UpgradeId          string            `cbor:"upgradeId"`
+	Level              uint64            `cbor:"level"`
+	StartedAt          int64             `cbor:"startedAt"`
+	EndedAt            int64             `cbor:"endedAt"`
+	Executed           bool              `cbor:"executed"`
+}
+
 type OChainUpgrade struct {
 	UniverseId         string            `cbor:"1,keyasint"`
 	PlanetCoordinateId string            `cbor:"2,keyasint"`
@@ -32,10 +43,53 @@ type OChainUpgrade struct {
 	Executed           bool              `cbor:"8,keyasint"`
 }
 
+func (upgrade *OChainUpgrade) WithAttributes() OChainUpgradeWithAttributes {
+	return OChainUpgradeWithAttributes{
+		UniverseId:         upgrade.UniverseId,
+		PlanetCoordinateId: upgrade.PlanetCoordinateId,
+		UpgradeType:        upgrade.UpgradeType,
+		UpgradeId:          upgrade.UpgradeId,
+		Level:              upgrade.Level,
+		StartedAt:          upgrade.StartedAt,
+		EndedAt:            upgrade.EndedAt,
+		Executed:           upgrade.Executed,
+	}
+}
+
+type OChainBuildWithAttributes struct {
+	BuildType OChainBuildType `cbor:"1,keyasint"`
+	BuildId   string          `cbor:"2,keyasint"`
+	Count     uint64          `cbor:"3,keyasint"`
+}
+
 type OChainBuild struct {
 	BuildType OChainBuildType `cbor:"1,keyasint"`
 	BuildId   string          `cbor:"2,keyasint"`
 	Count     uint64          `cbor:"3,keyasint"`
+}
+
+func (build *OChainBuild) WithAttributes() OChainBuildWithAttributes {
+	return OChainBuildWithAttributes{
+		BuildType: build.BuildType,
+		BuildId:   build.BuildId,
+		Count:     build.Count,
+	}
+}
+
+type OChainPlanetBuildingsWithAttributes struct {
+	MetalMine           uint64 `cbor:"metalMine"`
+	CrystalMine         uint64 `cbor:"crystalMine"`
+	DeuteriumMine       uint64 `cbor:"deuteriumMine"`
+	SolarPowerPlant     uint64 `cbor:"solarPowerPlant"`
+	RoboticFactory      uint64 `cbor:"roboticFactory"`
+	NaniteFactory       uint64 `cbor:"naniteFactory"`
+	SpaceshipFactory    uint64 `cbor:"spaceshipFactory"`
+	IntergalacticPortal uint64 `cbor:"intergalacticPortal"`
+	ResearchLaboratory  uint64 `cbor:"researchLaboratory"`
+	ShieldDome          uint64 `cbor:"shieldDome"`
+	MetalStorage        uint64 `cbor:"metalStorage"`
+	CrystalStorage      uint64 `cbor:"crystalStorage"`
+	DeuteriumStorage    uint64 `cbor:"deuteriumStorage"`
 }
 
 type OChainPlanetBuildings struct {
@@ -57,6 +111,39 @@ type OChainPlanetBuildings struct {
 	DeuteriumStorage uint64 `cbor:"13,keyasint"`
 }
 
+func (builds *OChainPlanetBuildings) WithAttributes() OChainPlanetBuildingsWithAttributes {
+	return OChainPlanetBuildingsWithAttributes{
+		MetalMine:           builds.MetalMine,
+		CrystalMine:         builds.CrystalMine,
+		DeuteriumMine:       builds.DeuteriumMine,
+		SolarPowerPlant:     builds.SolarPowerPlant,
+		RoboticFactory:      builds.RoboticFactory,
+		NaniteFactory:       builds.NaniteFactory,
+		SpaceshipFactory:    builds.SpaceshipFactory,
+		IntergalacticPortal: builds.IntergalacticPortal,
+		ResearchLaboratory:  builds.ResearchLaboratory,
+		ShieldDome:          builds.ShieldDome,
+		MetalStorage:        builds.MetalStorage,
+		CrystalStorage:      builds.CrystalStorage,
+		DeuteriumStorage:    builds.DeuteriumStorage,
+	}
+}
+
+type OChainFleetSpaceshipsWithAttributes struct {
+	SmallCargo    uint64 `cbor:"smallCargo"`
+	LargeCargo    uint64 `cbor:"largeCargo"`
+	LightFighter  uint64 `cbor:"lightFighter"`
+	HeavyFighter  uint64 `cbor:"heavyFighter"`
+	Cruiser       uint64 `cbor:"cruiser"`
+	Battleship    uint64 `cbor:"battleship"`
+	Battlecruiser uint64 `cbor:"battlecruiser"`
+	Bomber        uint64 `cbor:"bomber"`
+	Destroyer     uint64 `cbor:"destroyer"`
+	Deathstar     uint64 `cbor:"deathstar"`
+	Reaper        uint64 `cbor:"reaper"`
+	Recycler      uint64 `cbor:"recycler"`
+}
+
 type OChainFleetSpaceships struct {
 	SmallCargo   uint64 `cbor:"1,keyasint"`
 	LargeCargo   uint64 `cbor:"2,keyasint"`
@@ -74,6 +161,33 @@ type OChainFleetSpaceships struct {
 	Recycler  uint64 `cbor:"12,keyasint"`
 }
 
+func (fleet *OChainFleetSpaceships) WithAttributes() OChainFleetSpaceshipsWithAttributes {
+	return OChainFleetSpaceshipsWithAttributes{
+		SmallCargo:    fleet.SmallCargo,
+		LargeCargo:    fleet.LargeCargo,
+		LightFighter:  fleet.LightFighter,
+		HeavyFighter:  fleet.HeavyFighter,
+		Cruiser:       fleet.Cruiser,
+		Battleship:    fleet.Battleship,
+		Battlecruiser: fleet.Battlecruiser,
+		Bomber:        fleet.Bomber,
+		Destroyer:     fleet.Destroyer,
+		Deathstar:     fleet.Deathstar,
+		Reaper:        fleet.Reaper,
+		Recycler:      fleet.Recycler,
+	}
+}
+
+type OChainPlanetDefencesWithAttributes struct {
+	RocketLauncher  uint64 `cbor:"rocketLauncher"`
+	LightLaser      uint64 `cbor:"lightLaser"`
+	HeavyLaser      uint64 `cbor:"heavyLaser"`
+	IonCannon       uint64 `cbor:"ionCannon"`
+	GaussCannon     uint64 `cbor:"gaussCannon"`
+	PlasmaTurret    uint64 `cbor:"plasmaTurret"`
+	DarkMatterCanon uint64 `cbor:"darkMatterCanon"`
+}
+
 type OChainPlanetDefences struct {
 	RocketLauncher  uint64 `cbor:"1,keyasint"`
 	LightLaser      uint64 `cbor:"2,keyasint"`
@@ -84,12 +198,71 @@ type OChainPlanetDefences struct {
 	DarkMatterCanon uint64 `cbor:"7,keyasint"`
 }
 
+func (def *OChainPlanetDefences) WithAttributes() OChainPlanetDefencesWithAttributes {
+	return OChainPlanetDefencesWithAttributes{
+		RocketLauncher:  def.RocketLauncher,
+		LightLaser:      def.LightLaser,
+		HeavyLaser:      def.HeavyLaser,
+		IonCannon:       def.IonCannon,
+		GaussCannon:     def.GaussCannon,
+		PlasmaTurret:    def.PlasmaTurret,
+		DarkMatterCanon: def.DarkMatterCanon,
+	}
+}
+
+type OChainBuildQueueItemWithAttributes struct {
+	BuildType OChainBuildType `cbor:"buildType"`
+	BuildId   string          `cbor:"buildId"`
+	Count     uint64          `cbor:"count"`
+	StartAt   uint64          `cbor:"startAt"`
+	FinishAt  uint64          `cbor:"finishAt"`
+}
+
 type OChainBuildQueueItem struct {
 	BuildType OChainBuildType `cbor:"1,keyasint"`
 	BuildId   string          `cbor:"2,keyasint"`
 	Count     uint64          `cbor:"3,keyasint"`
 	StartAt   uint64          `cbor:"4,keyasint"`
 	FinishAt  uint64          `cbor:"5,keyasint"`
+}
+
+func (item *OChainBuildQueueItem) WithAttributes() OChainBuildQueueItemWithAttributes {
+	return OChainBuildQueueItemWithAttributes{
+		BuildType: item.BuildType,
+		BuildId:   item.BuildId,
+		Count:     item.Count,
+		StartAt:   item.StartAt,
+		FinishAt:  item.FinishAt,
+	}
+}
+
+type OChainPlanetStatistics struct {
+	MetalHourlyProduction     float64 `cbor:"metalHourlyProduction"`
+	CrystalHourlyProduction   float64 `cbor:"crystalHourlyProduction"`
+	DeutereumHourlyProduction float64 `cbor:"deutereumHourlyProduction"`
+
+	MetalMaxStorageCapacity     uint64 `cbor:"metalMaxStorageCapacity"`
+	CrystalMaxStorageCapacity   uint64 `cbor:"crystalMaxStorageCapacity"`
+	DeutereumMaxStorageCapacity uint64 `cbor:"deutereumMaxStorageCapacity"`
+
+	EnergyProduction int64 `cbor:"energyProduction"`
+	EnergyConsumtion int64 `cbor:"energyConsumtion"`
+}
+
+type OChainPlanetWithAttributes struct {
+	Owner       string `cbor:"owner"`
+	Universe    string `cbor:"universe"`
+	Galaxy      uint64 `cbor:"galaxy"`
+	SolarSystem uint64 `cbor:"solarSystem"`
+	Planet      uint64 `cbor:"planet"`
+
+	Buildings  OChainPlanetBuildingsWithAttributes `cbor:"buildings"`
+	Spaceships OChainFleetSpaceshipsWithAttributes `cbor:"spaceships"`
+	Defenses   OChainPlanetDefencesWithAttributes  `cbor:"defenses"`
+	Resources  OChainResourcesWithAttributes       `cbor:"resources"`
+
+	BuildQueue         []OChainBuildQueueItemWithAttributes `cbor:"buildQueue"`
+	LastResourceUpdate int64                                `cbor:"lastResourceUpdate"`
 }
 
 type OChainPlanet struct {
@@ -109,17 +282,25 @@ type OChainPlanet struct {
 	LastResourceUpdate int64 `cbor:"11,keyasint"`
 }
 
-type OChainPlanetStatistics struct {
-	MetalHourlyProduction     float64 `cbor:"1,keyasint"`
-	CrystalHourlyProduction   float64 `cbor:"2,keyasint"`
-	DeutereumHourlyProduction float64 `cbor:"3,keyasint"`
+func (planet *OChainPlanet) WithAttributes() OChainPlanetWithAttributes {
+	var queue []OChainBuildQueueItemWithAttributes
+	for i := range planet.BuildQueue {
+		queue = append(queue, planet.BuildQueue[i].WithAttributes())
+	}
 
-	MetalMaxStorageCapacity     uint64 `cbor:"4,keyasint"`
-	CrystalMaxStorageCapacity   uint64 `cbor:"5,keyasint"`
-	DeutereumMaxStorageCapacity uint64 `cbor:"6,keyasint"`
-
-	EnergyProduction int64 `cbor:"7,keyasint"`
-	EnergyConsumtion int64 `cbor:"8,keyasint"`
+	return OChainPlanetWithAttributes{
+		Owner:              planet.Owner,
+		Universe:           planet.Universe,
+		Galaxy:             planet.Galaxy,
+		SolarSystem:        planet.SolarSystem,
+		Planet:             planet.Planet,
+		Buildings:          planet.Buildings.WithAttributes(),
+		Spaceships:         planet.Spaceships.WithAttributes(),
+		Defenses:           planet.Defenses.WithAttributes(),
+		Resources:          planet.Resources.WithAttributes(),
+		BuildQueue:         queue,
+		LastResourceUpdate: planet.LastResourceUpdate,
+	}
 }
 
 func (planet *OChainPlanet) CoordinateId() string {

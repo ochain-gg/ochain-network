@@ -18,7 +18,7 @@ func CheckTx(ctx transactions.TransactionContext, req *abcitypes.CheckTxRequest)
 		return &abcitypes.CheckTxResponse{Code: types.ParsingTransactionError}
 	}
 
-	isSystemTx := uint64(tx.Type) <= 5
+	isSystemTx := uint64(tx.Type) <= 6
 	if isSystemTx {
 		return CheckSystemTx(ctx, req, tx)
 	} else {

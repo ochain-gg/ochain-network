@@ -1,11 +1,11 @@
 package queries
 
 import (
-	"fmt"
 	"log"
 
 	"github.com/fxamacker/cbor/v2"
 	"github.com/ochain-gg/ochain-network/database"
+	"github.com/ochain-gg/ochain-network/types"
 )
 
 type GetUniverseQueryParameters struct {
@@ -17,34 +17,40 @@ type GetUniverseAccountsQueryParameters struct {
 }
 
 func ResolveGetUniversesQuery(q []byte, db *database.OChainDatabase) ([]byte, error) {
-	log.Println("ResolveGetUniversesQuery ")
-
 	universes, err := db.Universes.GetAll()
 	if err != nil {
 		log.Println(err)
 		return []byte(""), err
 	}
 
-	log.Println("Universes founds: " + fmt.Sprint(len(universes)))
+	var result []types.OChainUniverseWithAttributes
+	for index := range universes {
+		result = append(result, universes[index].WithAttributes())
+	}
 
-	result, err := cbor.Marshal(universes)
+	r, err := cbor.Marshal(result)
 	if err != nil {
 		return []byte(""), err
 	}
 
-	return result, nil
+	return r, nil
 }
 
 func ResolveGetUniverseQuery(q []byte, db *database.OChainDatabase) ([]byte, error) {
+	log.Println(string(q))
+
 	var parameters GetUniverseQueryParameters
-	cbor.Unmarshal(q, &parameters)
+	err := cbor.Unmarshal(q, &parameters)
+	if err != nil {
+		return []byte(""), err
+	}
 
 	universes, err := db.Universes.Get(parameters.Id)
 	if err != nil {
 		return []byte(""), err
 	}
 
-	result, err := cbor.Marshal(universes)
+	result, err := cbor.Marshal(universes.WithAttributes())
 	if err != nil {
 		return []byte(""), err
 	}

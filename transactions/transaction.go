@@ -27,70 +27,70 @@ const (
 	//System transactions (Unauthenticated)
 	NewValidator          TransactionType = 0
 	RemoveValidator       TransactionType = 1
-	SlashValidator        TransactionType = 1
-	NewEpoch              TransactionType = 2
-	OChainTokenDeposit    TransactionType = 2
-	OChainCreditDeposit   TransactionType = 4
-	ExecutePendingUpgrade TransactionType = 5 // handle BuildingUpgrade / TechnologyUpgrade / DefenseBuild / SpaceshipBuild / FleetMove
+	SlashValidator        TransactionType = 2
+	NewEpoch              TransactionType = 3
+	OChainTokenDeposit    TransactionType = 4
+	OChainCreditDeposit   TransactionType = 5
+	ExecutePendingUpgrade TransactionType = 6 // handle BuildingUpgrade / TechnologyUpgrade / DefenseBuild / SpaceshipBuild / FleetMove
 
 	//Authenticated transactions
 
 	/**
 	 * Global Account transactions
 	 */
-	RegisterAccount          TransactionType = 6
-	ChangeAccountIAM         TransactionType = 7
-	ExecuteBridgeTransaction TransactionType = 7
-	OChainTokenWithdrawal    TransactionType = 3
+	RegisterAccount          TransactionType = 7
+	ChangeAccountIAM         TransactionType = 8
+	ExecuteBridgeTransaction TransactionType = 9
+	OChainTokenWithdrawal    TransactionType = 10
 
 	/**
 	 * Governance transactions
 	 */
-	CreateGovernanceProposal TransactionType = 33
-	VoteOnProposal           TransactionType = 34
-	ExecuteProposal          TransactionType = 35
+	CreateGovernanceProposal TransactionType = 11
+	VoteOnProposal           TransactionType = 12
+	ExecuteProposal          TransactionType = 13
 
 	/**
 	 * Game transactions
 	 */
 
 	//Universe account
-	RegisterUniverseAccount TransactionType = 8
+	RegisterUniverseAccount TransactionType = 14
 
 	//Planet transactions
-	MintPlanet             TransactionType = 9
-	StartBuildingUpgrade   TransactionType = 10
-	StartTechnologyUpgrade TransactionType = 11
-	StartBuildDefenses     TransactionType = 12
-	StartBuildSpaceships   TransactionType = 13
+	MintPlanet             TransactionType = 15
+	StartBuildingUpgrade   TransactionType = 16
+	StartTechnologyUpgrade TransactionType = 17
+	StartBuildDefenses     TransactionType = 18
+	StartBuildSpaceships   TransactionType = 19
 
 	//Fleet transactions
-	FillCargo                    TransactionType = 14
-	UnfillCargo                  TransactionType = 15
-	SendFleetInOrbit             TransactionType = 16
-	LandingFleetInOrbit          TransactionType = 17
-	MergeFleets                  TransactionType = 18
-	SplitFleet                   TransactionType = 19
-	RecycleRemnant               TransactionType = 20
-	IntergalacticPortalFleetMove TransactionType = 21
-	ChangeFleetMode              TransactionType = 22
-	AcceptFleetMode              TransactionType = 23
-	MoveFleet                    TransactionType = 24
-	CancelFleetMove              TransactionType = 25
+	FillCargo                    TransactionType = 20
+	UnfillCargo                  TransactionType = 21
+	SendFleetInOrbit             TransactionType = 22
+	LandingFleetInOrbit          TransactionType = 23
+	MergeFleets                  TransactionType = 24
+	SplitFleet                   TransactionType = 25
+	RecycleRemnant               TransactionType = 26
+	IntergalacticPortalFleetMove TransactionType = 27
+	ChangeFleetMode              TransactionType = 28
+	AcceptFleetMode              TransactionType = 29
+	MoveFleet                    TransactionType = 30
+	CancelFleetMove              TransactionType = 31
 
 	//Fight transactions
-	Fight TransactionType = 26
+	Fight TransactionType = 32
 
 	//Alliance transactions
-	CreateAlliance  TransactionType = 27
-	StakeOnAlliance TransactionType = 28
+	CreateAlliance  TransactionType = 33
+	StakeOnAlliance TransactionType = 34
 
 	//Market transations
-	SwapResources TransactionType = 29
+	SwapResources TransactionType = 35
 
 	//Global <-> universes transations
-	UniverseOChainTokenDeposit  TransactionType = 30
-	UniverseOChainTokenWithdraw TransactionType = 31
+	UniverseOChainTokenDeposit  TransactionType = 36
+	UniverseOChainTokenWithdraw TransactionType = 37
 )
 
 type TransactionContext struct {
