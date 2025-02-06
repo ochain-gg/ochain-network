@@ -11,11 +11,12 @@ import (
 )
 
 type SwapResourcesTransactionData struct {
-	Universe string                 `cbor:"1,keyasint"`
-	Planet   string                 `cbor:"2,keyasint"`
-	From     types.MarketResourceID `cbor:"3,keyasint"`
-	To       types.MarketResourceID `cbor:"4,keyasint"`
-	Amount   uint64                 `cbor:"5,keyasint"`
+	Universe     string                 `cbor:"1,keyasint"`
+	Planet       string                 `cbor:"2,keyasint"`
+	From         types.MarketResourceID `cbor:"3,keyasint"`
+	To           types.MarketResourceID `cbor:"4,keyasint"`
+	Amount       uint64                 `cbor:"5,keyasint"`
+	MinAmountOut uint64                 `cbor:"6,keyasint"`
 }
 
 type SwapResourcesTransaction struct {
@@ -147,6 +148,12 @@ func (tx *SwapResourcesTransaction) Execute(ctx t.TransactionContext) *abcitypes
 
 	amountOut, err := market.SwapResources(tx.Data.From, tx.Data.To, tx.Data.Amount)
 	if err != nil {
+		return &abcitypes.ExecTxResult{
+			Code: types.InvalidTransactionError,
+		}
+	}
+
+	if amountOut < tx.Data.MinAmountOut {
 		return &abcitypes.ExecTxResult{
 			Code: types.InvalidTransactionError,
 		}

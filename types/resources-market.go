@@ -22,6 +22,20 @@ const (
 // octBalance = resourceSupply^3 / 3
 // priceForXToken = ((resourceSupply + X)^3 / 3) - (resourceSupply^3 / 3)
 
+type OChainResourcesMarketWithAttributes struct {
+	UniverseId            string  `cbor:"universeId"`
+	FeesRate              float64 `cbor:"feesRate"`
+	MetalReserveRatio     float64 `cbor:"metalReserveRatio"`
+	MetalPoolBalance      uint64  `cbor:"metalPoolBalance"`
+	MetalSupplyMinted     uint64  `cbor:"metalSupplyMinted"`
+	CrystalReserveRatio   float64 `cbor:"crystalReserveRatio"`
+	CrystalPoolBalance    uint64  `cbor:"crystalPoolBalance"`
+	CrystalSupplyMinted   uint64  `cbor:"crystalSupplyMinted"`
+	DeuteriumReserveRatio float64 `cbor:"deuteriumReserveRatio"`
+	DeuteriumPoolBalance  uint64  `cbor:"deuteriumPoolBalance"`
+	DeuteriumSupplyMinted uint64  `cbor:"deuteriumSupplyMinted"`
+}
+
 type OChainResourcesMarket struct {
 	UniverseId string  `cbor:"1,keyasint"`
 	FeesRate   float64 `cbor:"2,keyasint"`
@@ -37,6 +51,23 @@ type OChainResourcesMarket struct {
 	DeuteriumReserveRatio float64 `cbor:"9,keyasint"`
 	DeuteriumPoolBalance  uint64  `cbor:"10,keyasint"`
 	DeuteriumSupplyMinted uint64  `cbor:"11,keyasint"`
+}
+
+func (market *OChainResourcesMarket) WithAttributes() OChainResourcesMarketWithAttributes {
+
+	return OChainResourcesMarketWithAttributes{
+		UniverseId:            market.UniverseId,
+		FeesRate:              market.FeesRate,
+		MetalReserveRatio:     market.MetalReserveRatio,
+		MetalPoolBalance:      market.MetalPoolBalance,
+		MetalSupplyMinted:     market.MetalSupplyMinted,
+		CrystalReserveRatio:   market.CrystalReserveRatio,
+		CrystalPoolBalance:    market.CrystalPoolBalance,
+		CrystalSupplyMinted:   market.CrystalSupplyMinted,
+		DeuteriumReserveRatio: market.DeuteriumReserveRatio,
+		DeuteriumPoolBalance:  market.DeuteriumPoolBalance,
+		DeuteriumSupplyMinted: market.DeuteriumSupplyMinted,
+	}
 }
 
 func (market *OChainResourcesMarket) GetSwapAmountOut(from MarketResourceID, to MarketResourceID, amount uint64) (uint64, error) {

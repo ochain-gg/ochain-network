@@ -61,9 +61,9 @@ type OChainUniverseWithAttributes struct {
 	MaxSolarSystemPerGalaxy uint64 `cbor:"maxSolarSystemPerGalaxy"`
 	MaxPlanetPerSolarSystem uint64 `cbor:"maxPlanetPerSolarSystem"`
 	Accounts                uint64 `cbor:"accounts"`
-	ColonizedPlanets        uint64 `cbor:"colonizedPlanetst"`
-	CreatedAt               uint64 `cbor:"createdAtt"`
-	EndingAt                uint64 `cbor:"endingAtt"`
+	ColonizedPlanets        uint64 `cbor:"colonizedPlanets"`
+	CreatedAt               uint64 `cbor:"createdAt"`
+	EndingAt                uint64 `cbor:"endingAt"`
 }
 
 type OChainUniverse struct {
@@ -118,7 +118,7 @@ type OChainSpaceshipWithAttributes struct {
 	Name         string                           `cbor:"name"`
 	FighterStats OChainFighterStats               `cbor:"fighterStats"`
 	Stats        OChainSpaceshipStats             `cbor:"stats"`
-	Cost         OChainResources                  `cbor:"cost"`
+	Cost         OChainResourcesWithAttributes    `cbor:"cost"`
 	Dependencies []OChainDependencyWithAttributes `cbor:"dependencies"`
 }
 
@@ -170,7 +170,7 @@ func (spaceship *OChainSpaceship) WithAttributes() OChainSpaceshipWithAttributes
 		Name:         spaceship.Name,
 		FighterStats: spaceship.FighterStats,
 		Stats:        spaceship.Stats,
-		Cost:         spaceship.Cost,
+		Cost:         spaceship.Cost.WithAttributes(),
 		Dependencies: dependencies,
 	}
 }
@@ -226,7 +226,7 @@ type OChainDefenseWithAttributes struct {
 	Id           OChainDefenseID                  `cbor:"id"`
 	Name         string                           `cbor:"name"`
 	FighterStats OChainFighterStats               `cbor:"fighterStats"`
-	Cost         OChainResources                  `cbor:"cost"`
+	Cost         OChainResourcesWithAttributes    `cbor:"cost"`
 	Dependencies []OChainDependencyWithAttributes `cbor:"dependencies"`
 }
 
@@ -248,7 +248,7 @@ func (def *OChainDefense) WithAttributes() OChainDefenseWithAttributes {
 		Id:           def.Id,
 		Name:         def.Name,
 		FighterStats: def.FighterStats,
-		Cost:         def.Cost,
+		Cost:         def.Cost.WithAttributes(),
 		Dependencies: dependencies,
 	}
 }

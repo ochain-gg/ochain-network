@@ -13,6 +13,8 @@ const (
 	GetUniversesPath    = "ochain_getUniverses"
 	GetUniversePath     = "ochain_getUniverse"
 	GetPlanetPath       = "ochain_getPlanet"
+	GetMarketPath       = "ochain_getMarket"
+	GetSwapRatePath     = "ochain_getSwapRate"
 	GetGameEntitiesPath = "ochain_getGameEntities"
 
 	GetAccountPath     = "ochain_getAccount"
@@ -53,6 +55,20 @@ func GetQueryResponse(req *abcitypes.QueryRequest, db *database.OChainDatabase) 
 
 	case GetGameEntitiesPath:
 		value, err := ResolveGetGameEntitiesQuery(req.Data, db)
+		if err != nil {
+			return []byte{}, err
+		}
+		return []byte(hex.EncodeToString(value)), nil
+
+	case GetMarketPath:
+		value, err := ResolveGetMarketQuery(req.Data, db)
+		if err != nil {
+			return []byte{}, err
+		}
+		return []byte(hex.EncodeToString(value)), nil
+
+	case GetSwapRatePath:
+		value, err := ResolveGetSwapRateQuery(req.Data, db)
 		if err != nil {
 			return []byte{}, err
 		}
