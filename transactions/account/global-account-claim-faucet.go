@@ -12,11 +12,7 @@ import (
 )
 
 type ClaimFaucetTransactionData struct {
-	Address             string   `cbor:"1,keyasint"`
-	GuardianQuorum      uint64   `cbor:"2,keyasint"`
-	Guardians           []string `cbor:"3,keyasint"`
-	DeleguatedTo        []string `cbor:"4,keyasint"`
-	AuthorizerSignature []byte   `cbor:"5,keyasint"`
+	Address string `cbor:"1,keyasint"`
 }
 
 type ClaimFaucetTransaction struct {
