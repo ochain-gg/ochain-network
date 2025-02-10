@@ -12,8 +12,8 @@ var DefaultBuildings []types.OChainBuilding = []types.OChainBuilding{
 		Name: "Metal Mine",
 		BaseCost: types.OChainResources{
 			OCT:       0,
-			Metal:     200,
-			Crystal:   100,
+			Metal:     60,
+			Crystal:   15,
 			Deuterium: 0,
 		},
 		Dependencies: []types.OChainDependency{},
@@ -23,8 +23,8 @@ var DefaultBuildings []types.OChainBuilding = []types.OChainBuilding{
 		Name: "Crystal Mine",
 		BaseCost: types.OChainResources{
 			OCT:       0,
-			Metal:     400,
-			Crystal:   200,
+			Metal:     48,
+			Crystal:   24,
 			Deuterium: 0,
 		},
 		Dependencies: []types.OChainDependency{},
@@ -34,8 +34,8 @@ var DefaultBuildings []types.OChainBuilding = []types.OChainBuilding{
 		Name: "Deuterium Synthesizer",
 		BaseCost: types.OChainResources{
 			OCT:       0,
-			Metal:     500,
-			Crystal:   250,
+			Metal:     225,
+			Crystal:   75,
 			Deuterium: 0,
 		},
 		Dependencies: []types.OChainDependency{},
@@ -45,8 +45,8 @@ var DefaultBuildings []types.OChainBuilding = []types.OChainBuilding{
 		Name: "Solar Power Plant",
 		BaseCost: types.OChainResources{
 			OCT:       0,
-			Metal:     300,
-			Crystal:   200,
+			Metal:     75,
+			Crystal:   30,
 			Deuterium: 0,
 		},
 		Dependencies: []types.OChainDependency{},
@@ -56,9 +56,9 @@ var DefaultBuildings []types.OChainBuilding = []types.OChainBuilding{
 		Name: "Robotics Factory",
 		BaseCost: types.OChainResources{
 			OCT:       0,
-			Metal:     1_000,
-			Crystal:   500,
-			Deuterium: 100,
+			Metal:     400,
+			Crystal:   120,
+			Deuterium: 200,
 		},
 		Dependencies: []types.OChainDependency{},
 	},
@@ -1203,5 +1203,6 @@ var DefaultUniverse types.OChainUniverse = types.OChainUniverse{
 	MaxPlanetPerSolarSystem: 16,
 	Accounts:                0,
 	ColonizedPlanets:        0,
+	OCTCirculatingSupply:    0,
 	CreatedAt:               uint64(time.Now().Unix()),
 }

@@ -66,7 +66,7 @@ func (acc *OChainGlobalAccount) WithAttributes() OChainGlobalAccountWithAttribut
 }
 
 func (acc *OChainGlobalAccount) GetGasCost(timestamp uint64) uint64 {
-	defaultGasCost := 100_000
+	defaultGasCost := 10_000
 	currentTransactionHour := timestamp / 60
 
 	if currentTransactionHour > acc.LastTransactionHour {
@@ -74,7 +74,7 @@ func (acc *OChainGlobalAccount) GetGasCost(timestamp uint64) uint64 {
 	}
 
 	lastHourCount := acc.LastTransactionCount + 1
-	return uint64(float64(defaultGasCost) * math.Pow(float64(lastHourCount), 3))
+	return uint64(float64(defaultGasCost) * math.Pow(float64(lastHourCount), 1.5))
 }
 
 func (acc *OChainGlobalAccount) ApplyGasCost(timestamp uint64) (uint64, error) {

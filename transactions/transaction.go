@@ -91,6 +91,7 @@ const (
 	//Global <-> universes transations
 	UniverseOChainTokenDeposit  TransactionType = 36
 	UniverseOChainTokenWithdraw TransactionType = 37
+	ClaimFaucet                 TransactionType = 38
 )
 
 type TransactionContext struct {
@@ -203,16 +204,19 @@ func (tx *Transaction) GetTypedData() ([]byte, error) {
 		Domain: apitypes.TypedDataDomain{
 			Name:              "OChainNetwork",
 			Version:           "1",
-			ChainId:           math.NewHexOrDecimal256(20291),
-			VerifyingContract: "0x0000000000000000000000000000000000000000",
+			ChainId:           math.NewHexOrDecimal256(84532),
+			VerifyingContract: "0x629c04197012af8e1c4eb92DF8CdA1ed71774488",
 		},
 		Message: map[string]interface{}{
 			"type":  strconv.FormatUint(uint64(tx.Type), 10),
 			"from":  tx.From,
 			"nonce": strconv.FormatUint(tx.Nonce, 10),
-			"data":  string(tx.Data),
+			"data":  hex.EncodeToString(tx.Data),
 		},
 	}
+
+	log.Println(hex.EncodeToString(tx.Data))
+
 	// EIP-712 typed data marshalling
 	domainSeparator, err := typedData.HashStruct("EIP712Domain", typedData.Domain.Map())
 	if err != nil {

@@ -5,6 +5,7 @@ import (
 
 	abcitypes "github.com/cometbft/cometbft/abci/types"
 	"github.com/ochain-gg/ochain-network/transactions"
+	game_transactions "github.com/ochain-gg/ochain-network/transactions/game"
 	validator_transactions "github.com/ochain-gg/ochain-network/transactions/validator"
 	"github.com/ochain-gg/ochain-network/types"
 )
@@ -41,6 +42,8 @@ func FinalizeSystemTx(ctx transactions.TransactionContext, tx transactions.Trans
 			Power:       10000,
 		})
 
+		return executeResult, valUpdates
+
 	case transactions.RemoveValidator:
 
 		transaction, err := validator_transactions.ParseOChainRemoveValidatorTransaction(tx)
@@ -73,7 +76,27 @@ func FinalizeSystemTx(ctx transactions.TransactionContext, tx transactions.Trans
 			PubKeyBytes: pubkeyBytes,
 			Power:       0,
 		})
+
+		return executeResult, valUpdates
+
+	case transactions.ExecutePendingUpgrade:
+		transaction, err := game_transactions.ParseExecuteUpgradeTransaction(tx)
+		if err != nil {
+			return &abcitypes.ExecTxResult{Code: types.ParsingTransactionDataError, GasWanted: 0, GasUsed: 0}, valUpdates
+		}
+
+		checkResult := transaction.Check(ctx)
+		if checkResult.Code != types.NoError {
+			return &abcitypes.ExecTxResult{Code: checkResult.Code, GasWanted: 0, GasUsed: 0}, valUpdates
+		}
+
+		executeResult := transaction.Execute(ctx)
+		if executeResult.Code != types.NoError {
+			return executeResult, valUpdates
+		}
+
+		return executeResult, valUpdates
 	}
 
-	return &abcitypes.ExecTxResult{Code: types.NoError, GasWanted: 0, GasUsed: 0}, valUpdates
+	return &abcitypes.ExecTxResult{Code: types.NotImplemented, GasWanted: 0, GasUsed: 0}, valUpdates
 }

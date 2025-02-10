@@ -2,6 +2,7 @@ package game_transactions
 
 import (
 	"fmt"
+	"log"
 	"math"
 
 	abcitypes "github.com/cometbft/cometbft/abci/types"
@@ -43,6 +44,7 @@ func (tx *UpgradeBuildingTransaction) Transaction() (t.Transaction, error) {
 func (tx *UpgradeBuildingTransaction) Check(ctx t.TransactionContext) *abcitypes.CheckTxResponse {
 	_, err := ctx.Db.GlobalsAccounts.GetAt(tx.From, uint64(ctx.Date.Unix()))
 	if err != nil {
+		log.Println("EXECUTE UPGRADE START ERROR: " + err.Error())
 		return &abcitypes.CheckTxResponse{
 			Code: types.InvalidTransactionError,
 		}
@@ -50,6 +52,7 @@ func (tx *UpgradeBuildingTransaction) Check(ctx t.TransactionContext) *abcitypes
 
 	account, err := ctx.Db.UniverseAccounts.GetAt(tx.Data.Universe, tx.From, uint64(ctx.Date.Unix()))
 	if err != nil {
+		log.Println("EXECUTE UPGRADE START ERROR: " + err.Error())
 		return &abcitypes.CheckTxResponse{
 			Code: types.InvalidTransactionError,
 		}
@@ -57,6 +60,7 @@ func (tx *UpgradeBuildingTransaction) Check(ctx t.TransactionContext) *abcitypes
 
 	universe, err := ctx.Db.Universes.GetAt(tx.Data.Universe, uint64(ctx.Date.Unix()))
 	if err != nil {
+		log.Println("EXECUTE UPGRADE START ERROR: " + err.Error())
 		return &abcitypes.CheckTxResponse{
 			Code: types.InvalidTransactionError,
 		}
@@ -64,6 +68,7 @@ func (tx *UpgradeBuildingTransaction) Check(ctx t.TransactionContext) *abcitypes
 
 	planet, err := ctx.Db.Planets.GetAt(tx.Data.Universe, tx.Data.Planet, uint64(ctx.Date.Unix()))
 	if err != nil {
+		log.Println("EXECUTE UPGRADE START ERROR: " + err.Error())
 		return &abcitypes.CheckTxResponse{
 			Code: types.InvalidTransactionError,
 		}
@@ -71,6 +76,7 @@ func (tx *UpgradeBuildingTransaction) Check(ctx t.TransactionContext) *abcitypes
 
 	building, err := ctx.Db.Buildings.GetAt(tx.Data.Building, uint64(ctx.Date.Unix()))
 	if err != nil {
+		log.Println("EXECUTE UPGRADE START ERROR: " + err.Error())
 		return &abcitypes.CheckTxResponse{
 			Code: types.InvalidTransactionError,
 		}
@@ -78,6 +84,7 @@ func (tx *UpgradeBuildingTransaction) Check(ctx t.TransactionContext) *abcitypes
 
 	ok := building.MeetRequirements(planet, account)
 	if !ok {
+		log.Println("EXECUTE UPGRADE START ERROR: REQUIREMENT NOT MET")
 		return &abcitypes.CheckTxResponse{
 			Code: types.InvalidTransactionError,
 		}
@@ -90,6 +97,7 @@ func (tx *UpgradeBuildingTransaction) Check(ctx t.TransactionContext) *abcitypes
 
 	payable := planet.CanPay(cost)
 	if !payable {
+		log.Println("EXECUTE UPGRADE START ERROR: NO SUFFICIENT GAS")
 		return &abcitypes.CheckTxResponse{
 			Code: types.InvalidTransactionError,
 		}
@@ -97,18 +105,22 @@ func (tx *UpgradeBuildingTransaction) Check(ctx t.TransactionContext) *abcitypes
 
 	pendingUpgrades, err := ctx.Db.Upgrades.GetPendingBuildingUpgradesByPlanetAt(universe.Id, planet.CoordinateId(), uint64(ctx.Date.Unix()))
 	if err != nil {
+		log.Println("EXECUTE UPGRADE START ERROR: " + err.Error())
 		return &abcitypes.CheckTxResponse{
 			Code: types.InvalidTransactionError,
 		}
 	}
 
 	if len(pendingUpgrades) > 0 {
+		log.Println("EXECUTE UPGRADE START ERROR: PENDING UPGRADE IN PROGRESS")
 		return &abcitypes.CheckTxResponse{
 			Code: types.InvalidTransactionError,
 		}
 	}
 
-	return nil
+	return &abcitypes.CheckTxResponse{
+		Code: types.NoError,
+	}
 }
 
 func (tx *UpgradeBuildingTransaction) Execute(ctx t.TransactionContext) *abcitypes.ExecTxResult {
@@ -122,13 +134,7 @@ func (tx *UpgradeBuildingTransaction) Execute(ctx t.TransactionContext) *abcityp
 	currentDate := uint64(ctx.Date.Unix())
 	universe, err := ctx.Db.Universes.GetAt(tx.Data.Universe, currentDate)
 	if err != nil {
-		return &abcitypes.ExecTxResult{
-			Code: types.InvalidTransactionError,
-		}
-	}
-
-	globalAccount, err := ctx.Db.GlobalsAccounts.GetAt(tx.From, currentDate)
-	if err != nil {
+		log.Println("EXECUTE UPGRADE START ERROR: " + err.Error())
 		return &abcitypes.ExecTxResult{
 			Code: types.InvalidTransactionError,
 		}
@@ -136,6 +142,7 @@ func (tx *UpgradeBuildingTransaction) Execute(ctx t.TransactionContext) *abcityp
 
 	account, err := ctx.Db.UniverseAccounts.GetAt(universe.Id, tx.From, currentDate)
 	if err != nil {
+		log.Println("EXECUTE UPGRADE START ERROR: " + err.Error())
 		return &abcitypes.ExecTxResult{
 			Code: types.InvalidTransactionError,
 		}
@@ -143,6 +150,7 @@ func (tx *UpgradeBuildingTransaction) Execute(ctx t.TransactionContext) *abcityp
 
 	planet, err := ctx.Db.Planets.GetAt(tx.Data.Universe, tx.Data.Planet, currentDate)
 	if err != nil {
+		log.Println("EXECUTE UPGRADE START ERROR: " + err.Error())
 		return &abcitypes.ExecTxResult{
 			Code: types.InvalidTransactionError,
 		}
@@ -150,10 +158,14 @@ func (tx *UpgradeBuildingTransaction) Execute(ctx t.TransactionContext) *abcityp
 
 	building, err := ctx.Db.Buildings.GetAt(tx.Data.Building, currentDate)
 	if err != nil {
+		log.Println("EXECUTE UPGRADE START ERROR: " + err.Error())
 		return &abcitypes.ExecTxResult{
 			Code: types.InvalidTransactionError,
 		}
 	}
+
+	log.Println("EXECUTE UPGRADE START ON:")
+	log.Println(building)
 
 	ok := building.MeetRequirements(planet, account)
 	if !ok {
@@ -181,8 +193,8 @@ func (tx *UpgradeBuildingTransaction) Execute(ctx t.TransactionContext) *abcityp
 
 	planet.UpdateResources(universe.Speed, ctx.Date.Unix(), account)
 
-	payable := planet.CanPay(upgradeCost)
-	if !payable {
+	err = planet.Pay(upgradeCost)
+	if err != nil {
 		return &abcitypes.ExecTxResult{
 			Code: types.InvalidTransactionError,
 		}
@@ -201,17 +213,6 @@ func (tx *UpgradeBuildingTransaction) Execute(ctx t.TransactionContext) *abcityp
 		return &abcitypes.ExecTxResult{
 			Code: types.InvalidTransactionError,
 		}
-	}
-
-	txGasCost, err := globalAccount.ApplyGasCost(uint64(ctx.Date.Unix()))
-	if err != nil {
-		return &abcitypes.ExecTxResult{
-			Code: types.GasCostHigherThanBalance,
-		}
-	}
-
-	receipt := t.TransactionReceipt{
-		GasCost: txGasCost,
 	}
 
 	events := []abcitypes.Event{
@@ -242,11 +243,8 @@ func (tx *UpgradeBuildingTransaction) Execute(ctx t.TransactionContext) *abcityp
 	}
 
 	return &abcitypes.ExecTxResult{
-		Code:      types.NoError,
-		Events:    events,
-		GasUsed:   100,
-		GasWanted: 100,
-		Data:      receipt.Bytes(),
+		Code:   types.NoError,
+		Events: events,
 	}
 }
 

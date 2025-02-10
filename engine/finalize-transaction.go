@@ -11,17 +11,21 @@ import (
 
 func FinalizeTx(ctx transactions.TransactionContext, tx []byte) (*abcitypes.ExecTxResult, []abcitypes.ValidatorUpdate) {
 
-	log.Printf("Check tx: %s", hex.EncodeToString(tx))
+	log.Println("FINALIZE TX DATA RECEIVED: ", string(tx))
 
-	transaction, err := transactions.ParseTransaction(tx)
+	txBytes, err := hex.DecodeString(string(tx))
+	transac, err := transactions.ParseTransaction(txBytes)
 	if err != nil {
-		return &abcitypes.ExecTxResult{Code: types.ParsingTransactionError, GasWanted: 0, GasUsed: 0}, []abcitypes.ValidatorUpdate{}
+		log.Println("finalize tx failed: " + err.Error())
+		return &abcitypes.ExecTxResult{Code: types.ParsingTransactionError}, nil
 	}
 
-	isSystemTx := uint64(transaction.Type) <= 5
+	log.Println("finalize tx decoded: ", transac)
+
+	isSystemTx := uint64(transac.Type) <= 6
 	if isSystemTx {
-		return FinalizeSystemTx(ctx, transaction)
+		return FinalizeSystemTx(ctx, transac)
 	} else {
-		return FinalizeAuthenticatedTx(ctx, transaction)
+		return FinalizeAuthenticatedTx(ctx, transac)
 	}
 }

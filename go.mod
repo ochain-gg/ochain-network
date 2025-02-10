@@ -5,8 +5,9 @@ go 1.23.5
 require (
 	github.com/cometbft/cometbft v1.0.0
 	github.com/dgraph-io/badger/v4 v4.5.0
+	github.com/dgraph-io/ristretto/v2 v2.0.0
 	github.com/ethereum/go-ethereum v1.12.2
-	github.com/fxamacker/cbor/v2 v2.6.0
+	github.com/fxamacker/cbor/v2 v2.7.0
 	github.com/go-co-op/gocron/v2 v2.5.0
 	github.com/spf13/cobra v1.8.1
 	github.com/spf13/viper v1.19.0
@@ -25,7 +26,6 @@ require (
 	github.com/cometbft/cometbft/api v1.0.0 // indirect
 	github.com/consensys/gnark-crypto v0.12.1 // indirect
 	github.com/crate-crypto/go-kzg-4844 v1.0.0 // indirect
-	github.com/dgraph-io/ristretto/v2 v2.0.0 // indirect
 	github.com/ethereum/c-kzg-4844/bindings/go v0.0.0-20230126171313-363c7d7593b4 // indirect
 	github.com/getsentry/sentry-go v0.27.0 // indirect
 	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect
@@ -49,7 +49,6 @@ require (
 	github.com/deckarep/golang-set/v2 v2.6.0 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.3.0 // indirect
 	github.com/dgraph-io/badger v1.6.2
-	github.com/dgraph-io/ristretto v0.1.2-0.20240116140435-c67e07994f91
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/go-kit/log v0.2.1 // indirect

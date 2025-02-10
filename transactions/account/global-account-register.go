@@ -73,8 +73,8 @@ func (tx *RegisterAccountTransaction) Check(ctx t.TransactionContext) *abcitypes
 		Domain: apitypes.TypedDataDomain{
 			Name:              "OChainNetwork",
 			Version:           "1",
-			ChainId:           math.NewHexOrDecimal256(20291),
-			VerifyingContract: "0x0000000000000000000000000000000000000000",
+			ChainId:           math.NewHexOrDecimal256(84532),
+			VerifyingContract: "0x629c04197012af8e1c4eb92DF8CdA1ed71774488",
 		},
 		Message: map[string]interface{}{
 			"address": tx.From,
@@ -135,11 +135,14 @@ func (tx *RegisterAccountTransaction) Execute(ctx t.TransactionContext) *abcityp
 		}
 	}
 
+	var faucetAmount uint64 = 10_000_000
+
 	account := types.OChainGlobalAccount{
-		Address:       tx.From,
-		Nonce:         1,
-		TokenBalance:  0,
-		CreditBalance: 0,
+		Address:        tx.From,
+		Nonce:          1,
+		TokenBalance:   faucetAmount,
+		CreditBalance:  0,
+		LastDailyClaim: ctx.Date.Unix(),
 		IAM: types.OChainGlobalAccountIAM{
 			GuardianQuorum: tx.Data.GuardianQuorum,
 			Guardians:      tx.Data.Guardians,
@@ -147,6 +150,8 @@ func (tx *RegisterAccountTransaction) Execute(ctx t.TransactionContext) *abcityp
 		},
 		CreatedAt: ctx.Date.Unix(),
 	}
+
+	ctx.State.AddInGameCirculatingSupply(faucetAmount)
 
 	err := ctx.Db.GlobalsAccounts.Insert(account)
 	if err != nil {
@@ -160,6 +165,13 @@ func (tx *RegisterAccountTransaction) Execute(ctx t.TransactionContext) *abcityp
 			Type: "GlobalAccountRegistered",
 			Attributes: []abcitypes.EventAttribute{
 				{Key: "address", Value: tx.From, Index: true},
+			},
+		},
+		{
+			Type: "FaucetClaimed",
+			Attributes: []abcitypes.EventAttribute{
+				{Key: "address", Value: tx.From, Index: true},
+				{Key: "amount", Value: fmt.Sprint(faucetAmount)},
 			},
 		},
 	}

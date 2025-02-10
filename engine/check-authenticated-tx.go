@@ -4,6 +4,7 @@ import (
 	abcitypes "github.com/cometbft/cometbft/abci/types"
 	"github.com/ochain-gg/ochain-network/transactions"
 	account_transactions "github.com/ochain-gg/ochain-network/transactions/account"
+	game_transactions "github.com/ochain-gg/ochain-network/transactions/game"
 	"github.com/ochain-gg/ochain-network/types"
 )
 
@@ -67,6 +68,15 @@ func CheckAuthenticatedTx(ctx transactions.TransactionContext, req *abcitypes.Ch
 	case transactions.RegisterUniverseAccount:
 
 		transaction, err := account_transactions.ParseRegisterUniverseAccountTransaction(tx)
+		if err != nil {
+			return &abcitypes.CheckTxResponse{Code: types.ParsingTransactionDataError, GasWanted: 0, GasUsed: 0}
+		}
+
+		return transaction.Check(ctx)
+
+	case transactions.StartBuildingUpgrade:
+
+		transaction, err := game_transactions.ParseUpgradeBuildingTransaction(tx)
 		if err != nil {
 			return &abcitypes.CheckTxResponse{Code: types.ParsingTransactionDataError, GasWanted: 0, GasUsed: 0}
 		}

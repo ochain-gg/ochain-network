@@ -80,8 +80,10 @@ type OChainUniverse struct {
 	Accounts         uint64 `cbor:"9,keyasint"`
 	ColonizedPlanets uint64 `cbor:"10,keyasint"`
 
-	CreatedAt uint64 `cbor:"11,keyasint"`
-	EndingAt  uint64 `cbor:"12,keyasint"`
+	OCTCirculatingSupply uint64 `cbor:"11,keyasint"`
+
+	CreatedAt uint64 `cbor:"12,keyasint"`
+	EndingAt  uint64 `cbor:"13,keyasint"`
 }
 
 func (universe *OChainUniverse) WithAttributes() OChainUniverseWithAttributes {
@@ -404,6 +406,7 @@ type OChainBuildingWithAttributes struct {
 	Name         string                           `cbor:"name"`
 	BaseCost     OChainResourcesWithAttributes    `cbor:"baseCost"`
 	Dependencies []OChainDependencyWithAttributes `cbor:"dependencies"`
+	UpgradeCost  OChainResourcesWithAttributes    `cbor:"upgradeCost"`
 }
 
 type OChainBuilding struct {
@@ -428,11 +431,60 @@ func (def *OChainBuilding) WithAttributes() OChainBuildingWithAttributes {
 }
 
 func (building *OChainBuilding) GetUpgradeCost(level uint64) OChainResources {
+	switch building.Id {
+	case MetalMineID:
+		return OChainResources{
+			OCT:       0,
+			Metal:     uint64(float64(building.BaseCost.Metal) * math.Pow(1.5, float64(level-1))),
+			Crystal:   uint64(float64(building.BaseCost.Crystal) * math.Pow(1.5, float64(level-1))),
+			Deuterium: uint64(float64(building.BaseCost.Deuterium) * math.Pow(1.5, float64(level-1))),
+		}
+
+	case CrystalMineID:
+		return OChainResources{
+			OCT:       0,
+			Metal:     uint64(float64(building.BaseCost.Metal) * math.Pow(1.6, float64(level-1))),
+			Crystal:   uint64(float64(building.BaseCost.Crystal) * math.Pow(1.6, float64(level-1))),
+			Deuterium: uint64(float64(building.BaseCost.Deuterium) * math.Pow(1.6, float64(level-1))),
+		}
+
+	case DeuteriumMineID:
+		return OChainResources{
+			OCT:       0,
+			Metal:     uint64(float64(building.BaseCost.Metal) * math.Pow(1.5, float64(level-1))),
+			Crystal:   uint64(float64(building.BaseCost.Crystal) * math.Pow(1.5, float64(level-1))),
+			Deuterium: uint64(float64(building.BaseCost.Deuterium) * math.Pow(1.5, float64(level-1))),
+		}
+
+	case SolarPowerPlantID:
+		return OChainResources{
+			OCT:       0,
+			Metal:     uint64(float64(building.BaseCost.Metal) * math.Pow(1.5, float64(level-1))),
+			Crystal:   uint64(float64(building.BaseCost.Crystal) * math.Pow(1.5, float64(level-1))),
+			Deuterium: uint64(float64(building.BaseCost.Deuterium) * math.Pow(1.5, float64(level-1))),
+		}
+
+	case MetalStorageID:
+	case CrystalStorageID:
+	case DeuteriumStorageID:
+	case RoboticFactoryID:
+	case SpaceshipFactoryID:
+	case ResearchLaboratoryID:
+	case NaniteFactoryID:
+	case IntergalacticPortalID:
+	case ShieldDomeID:
+		return OChainResources{
+			OCT:       0,
+			Metal:     uint64(float64(building.BaseCost.Metal) * math.Pow(2, float64(level-1))),
+			Crystal:   uint64(float64(building.BaseCost.Crystal) * math.Pow(2, float64(level-1))),
+			Deuterium: uint64(float64(building.BaseCost.Deuterium) * math.Pow(2, float64(level-1))),
+		}
+	}
 	return OChainResources{
 		OCT:       0,
-		Metal:     uint64(float64(building.BaseCost.Metal) * math.Pow(1.75, float64(level-1))),
-		Crystal:   uint64(float64(building.BaseCost.Crystal) * math.Pow(1.75, float64(level-1))),
-		Deuterium: uint64(float64(building.BaseCost.Deuterium) * math.Pow(1.75, float64(level-1))),
+		Metal:     0,
+		Crystal:   0,
+		Deuterium: 0,
 	}
 }
 

@@ -18,8 +18,9 @@ type PlanetStatistics struct {
 }
 
 type GetPlanetQueryResponse struct {
-	Planet types.OChainPlanetWithAttributes `cbor:"planet"`
-	Stats  types.OChainPlanetStatistics     `cbor:"stats"`
+	Planet           types.OChainPlanetWithAttributes    `cbor:"planet"`
+	Stats            types.OChainPlanetStatistics        `cbor:"stats"`
+	BuildingUpgrades []types.OChainUpgradeWithAttributes `cbor:"pendingBuildingUpgrades"`
 }
 
 func ResolveGetPlanetQuery(q []byte, db *database.OChainDatabase) ([]byte, error) {
@@ -39,6 +40,16 @@ func ResolveGetPlanetQuery(q []byte, db *database.OChainDatabase) ([]byte, error
 		return []byte(""), err
 	}
 
+	pendingUpgrades, err := db.Upgrades.GetPendingBuildingUpgradesByPlanet(parameters.UniverseId, parameters.CoordinateId)
+	if err != nil {
+		return []byte(""), err
+	}
+
+	var upgrades []types.OChainUpgradeWithAttributes
+	for i := range pendingUpgrades {
+		upgrades = append(upgrades, types.OChainUpgradeWithAttributes(pendingUpgrades[i].WithAttributes()))
+	}
+
 	account, err := db.UniverseAccounts.Get(parameters.UniverseId, planet.Owner)
 	if err != nil {
 		return []byte(""), err
@@ -47,9 +58,11 @@ func ResolveGetPlanetQuery(q []byte, db *database.OChainDatabase) ([]byte, error
 	planet.UpdateResources(universe.Speed, time.Now().Unix(), account)
 
 	result, err := cbor.Marshal(GetPlanetQueryResponse{
-		Planet: planet.WithAttributes(),
-		Stats:  planet.PlanetStatistics(universe.Speed, time.Now().Unix(), account),
+		Planet:           planet.WithAttributes(),
+		Stats:            planet.PlanetStatistics(universe.Speed, time.Now().Unix(), account),
+		BuildingUpgrades: upgrades,
 	})
+
 	if err != nil {
 		return []byte(""), err
 	}

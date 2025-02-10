@@ -20,8 +20,6 @@ import (
 
 func CheckAndHandlePortalUpdate(cfg config.OChainConfig, db *database.OChainDatabase) {
 
-	log.Println("CheckAndHandlePortalUpdate process start")
-
 	//skip if application not synced
 	client, err := rpchttp.New("http://127.0.0.1:26657")
 	if err != nil {
@@ -47,7 +45,6 @@ func CheckAndHandlePortalUpdate(cfg config.OChainConfig, db *database.OChainData
 		return
 	}
 
-	log.Printf("Get last portal update on: %s", cfg.EVMPortalAddress)
 	address := common.HexToAddress(cfg.EVMPortalAddress)
 	portal, err := contracts.NewOChainPortal(address, evmClient)
 	if err != nil {
@@ -56,13 +53,12 @@ func CheckAndHandlePortalUpdate(cfg config.OChainConfig, db *database.OChainData
 	}
 
 	res, err := portal.LatestUpdateAt(nil)
-	lastContractUpdateBlockNumber := res.Uint64()
 	if err != nil {
 		log.Println(err)
 		return
 	}
 
-	log.Printf("Last portal update on chain: %d", res.Uint64())
+	lastContractUpdateBlockNumber := res.Uint64()
 
 	//get last smart contract update on app
 	state, err := db.State.Get()
@@ -72,12 +68,10 @@ func CheckAndHandlePortalUpdate(cfg config.OChainConfig, db *database.OChainData
 		return
 	}
 
-	log.Printf("Last portal update on state: %d", state.LatestPortalUpdate)
 	lastAppUpdateBlockNumber := state.LatestPortalUpdate
 
 	//compare and skip if sc and app last update are the same
 	if lastContractUpdateBlockNumber <= lastAppUpdateBlockNumber {
-		log.Println("Portal sync: up to date")
 		return
 	}
 
@@ -93,7 +87,6 @@ func CheckAndHandlePortalUpdate(cfg config.OChainConfig, db *database.OChainData
 		}
 		logsToIndex, err = evmClient.FilterLogs(context.Background(), filter)
 		if err != nil {
-			log.Println("portal sync up to date")
 			return
 		}
 	} else {
@@ -112,7 +105,6 @@ func CheckAndHandlePortalUpdate(cfg config.OChainConfig, db *database.OChainData
 
 			logs, err := evmClient.FilterLogs(context.Background(), filter)
 			if err != nil {
-				log.Println("portal sync up to date")
 				return
 			}
 
@@ -157,23 +149,17 @@ func CheckAndHandlePortalUpdate(cfg config.OChainConfig, db *database.OChainData
 				return
 			}
 
-			resCheck, err := client.CheckTx(context.Background(), bytesTx)
+			_, err = client.CheckTx(context.Background(), bytesTx)
 			if err != nil {
 				log.Println(err)
 				return
 			}
 
-			log.Printf("CheckTx code: %d", resCheck.Code)
-
-			res, err := client.BroadcastTxCommit(context.Background(), bytesTx)
+			_, err = client.BroadcastTxCommit(context.Background(), bytesTx)
 			if err != nil {
 				log.Println(err)
 				return
 			}
-
-			log.Printf("CheckTx code: %d", res.CheckTx.Code)
-			log.Printf("Transaction Hash: %b", res.Hash)
-			log.Printf("Block height: %d", res.Height)
 		}
 
 		removeValidatorLog, err := portal.ParseOChainRemoveValidator(l)

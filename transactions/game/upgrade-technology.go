@@ -181,8 +181,8 @@ func (tx *UpgradeTechnologyTransaction) Execute(ctx t.TransactionContext) *abcit
 
 	planet.UpdateResources(universe.Speed, ctx.Date.Unix(), account)
 
-	payable := planet.CanPay(upgradeCost)
-	if !payable {
+	err = planet.Pay(upgradeCost)
+	if err != nil {
 		return &abcitypes.ExecTxResult{
 			Code: types.InvalidTransactionError,
 		}

@@ -2,6 +2,7 @@ package game_transactions
 
 import (
 	"fmt"
+	"log"
 
 	abcitypes "github.com/cometbft/cometbft/abci/types"
 	"github.com/fxamacker/cbor/v2"
@@ -50,32 +51,39 @@ func (tx *ExecuteUpgradeTransaction) Check(ctx t.TransactionContext) *abcitypes.
 		}
 	}
 
-	pendingUpgrades, err := ctx.Db.Upgrades.GetPendingTechnologyUpgradesByPlanetAt(universe.Id, planet.CoordinateId(), uint64(ctx.Date.Unix()))
+	upgrades, err := ctx.Db.Upgrades.GetByPlanetAt(universe.Id, planet.CoordinateId(), uint64(ctx.Date.Unix()))
 	if err != nil {
 		return &abcitypes.CheckTxResponse{
 			Code: types.InvalidTransactionError,
 		}
 	}
 
-	if len(pendingUpgrades) == 0 {
+	if len(upgrades) == 0 {
 		return &abcitypes.CheckTxResponse{
 			Code: types.InvalidTransactionError,
 		}
 	}
 
-	for i := 0; i < len(pendingUpgrades); i++ {
-		upgrade := pendingUpgrades[i]
+	isFound := false
+	for i := 0; i < len(upgrades); i++ {
+		upgrade := upgrades[i]
 
-		if upgrade.UpgradeType != tx.Data.UpgradeType || tx.Data.UpgradeId != upgrade.UpgradeId {
+		if upgrade.Executed || upgrade.UpgradeType != tx.Data.UpgradeType || tx.Data.UpgradeId != upgrade.UpgradeId {
 			continue
 		}
 
-		if upgrade.EndedAt > ctx.Date.Unix() {
-			return &abcitypes.CheckTxResponse{
-				Code: types.InvalidTransactionError,
-			}
+		if upgrade.EndedAt < ctx.Date.Unix() {
+			isFound = true
 		}
 	}
+
+	if !isFound {
+		return &abcitypes.CheckTxResponse{
+			Code: types.InvalidTransactionError,
+		}
+	}
+
+	log.Println("UPGRADE FOUND")
 
 	return &abcitypes.CheckTxResponse{
 		Code: types.NoError,
@@ -112,59 +120,38 @@ func (tx *ExecuteUpgradeTransaction) Execute(ctx t.TransactionContext) *abcitype
 		}
 	}
 
-	pendingUpgrades, err := ctx.Db.Upgrades.GetPendingTechnologyUpgradesByPlanetAt(universe.Id, planet.CoordinateId(), uint64(ctx.Date.Unix()))
+	pendingUpgrades, err := ctx.Db.Upgrades.GetByPlanetAt(universe.Id, planet.CoordinateId(), currentDate)
 	if err != nil {
 		return &abcitypes.ExecTxResult{
 			Code: types.InvalidTransactionError,
 		}
 	}
 
-	if len(pendingUpgrades) == 0 {
-		return &abcitypes.ExecTxResult{
-			Code: types.InvalidTransactionError,
-		}
-	}
+	log.Println("UPGRADES COUNT: " + fmt.Sprint(len(pendingUpgrades)))
 
-	var level uint64
-
+	var upgrade types.OChainUpgrade
 	for i := 0; i < len(pendingUpgrades); i++ {
-		upgrade := pendingUpgrades[i]
-
-		if upgrade.UpgradeType != tx.Data.UpgradeType || tx.Data.UpgradeId != upgrade.UpgradeId {
+		u := pendingUpgrades[i]
+		log.Println("UPGRADE: " + fmt.Sprint(i))
+		log.Println(u)
+		if u.Executed || u.UpgradeType != tx.Data.UpgradeType || tx.Data.UpgradeId != u.UpgradeId {
 			continue
 		}
 
-		if upgrade.EndedAt > ctx.Date.Unix() {
-			return &abcitypes.ExecTxResult{
-				Code: types.InvalidTransactionError,
-			}
-		}
+		log.Println("UPGRADE SELECTED: " + fmt.Sprint(i))
+		log.Println("UPGRADE IS EXECUTED: " + fmt.Sprint(upgrade.Executed))
+		upgrade = u
+	}
 
-		upgrade.Executed = true
+	log.Println("UPGRADE FOUND")
+	log.Println(upgrade)
 
-		if upgrade.UpgradeType == types.OChainBuildingUpgrade {
-			planet.SetBuildingLevel(types.OChainBuildingID(upgrade.UpgradeId), upgrade.Level)
-			err = ctx.Db.Planets.Update(universe.Id, planet)
-			if err != nil {
-				return &abcitypes.ExecTxResult{
-					Code: types.InvalidTransactionError,
-				}
-			}
-		}
+	planet.UpdateResources(universe.Speed, ctx.Date.Unix(), account)
+	upgrade.Executed = true
 
-		if upgrade.UpgradeType == types.OChainTechnologyUpgrade {
-			account.SetTechnologyLevel(types.OChainTechnologyID(upgrade.UpgradeId), upgrade.Level)
-			err = ctx.Db.UniverseAccounts.Update(account)
-			if err != nil {
-				return &abcitypes.ExecTxResult{
-					Code: types.InvalidTransactionError,
-				}
-			}
-		}
-
-		level = upgrade.Level
-
-		err = ctx.Db.Upgrades.Update(upgrade)
+	if upgrade.UpgradeType == types.OChainBuildingUpgrade {
+		planet.SetBuildingLevel(types.OChainBuildingID(upgrade.UpgradeId), upgrade.Level)
+		err = ctx.Db.Planets.Update(universe.Id, planet)
 		if err != nil {
 			return &abcitypes.ExecTxResult{
 				Code: types.InvalidTransactionError,
@@ -172,7 +159,23 @@ func (tx *ExecuteUpgradeTransaction) Execute(ctx t.TransactionContext) *abcitype
 		}
 	}
 
-	planet.UpdateResources(universe.Speed, ctx.Date.Unix(), account)
+	if upgrade.UpgradeType == types.OChainTechnologyUpgrade {
+		account.SetTechnologyLevel(types.OChainTechnologyID(upgrade.UpgradeId), upgrade.Level)
+		err = ctx.Db.UniverseAccounts.Update(account)
+		if err != nil {
+			return &abcitypes.ExecTxResult{
+				Code: types.InvalidTransactionError,
+			}
+		}
+	}
+
+	err = ctx.Db.Upgrades.Update(upgrade)
+	if err != nil {
+		return &abcitypes.ExecTxResult{
+			Code: types.InvalidTransactionError,
+		}
+	}
+
 	err = ctx.Db.Planets.Update(universe.Id, planet)
 	if err != nil {
 		return &abcitypes.ExecTxResult{
@@ -189,7 +192,7 @@ func (tx *ExecuteUpgradeTransaction) Execute(ctx t.TransactionContext) *abcitype
 				{Key: "planet", Value: tx.Data.Planet, Index: true},
 				{Key: "upgradeType", Value: fmt.Sprint(tx.Data.UpgradeType)},
 				{Key: "upgradeId", Value: tx.Data.UpgradeId},
-				{Key: "level", Value: fmt.Sprint(level)},
+				{Key: "level", Value: fmt.Sprint(upgrade.Level)},
 			},
 		},
 		{

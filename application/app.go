@@ -147,8 +147,6 @@ func (app *OChainApplication) InitChain(_ context.Context, chain *abcitypes.Init
 	mainUniverse := DefaultUniverse
 	mainUniverse.CreatedAt = uint64(time.Now().Unix())
 
-	app.db.Universes.Insert(mainUniverse)
-
 	//Initalize marketplace
 
 	//Reserve Token Balance / (Continuous Token Supply x Continuous Token Price)
@@ -174,6 +172,12 @@ func (app *OChainApplication) InitChain(_ context.Context, chain *abcitypes.Init
 		DeuteriumPoolBalance:  uint64(100_000_000_000_000), // 100k token for this reserve
 		DeuteriumSupplyMinted: uint64(2_000_000_000),       // 2B minted at init
 	}
+
+	mainUniverse.ResourcesMarketEnabled = true
+	mainUniverse.Speed = 5
+	mainUniverse.IsStretchable = true
+	mainUniverse.OCTCirculatingSupply = universeResourceMarket.MetalPoolBalance + universeResourceMarket.CrystalPoolBalance + universeResourceMarket.DeuteriumPoolBalance
+	app.db.Universes.Insert(mainUniverse)
 
 	app.db.ResourcesMarket.Insert(universeResourceMarket)
 

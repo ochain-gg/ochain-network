@@ -43,6 +43,10 @@ type OChainUpgrade struct {
 	Executed           bool              `cbor:"8,keyasint"`
 }
 
+func (upgrade *OChainUpgrade) Id() string {
+	return upgrade.UniverseId + "_" + upgrade.PlanetCoordinateId + "_" + fmt.Sprint(upgrade.UpgradeType) + "_" + fmt.Sprint(upgrade.UpgradeId) + "_" + fmt.Sprint(upgrade.Level)
+}
+
 func (upgrade *OChainUpgrade) WithAttributes() OChainUpgradeWithAttributes {
 	return OChainUpgradeWithAttributes{
 		UniverseId:         upgrade.UniverseId,

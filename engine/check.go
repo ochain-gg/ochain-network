@@ -11,10 +11,12 @@ import (
 
 func CheckTx(ctx transactions.TransactionContext, req *abcitypes.CheckTxRequest) *abcitypes.CheckTxResponse {
 
-	log.Printf("Check tx: %s", hex.EncodeToString(req.Tx))
+	log.Println("CHECK TX DATA RECEIVED: ", string(req.Tx))
 
-	tx, err := transactions.ParseTransaction(req.Tx)
+	txBytes, err := hex.DecodeString(string(req.Tx))
+	tx, err := transactions.ParseTransaction(txBytes)
 	if err != nil {
+		log.Println("Check tx failed: " + err.Error())
 		return &abcitypes.CheckTxResponse{Code: types.ParsingTransactionError}
 	}
 

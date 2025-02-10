@@ -29,7 +29,7 @@ func (db *OChainUpgradeTable) Exists(id string) (bool, error) {
 }
 
 func (db *OChainUpgradeTable) ExistsAt(id string, at uint64) (bool, error) {
-	key := []byte(OChainUpgradePrefix + id)
+	key := []byte(OChainUpgradePrefix + "_" + id)
 	txn := db.bdb.NewTransactionAt(at, false)
 	if _, err := txn.Get([]byte(key)); err != nil {
 		if errors.Is(err, badger.ErrKeyNotFound) {
@@ -49,7 +49,7 @@ func (db *OChainUpgradeTable) Get(id string) (types.OChainUpgrade, error) {
 
 func (db *OChainUpgradeTable) GetAt(id string, at uint64) (types.OChainUpgrade, error) {
 	var upgrade types.OChainUpgrade
-	key := []byte(OChainUpgradePrefix + id)
+	key := []byte(OChainUpgradePrefix + "_" + id)
 	txn := db.bdb.NewTransactionAt(at, false)
 
 	item, err := txn.Get([]byte(key))
@@ -71,10 +71,9 @@ func (db *OChainUpgradeTable) GetAt(id string, at uint64) (types.OChainUpgrade, 
 }
 
 func (db *OChainUpgradeTable) Insert(upgrade types.OChainUpgrade) error {
-	id := upgrade.UniverseId + "_" + upgrade.PlanetCoordinateId + "_" + fmt.Sprint(upgrade.UpgradeType) + "_" + fmt.Sprint(upgrade.UpgradeId)
-	key := []byte(OChainUpgradePrefix + id)
+	key := []byte(OChainUpgradePrefix + "_" + upgrade.Id())
 
-	exists, err := db.ExistsAt(id, db.currentTxn.ReadTs())
+	exists, err := db.ExistsAt(upgrade.Id(), db.currentTxn.ReadTs())
 	if err != nil {
 		return err
 	}
@@ -92,10 +91,9 @@ func (db *OChainUpgradeTable) Insert(upgrade types.OChainUpgrade) error {
 }
 
 func (db *OChainUpgradeTable) Update(upgrade types.OChainUpgrade) error {
-	id := upgrade.UniverseId + "_" + upgrade.PlanetCoordinateId + "_" + fmt.Sprint(upgrade.UpgradeType) + "_" + fmt.Sprint(upgrade.UpgradeId)
-	key := []byte(OChainUpgradePrefix + id)
+	key := []byte(OChainUpgradePrefix + "_" + upgrade.Id())
 
-	exists, err := db.ExistsAt(id, db.currentTxn.ReadTs())
+	exists, err := db.ExistsAt(upgrade.Id(), db.currentTxn.ReadTs())
 	if err != nil {
 		return err
 	}
@@ -113,7 +111,7 @@ func (db *OChainUpgradeTable) Update(upgrade types.OChainUpgrade) error {
 }
 
 func (db *OChainUpgradeTable) Upsert(upgrade types.OChainUpgrade) error {
-	key := []byte(OChainUpgradePrefix + upgrade.UniverseId + "_" + upgrade.PlanetCoordinateId + "_" + fmt.Sprint(upgrade.UpgradeType) + "_" + fmt.Sprint(upgrade.UpgradeId))
+	key := []byte(OChainUpgradePrefix + "_" + upgrade.Id())
 	value, err := cbor.Marshal(upgrade)
 	if err != nil {
 		return err
@@ -123,7 +121,7 @@ func (db *OChainUpgradeTable) Upsert(upgrade types.OChainUpgrade) error {
 }
 
 func (db *OChainUpgradeTable) Delete(id string) error {
-	key := []byte(OChainUpgradePrefix + id)
+	key := []byte(OChainUpgradePrefix + "_" + id)
 	return db.currentTxn.Delete(key)
 }
 
@@ -243,7 +241,7 @@ func (db *OChainUpgradeTable) GetPendingBuildingUpgradesByPlanetAt(universeId st
 	it := txn.NewIterator(badger.DefaultIteratorOptions)
 	defer it.Close()
 
-	prefix := []byte(OChainUpgradePrefix + "_" + universeId + "_" + planetCoordinateId)
+	prefix := []byte(OChainUpgradePrefix + "_" + universeId + "_" + planetCoordinateId + "_" + fmt.Sprint(types.OChainBuildingUpgrade))
 
 	for it.Seek(prefix); it.ValidForPrefix(prefix); it.Next() {
 		item := it.Item()
@@ -259,7 +257,7 @@ func (db *OChainUpgradeTable) GetPendingBuildingUpgradesByPlanetAt(universeId st
 			return []types.OChainUpgrade{}, err
 		}
 
-		if upgrade.UpgradeType == types.OChainBuildingUpgrade && !upgrade.Executed {
+		if !upgrade.Executed {
 			upgrades = append(upgrades, upgrade)
 		}
 	}
@@ -279,7 +277,7 @@ func (db *OChainUpgradeTable) GetTechnologyUpgradesByPlanetAt(universeId string,
 	it := txn.NewIterator(badger.DefaultIteratorOptions)
 	defer it.Close()
 
-	prefix := []byte(OChainUpgradePrefix + "_" + universeId + "_" + planetCoordinateId)
+	prefix := []byte(OChainUpgradePrefix + "_" + universeId + "_" + planetCoordinateId + "_" + fmt.Sprint(types.OChainTechnologyUpgrade))
 
 	for it.Seek(prefix); it.ValidForPrefix(prefix); it.Next() {
 		item := it.Item()
@@ -315,7 +313,7 @@ func (db *OChainUpgradeTable) GetPendingTechnologyUpgradesByPlanetAt(universeId 
 	it := txn.NewIterator(badger.DefaultIteratorOptions)
 	defer it.Close()
 
-	prefix := []byte(OChainUpgradePrefix + "_" + universeId + "_" + planetCoordinateId)
+	prefix := []byte(OChainUpgradePrefix + "_" + universeId + "_" + planetCoordinateId + "_" + fmt.Sprint(types.OChainTechnologyUpgrade))
 
 	for it.Seek(prefix); it.ValidForPrefix(prefix); it.Next() {
 		item := it.Item()
@@ -331,7 +329,7 @@ func (db *OChainUpgradeTable) GetPendingTechnologyUpgradesByPlanetAt(universeId 
 			return []types.OChainUpgrade{}, err
 		}
 
-		if upgrade.UpgradeType == types.OChainTechnologyUpgrade && !upgrade.Executed {
+		if !upgrade.Executed {
 			upgrades = append(upgrades, upgrade)
 		}
 	}
