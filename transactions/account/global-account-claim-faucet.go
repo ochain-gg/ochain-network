@@ -12,7 +12,6 @@ import (
 )
 
 type ClaimFaucetTransactionData struct {
-	Address string `cbor:"1,keyasint"`
 }
 
 type ClaimFaucetTransaction struct {
@@ -41,22 +40,22 @@ func (tx *ClaimFaucetTransaction) Transaction() (t.Transaction, error) {
 func (tx *ClaimFaucetTransaction) Check(ctx t.TransactionContext) *abcitypes.CheckTxResponse {
 
 	log.Println("[ClaimFaucetTransaction] Check")
-	var faucetAmount uint64 = 10_000_000
+	// var faucetAmount uint64 = 10_000_000
 
-	globalAccount, err := ctx.Db.GlobalsAccounts.Get(tx.Data.Address)
+	globalAccount, err := ctx.Db.GlobalsAccounts.Get(tx.From)
 	if err != nil {
 		return &abcitypes.CheckTxResponse{
 			Code: types.InvalidTransactionError,
 		}
 	}
 
-	if ctx.State.AvailableTokensInTreasury < ctx.State.OCTInGameCirculatingSupply+faucetAmount {
-		return &abcitypes.CheckTxResponse{
-			Code: types.InvalidTransactionError,
-		}
-	}
+	// if ctx.State.AvailableTokensInTreasury < ctx.State.OCTInGameCirculatingSupply+faucetAmount {
+	// 	return &abcitypes.CheckTxResponse{
+	// 		Code: types.InvalidTransactionError,
+	// 	}
+	// }
 
-	if globalAccount.LastDailyClaim > ctx.Date.Unix()-3600*24 {
+	if globalAccount.LastDailyClaim > ctx.Date.Unix() /*-3600*24*/ {
 		return &abcitypes.CheckTxResponse{
 			Code: types.InvalidTransactionError,
 		}
@@ -77,7 +76,7 @@ func (tx *ClaimFaucetTransaction) Execute(ctx t.TransactionContext) *abcitypes.E
 
 	var faucetAmount uint64 = 10_000_000
 
-	globalAccount, err := ctx.Db.GlobalsAccounts.Get(tx.Data.Address)
+	globalAccount, err := ctx.Db.GlobalsAccounts.Get(tx.From)
 	if err != nil {
 		return &abcitypes.ExecTxResult{
 			Code: types.InvalidTransactionError,
@@ -91,6 +90,8 @@ func (tx *ClaimFaucetTransaction) Execute(ctx t.TransactionContext) *abcitypes.E
 			Code: types.InvalidTransactionError,
 		}
 	}
+
+	ctx.State.AddInGameCirculatingSupply(faucetAmount)
 
 	events := []abcitypes.Event{
 		{
@@ -112,18 +113,11 @@ func (tx *ClaimFaucetTransaction) Execute(ctx t.TransactionContext) *abcitypes.E
 }
 
 func ParseClaimFaucetTransaction(tx t.Transaction) (ClaimFaucetTransaction, error) {
-	var txData ClaimFaucetTransactionData
-	err := cbor.Unmarshal(tx.Data, &txData)
-
-	if err != nil {
-		return ClaimFaucetTransaction{}, err
-	}
-
 	return ClaimFaucetTransaction{
 		Type:      tx.Type,
 		From:      tx.From,
 		Nonce:     tx.Nonce,
-		Data:      txData,
+		Data:      ClaimFaucetTransactionData{},
 		Signature: tx.Signature,
 	}, nil
 }

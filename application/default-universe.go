@@ -161,7 +161,7 @@ var DefaultBuildings []types.OChainBuilding = []types.OChainBuilding{
 		Name: "Metal storage",
 		BaseCost: types.OChainResources{
 			OCT:       0,
-			Metal:     2_000,
+			Metal:     1_000,
 			Crystal:   0,
 			Deuterium: 0,
 		},
@@ -172,8 +172,8 @@ var DefaultBuildings []types.OChainBuilding = []types.OChainBuilding{
 		Name: "Crystal storage",
 		BaseCost: types.OChainResources{
 			OCT:       0,
-			Metal:     2_000,
-			Crystal:   1_000,
+			Metal:     500,
+			Crystal:   250,
 			Deuterium: 0,
 		},
 		Dependencies: []types.OChainDependency{},
@@ -183,8 +183,8 @@ var DefaultBuildings []types.OChainBuilding = []types.OChainBuilding{
 		Name: "Deutereum storage",
 		BaseCost: types.OChainResources{
 			OCT:       0,
-			Metal:     2_000,
-			Crystal:   2_000,
+			Metal:     1_000,
+			Crystal:   1_000,
 			Deuterium: 0,
 		},
 		Dependencies: []types.OChainDependency{},
@@ -496,17 +496,12 @@ var DefaultTechnologies []types.OChainTechnology = []types.OChainTechnology{
 			{
 				DependencyType: types.OChainBuildingDependency,
 				DependencyId:   string(types.ResearchLaboratoryID),
-				Level:          10,
+				Level:          6,
 			},
 			{
 				DependencyType: types.OChainTechnologyDependency,
-				DependencyId:   string(types.ComputerID),
-				Level:          8,
-			},
-			{
-				DependencyType: types.OChainTechnologyDependency,
-				DependencyId:   string(types.HyperspaceID),
-				Level:          8,
+				DependencyId:   string(types.ImpulseDriveID),
+				Level:          5,
 			},
 		},
 	},

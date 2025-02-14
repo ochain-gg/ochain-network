@@ -84,9 +84,51 @@ func FinalizeAuthenticatedTx(ctx transactions.TransactionContext, tx transaction
 
 		return transaction.Execute(ctx), valUpdates
 
+	case transactions.ClaimFaucet:
+
+		transaction, err := account_transactions.ParseClaimFaucetTransaction(tx)
+		if err != nil {
+			return &abcitypes.ExecTxResult{Code: types.ParsingTransactionDataError}, valUpdates
+		}
+
+		checkResult := transaction.Check(ctx)
+		if checkResult.Code != types.NoError {
+			return &abcitypes.ExecTxResult{Code: checkResult.Code, GasWanted: 0, GasUsed: 0}, valUpdates
+		}
+
+		return transaction.Execute(ctx), valUpdates
+
 	case transactions.StartBuildingUpgrade:
 
 		transaction, err := game_transactions.ParseUpgradeBuildingTransaction(tx)
+		if err != nil {
+			return &abcitypes.ExecTxResult{Code: types.ParsingTransactionDataError}, valUpdates
+		}
+
+		checkResult := transaction.Check(ctx)
+		if checkResult.Code != types.NoError {
+			return &abcitypes.ExecTxResult{Code: checkResult.Code, GasWanted: 0, GasUsed: 0}, valUpdates
+		}
+
+		return transaction.Execute(ctx), valUpdates
+
+	case transactions.StartTechnologyUpgrade:
+
+		transaction, err := game_transactions.ParseUpgradeTechnologyTransaction(tx)
+		if err != nil {
+			return &abcitypes.ExecTxResult{Code: types.ParsingTransactionDataError}, valUpdates
+		}
+
+		checkResult := transaction.Check(ctx)
+		if checkResult.Code != types.NoError {
+			return &abcitypes.ExecTxResult{Code: checkResult.Code, GasWanted: 0, GasUsed: 0}, valUpdates
+		}
+
+		return transaction.Execute(ctx), valUpdates
+
+	case transactions.Build:
+
+		transaction, err := game_transactions.ParseBuildTransaction(tx)
 		if err != nil {
 			return &abcitypes.ExecTxResult{Code: types.ParsingTransactionDataError}, valUpdates
 		}

@@ -343,6 +343,12 @@ func (planet *OChainPlanet) BuildingLevel(id OChainBuildingID) uint64 {
 		return planet.Buildings.CrystalMine
 	case DeuteriumMineID:
 		return planet.Buildings.DeuteriumMine
+	case MetalStorageID:
+		return planet.Buildings.MetalStorage
+	case CrystalStorageID:
+		return planet.Buildings.CrystalStorage
+	case DeuteriumStorageID:
+		return planet.Buildings.DeuteriumStorage
 	case SolarPowerPlantID:
 		return planet.Buildings.SolarPowerPlant
 	case RoboticFactoryID:
@@ -369,6 +375,12 @@ func (planet *OChainPlanet) SetBuildingLevel(id OChainBuildingID, level uint64) 
 		planet.Buildings.CrystalMine = level
 	case DeuteriumMineID:
 		planet.Buildings.DeuteriumMine = level
+	case MetalStorageID:
+		planet.Buildings.MetalStorage = level
+	case CrystalStorageID:
+		planet.Buildings.CrystalStorage = level
+	case DeuteriumStorageID:
+		planet.Buildings.DeuteriumStorage = level
 	case SolarPowerPlantID:
 		planet.Buildings.SolarPowerPlant = level
 	case RoboticFactoryID:
@@ -560,7 +572,7 @@ func (planet *OChainPlanet) Pay(cost OChainResources) error {
 func (planet *OChainPlanet) AddItemToBuildQueue(item OChainBuild, duration uint64) OChainBuildQueueItem {
 	newState := []OChainBuildQueueItem{}
 	queueFinishingAt := uint64(time.Now().Unix())
-	for i := 0; i < len(planet.BuildQueue); i++ {
+	for i := range planet.BuildQueue {
 		queueItem := planet.BuildQueue[i]
 		if queueFinishingAt < queueItem.FinishAt {
 			queueFinishingAt = queueItem.FinishAt
@@ -586,11 +598,11 @@ func (planet *OChainPlanet) AddItemToBuildQueue(item OChainBuild, duration uint6
 
 func (planet *OChainPlanet) UpdateBuildQueue(timestamp uint64) {
 	newState := []OChainBuildQueueItem{}
-	for i := 0; i < len(planet.BuildQueue); i++ {
+	for i := range planet.BuildQueue {
 		item := planet.BuildQueue[i]
 
 		//if currently processing or ended
-		if item.StartAt > timestamp {
+		if item.StartAt < timestamp {
 
 			//if item in queue is finished
 			if item.FinishAt <= timestamp {
@@ -618,8 +630,9 @@ func (planet *OChainPlanet) UpdateBuildQueue(timestamp uint64) {
 
 				newState = append(newState, item)
 			}
+		} else {
+			newState = append(newState, item)
 		}
-
 	}
 	planet.BuildQueue = newState
 }
@@ -637,23 +650,30 @@ func (planet *OChainPlanet) UpdateResources(speed uint64, timestamp int64, accou
 		energyRate = 1
 	}
 
+	metalProdSinceLastUpdate := planet.computeMetalProductionFromLastUpdate(energyRate, timestamp, speed, account)
 	if planet.Resources.Metal < planet.getMetalStorageCapacity() {
-		planet.Resources.Metal += planet.computeMetalProductionFromLastUpdate(energyRate, timestamp, speed, account)
-		if planet.Resources.Metal > planet.getMetalStorageCapacity() {
+		if planet.Resources.Metal+metalProdSinceLastUpdate > planet.getMetalStorageCapacity() {
 			planet.Resources.Metal = planet.getMetalStorageCapacity()
+		} else {
+			planet.Resources.Metal += metalProdSinceLastUpdate
 		}
 	}
 
+	crystalProdSinceLastUpdate := planet.computeCrystalProductionFromLastUpdate(energyRate, timestamp, speed, account)
 	if planet.Resources.Crystal < planet.getCrystalStorageCapacity() {
-		planet.Resources.Crystal += planet.computeCrystalProductionFromLastUpdate(energyRate, timestamp, speed, account)
-		if planet.Resources.Crystal > planet.getCrystalStorageCapacity() {
+		if planet.Resources.Crystal+crystalProdSinceLastUpdate > planet.getCrystalStorageCapacity() {
 			planet.Resources.Crystal = planet.getCrystalStorageCapacity()
+		} else {
+			planet.Resources.Crystal += crystalProdSinceLastUpdate
 		}
 	}
+
+	deuteriumProdSinceLastUpdate := planet.computeDeuteriumProductionFromLastUpdate(energyRate, timestamp, speed, account)
 	if planet.Resources.Deuterium < planet.getDeuteriumStorageCapacity() {
-		planet.Resources.Deuterium += planet.computeDeuteriumProductionFromLastUpdate(energyRate, timestamp, speed, account)
-		if planet.Resources.Deuterium > planet.getDeuteriumStorageCapacity() {
+		if planet.Resources.Deuterium+deuteriumProdSinceLastUpdate > planet.getDeuteriumStorageCapacity() {
 			planet.Resources.Deuterium = planet.getDeuteriumStorageCapacity()
+		} else {
+			planet.Resources.Deuterium += deuteriumProdSinceLastUpdate
 		}
 	}
 
@@ -664,7 +684,7 @@ func (planet *OChainPlanet) computeEnergyConsumtion() int64 {
 	var metalFactor float64 = math.Pow(float64(1.1), float64(planet.Buildings.MetalMine))
 	var metalEnergy float64 = 10 * float64(planet.Buildings.MetalMine) * metalFactor
 
-	var crystalFactor float64 = math.Pow(float64(1.6), float64(planet.Buildings.CrystalMine))
+	var crystalFactor float64 = math.Pow(float64(1.1), float64(planet.Buildings.CrystalMine))
 	var crystalEnergy float64 = 10 * float64(planet.Buildings.CrystalMine) * crystalFactor
 
 	var deuteriumFactor float64 = math.Pow(float64(1.1), float64(planet.Buildings.DeuteriumMine))
@@ -674,12 +694,12 @@ func (planet *OChainPlanet) computeEnergyConsumtion() int64 {
 }
 
 func (planet *OChainPlanet) computeTotalEnergy(account OChainUniverseAccount) int64 {
-	var solarPlantEnergy float64 = 20 + (20 * float64(planet.Buildings.SolarPowerPlant) * math.Pow(float64(1.1), float64(planet.Buildings.SolarPowerPlant)))
-	return int64(solarPlantEnergy * math.Pow(1.05, float64(account.Technologies.Energy)))
+	var solarPlantEnergy float64 = (20 * float64(planet.Buildings.SolarPowerPlant) * math.Pow(float64(1.1), float64(planet.Buildings.SolarPowerPlant)))
+	return int64(solarPlantEnergy * (1 + (0.01 * float64(account.Technologies.Energy))))
 }
 
 func (planet *OChainPlanet) getMetalStorageCapacity() uint64 {
-	return uint64(float64(5000) * float64(2.5) * math.Pow(float64(2.71828), float64(20*planet.Buildings.MetalStorage/33)))
+	return uint64(float64(5000) * (float64(2.5) * math.Pow(float64(10), float64(20*planet.Buildings.MetalStorage/33))))
 }
 
 func (planet *OChainPlanet) getMetalProduction(energyRate float64, timestamp int64, speed uint64, account OChainUniverseAccount) float64 {
@@ -711,7 +731,7 @@ func (planet *OChainPlanet) computeMetalProductionFromLastUpdate(energyRate floa
 }
 
 func (planet *OChainPlanet) getCrystalStorageCapacity() uint64 {
-	return uint64(float64(5000) * float64(2.5) * math.Pow(float64(2.71828), float64(20*planet.Buildings.CrystalStorage/33)))
+	return uint64(float64(5000) * (float64(2.5) * math.Pow(float64(10), float64(20*planet.Buildings.CrystalStorage/33))))
 }
 
 func (planet *OChainPlanet) getCrystalProduction(energyRate float64, timestamp int64, speed uint64, account OChainUniverseAccount) float64 {
@@ -742,7 +762,7 @@ func (planet *OChainPlanet) computeCrystalProductionFromLastUpdate(energyRate fl
 }
 
 func (planet *OChainPlanet) getDeuteriumStorageCapacity() uint64 {
-	return uint64(float64(5000) * float64(2.5) * math.Pow(float64(2.71828), float64(20*planet.Buildings.DeuteriumStorage/33)))
+	return uint64(float64(5000) * (float64(2.5) * math.Pow(float64(10), float64(20*planet.Buildings.DeuteriumStorage/33))))
 }
 
 func (planet *OChainPlanet) getDeuteriumProduction(energyRate float64, timestamp int64, speed uint64, account OChainUniverseAccount) float64 {

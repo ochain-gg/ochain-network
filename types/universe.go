@@ -464,15 +464,7 @@ func (building *OChainBuilding) GetUpgradeCost(level uint64) OChainResources {
 			Deuterium: uint64(float64(building.BaseCost.Deuterium) * math.Pow(1.5, float64(level-1))),
 		}
 
-	case MetalStorageID:
-	case CrystalStorageID:
-	case DeuteriumStorageID:
-	case RoboticFactoryID:
-	case SpaceshipFactoryID:
-	case ResearchLaboratoryID:
-	case NaniteFactoryID:
-	case IntergalacticPortalID:
-	case ShieldDomeID:
+	case MetalStorageID, CrystalStorageID, DeuteriumStorageID, RoboticFactoryID, SpaceshipFactoryID, ResearchLaboratoryID, NaniteFactoryID, IntergalacticPortalID, ShieldDomeID:
 		return OChainResources{
 			OCT:       0,
 			Metal:     uint64(float64(building.BaseCost.Metal) * math.Pow(2, float64(level-1))),
@@ -480,6 +472,7 @@ func (building *OChainBuilding) GetUpgradeCost(level uint64) OChainResources {
 			Deuterium: uint64(float64(building.BaseCost.Deuterium) * math.Pow(2, float64(level-1))),
 		}
 	}
+
 	return OChainResources{
 		OCT:       0,
 		Metal:     0,
@@ -537,12 +530,23 @@ func (tech *OChainTechnology) WithAttributes() OChainTechnologyWithAttributes {
 }
 
 func (technology *OChainTechnology) GetUpgradeCost(level uint64) OChainResources {
-	return OChainResources{
-		OCT:       0,
-		Metal:     uint64(float64(technology.BaseCost.Metal) * math.Pow(2, float64(level-1))),
-		Crystal:   uint64(float64(technology.BaseCost.Crystal) * math.Pow(2, float64(level-1))),
-		Deuterium: uint64(float64(technology.BaseCost.Deuterium) * math.Pow(2, float64(level-1))),
+
+	if technology.Id != AstrophysicsID {
+		return OChainResources{
+			OCT:       0,
+			Metal:     uint64(float64(technology.BaseCost.Metal) * math.Pow(2, float64(level-1))),
+			Crystal:   uint64(float64(technology.BaseCost.Crystal) * math.Pow(2, float64(level-1))),
+			Deuterium: uint64(float64(technology.BaseCost.Deuterium) * math.Pow(2, float64(level-1))),
+		}
+	} else {
+		return OChainResources{
+			OCT:       0,
+			Metal:     uint64(float64(technology.BaseCost.Metal) * math.Pow(1.75, float64(level-1))),
+			Crystal:   uint64(float64(technology.BaseCost.Crystal) * math.Pow(1.75, float64(level-1))),
+			Deuterium: uint64(float64(technology.BaseCost.Deuterium) * math.Pow(1.75, float64(level-1))),
+		}
 	}
+
 }
 
 func (technology *OChainTechnology) MeetRequirements(planet OChainPlanet, acc OChainUniverseAccount) bool {

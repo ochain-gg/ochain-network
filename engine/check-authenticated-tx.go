@@ -74,9 +74,35 @@ func CheckAuthenticatedTx(ctx transactions.TransactionContext, req *abcitypes.Ch
 
 		return transaction.Check(ctx)
 
+	case transactions.ClaimFaucet:
+
+		transaction, err := account_transactions.ParseClaimFaucetTransaction(tx)
+		if err != nil {
+			return &abcitypes.CheckTxResponse{Code: types.ParsingTransactionDataError, GasWanted: 0, GasUsed: 0}
+		}
+
+		return transaction.Check(ctx)
+
 	case transactions.StartBuildingUpgrade:
 
 		transaction, err := game_transactions.ParseUpgradeBuildingTransaction(tx)
+		if err != nil {
+			return &abcitypes.CheckTxResponse{Code: types.ParsingTransactionDataError, GasWanted: 0, GasUsed: 0}
+		}
+
+		return transaction.Check(ctx)
+
+	case transactions.StartTechnologyUpgrade:
+
+		transaction, err := game_transactions.ParseUpgradeTechnologyTransaction(tx)
+		if err != nil {
+			return &abcitypes.CheckTxResponse{Code: types.ParsingTransactionDataError, GasWanted: 0, GasUsed: 0}
+		}
+
+		return transaction.Check(ctx)
+	case transactions.Build:
+
+		transaction, err := game_transactions.ParseBuildTransaction(tx)
 		if err != nil {
 			return &abcitypes.CheckTxResponse{Code: types.ParsingTransactionDataError, GasWanted: 0, GasUsed: 0}
 		}

@@ -50,6 +50,8 @@ func (tx *UpgradeBuildingTransaction) Check(ctx t.TransactionContext) *abcitypes
 		}
 	}
 
+	//TODO: Check if the technology is not actually upgrading on an other planet
+
 	account, err := ctx.Db.UniverseAccounts.GetAt(tx.Data.Universe, tx.From, uint64(ctx.Date.Unix()))
 	if err != nil {
 		log.Println("EXECUTE UPGRADE START ERROR: " + err.Error())
@@ -97,7 +99,7 @@ func (tx *UpgradeBuildingTransaction) Check(ctx t.TransactionContext) *abcitypes
 
 	payable := planet.CanPay(cost)
 	if !payable {
-		log.Println("EXECUTE UPGRADE START ERROR: NO SUFFICIENT GAS")
+		log.Println("EXECUTE UPGRADE START ERROR: NO SUFFICIENT RESOURCES")
 		return &abcitypes.CheckTxResponse{
 			Code: types.InvalidTransactionError,
 		}

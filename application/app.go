@@ -174,7 +174,7 @@ func (app *OChainApplication) InitChain(_ context.Context, chain *abcitypes.Init
 	}
 
 	mainUniverse.ResourcesMarketEnabled = true
-	mainUniverse.Speed = 5
+	mainUniverse.Speed = 50
 	mainUniverse.IsStretchable = true
 	mainUniverse.OCTCirculatingSupply = universeResourceMarket.MetalPoolBalance + universeResourceMarket.CrystalPoolBalance + universeResourceMarket.DeuteriumPoolBalance
 	app.db.Universes.Insert(mainUniverse)
@@ -202,7 +202,6 @@ func (app *OChainApplication) CheckTx(ctx context.Context, req *abcitypes.CheckT
 
 	return engine.CheckTx(txCtx, req), nil
 }
-
 func (app *OChainApplication) FinalizeBlock(_ context.Context, req *abcitypes.FinalizeBlockRequest) (*abcitypes.FinalizeBlockResponse, error) {
 	log.Printf("Finalize block: %d", req.Height)
 	app.ValUpdates = make([]abcitypes.ValidatorUpdate, 0)

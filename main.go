@@ -10,7 +10,6 @@ import (
 	"path/filepath"
 	"strconv"
 	"syscall"
-	"time"
 
 	"github.com/ethereum/go-ethereum/crypto"
 
@@ -61,8 +60,8 @@ func main() {
 		log.Fatalf("Invalid configuration data: %v", err)
 	}
 
-	config.Consensus.CreateEmptyBlocks = false
-	config.Consensus.CreateEmptyBlocksInterval = time.Hour
+	// config.Consensus.CreateEmptyBlocks = false
+	// config.Consensus.CreateEmptyBlocksInterval = time.Hour
 
 	dbPath := filepath.Join(homeDir, "database")
 

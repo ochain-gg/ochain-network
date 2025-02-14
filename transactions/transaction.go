@@ -61,8 +61,7 @@ const (
 	MintPlanet             TransactionType = 15
 	StartBuildingUpgrade   TransactionType = 16
 	StartTechnologyUpgrade TransactionType = 17
-	StartBuildDefenses     TransactionType = 18
-	StartBuildSpaceships   TransactionType = 19
+	Build                  TransactionType = 18
 
 	//Fleet transactions
 	FillCargo                    TransactionType = 20

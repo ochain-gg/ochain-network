@@ -16,6 +16,7 @@ type ExecuteUpgradeTransactionData struct {
 	Planet      string                  `cbor:"2,keyasint"`
 	UpgradeType types.OChainUpgradeType `cbor:"3,keyasint"`
 	UpgradeId   string                  `cbor:"4,keyasint"`
+	Level       uint64                  `cbor:"5,keyasint"`
 }
 
 type ExecuteUpgradeTransaction struct {
@@ -68,7 +69,7 @@ func (tx *ExecuteUpgradeTransaction) Check(ctx t.TransactionContext) *abcitypes.
 	for i := 0; i < len(upgrades); i++ {
 		upgrade := upgrades[i]
 
-		if upgrade.Executed || upgrade.UpgradeType != tx.Data.UpgradeType || tx.Data.UpgradeId != upgrade.UpgradeId {
+		if upgrade.Executed || upgrade.UpgradeType != tx.Data.UpgradeType || tx.Data.UpgradeId != upgrade.UpgradeId || tx.Data.Level != upgrade.Level {
 			continue
 		}
 
@@ -134,7 +135,7 @@ func (tx *ExecuteUpgradeTransaction) Execute(ctx t.TransactionContext) *abcitype
 		u := pendingUpgrades[i]
 		log.Println("UPGRADE: " + fmt.Sprint(i))
 		log.Println(u)
-		if u.Executed || u.UpgradeType != tx.Data.UpgradeType || tx.Data.UpgradeId != u.UpgradeId {
+		if u.Executed || u.UpgradeType != tx.Data.UpgradeType || tx.Data.UpgradeId != u.UpgradeId || tx.Data.Level != u.Level {
 			continue
 		}
 

@@ -2,6 +2,7 @@ package game_transactions
 
 import (
 	"fmt"
+	"log"
 
 	abcitypes "github.com/cometbft/cometbft/abci/types"
 	"github.com/fxamacker/cbor/v2"
@@ -40,6 +41,7 @@ func (tx *UpgradeTechnologyTransaction) Transaction() (t.Transaction, error) {
 }
 
 func (tx *UpgradeTechnologyTransaction) Check(ctx t.TransactionContext) *abcitypes.CheckTxResponse {
+	log.Println("----------- 1")
 	_, err := ctx.Db.GlobalsAccounts.GetAt(tx.From, uint64(ctx.Date.Unix()))
 	if err != nil {
 		return &abcitypes.CheckTxResponse{
@@ -47,6 +49,7 @@ func (tx *UpgradeTechnologyTransaction) Check(ctx t.TransactionContext) *abcityp
 		}
 	}
 
+	log.Println("----------- 2")
 	account, err := ctx.Db.UniverseAccounts.GetAt(tx.Data.Universe, tx.From, uint64(ctx.Date.Unix()))
 	if err != nil {
 		return &abcitypes.CheckTxResponse{
@@ -54,6 +57,7 @@ func (tx *UpgradeTechnologyTransaction) Check(ctx t.TransactionContext) *abcityp
 		}
 	}
 
+	log.Println("----------- 3")
 	universe, err := ctx.Db.Universes.GetAt(tx.Data.Universe, uint64(ctx.Date.Unix()))
 	if err != nil {
 		return &abcitypes.CheckTxResponse{
@@ -61,6 +65,7 @@ func (tx *UpgradeTechnologyTransaction) Check(ctx t.TransactionContext) *abcityp
 		}
 	}
 
+	log.Println("----------- 4")
 	planet, err := ctx.Db.Planets.GetAt(tx.Data.Universe, tx.Data.Planet, uint64(ctx.Date.Unix()))
 	if err != nil {
 		return &abcitypes.CheckTxResponse{
@@ -68,6 +73,7 @@ func (tx *UpgradeTechnologyTransaction) Check(ctx t.TransactionContext) *abcityp
 		}
 	}
 
+	log.Println("----------- 5")
 	technology, err := ctx.Db.Technologies.GetAt(tx.Data.Technology, uint64(ctx.Date.Unix()))
 	if err != nil {
 		return &abcitypes.CheckTxResponse{
@@ -75,6 +81,7 @@ func (tx *UpgradeTechnologyTransaction) Check(ctx t.TransactionContext) *abcityp
 		}
 	}
 
+	log.Println("----------- 6")
 	ok := technology.MeetRequirements(planet, account)
 	if !ok {
 		return &abcitypes.CheckTxResponse{
@@ -82,11 +89,13 @@ func (tx *UpgradeTechnologyTransaction) Check(ctx t.TransactionContext) *abcityp
 		}
 	}
 
+	log.Println("----------- 7")
 	planet.UpdateResources(universe.Speed, int64(ctx.Date.Unix()), account)
 
 	level := account.TechnologyLevel(technology.Id) + 1
 	cost := technology.GetUpgradeCost(level)
 
+	log.Println("----------- 8")
 	payable := planet.CanPay(cost)
 	if !payable {
 		return &abcitypes.CheckTxResponse{
@@ -94,6 +103,7 @@ func (tx *UpgradeTechnologyTransaction) Check(ctx t.TransactionContext) *abcityp
 		}
 	}
 
+	log.Println("----------- 9")
 	pendingUpgrades, err := ctx.Db.Upgrades.GetPendingTechnologyUpgradesByPlanetAt(universe.Id, planet.CoordinateId(), uint64(ctx.Date.Unix()))
 	if err != nil {
 		return &abcitypes.CheckTxResponse{
@@ -101,13 +111,16 @@ func (tx *UpgradeTechnologyTransaction) Check(ctx t.TransactionContext) *abcityp
 		}
 	}
 
+	log.Println("----------- 10")
 	if len(pendingUpgrades) > 0 {
 		return &abcitypes.CheckTxResponse{
 			Code: types.InvalidTransactionError,
 		}
 	}
 
-	return nil
+	return &abcitypes.CheckTxResponse{
+		Code: types.NoError,
+	}
 }
 
 func (tx *UpgradeTechnologyTransaction) Execute(ctx t.TransactionContext) *abcitypes.ExecTxResult {
@@ -120,13 +133,6 @@ func (tx *UpgradeTechnologyTransaction) Execute(ctx t.TransactionContext) *abcit
 
 	currentDate := uint64(ctx.Date.Unix())
 	universe, err := ctx.Db.Universes.GetAt(tx.Data.Universe, currentDate)
-	if err != nil {
-		return &abcitypes.ExecTxResult{
-			Code: types.InvalidTransactionError,
-		}
-	}
-
-	globalAccount, err := ctx.Db.GlobalsAccounts.GetAt(tx.From, currentDate)
 	if err != nil {
 		return &abcitypes.ExecTxResult{
 			Code: types.InvalidTransactionError,
@@ -202,17 +208,6 @@ func (tx *UpgradeTechnologyTransaction) Execute(ctx t.TransactionContext) *abcit
 		}
 	}
 
-	txGasCost, err := globalAccount.ApplyGasCost(uint64(ctx.Date.Unix()))
-	if err != nil {
-		return &abcitypes.ExecTxResult{
-			Code: types.GasCostHigherThanBalance,
-		}
-	}
-
-	receipt := t.TransactionReceipt{
-		GasCost: txGasCost,
-	}
-
 	events := []abcitypes.Event{
 		{
 			Type: "UpgradeStarted",
@@ -244,7 +239,7 @@ func (tx *UpgradeTechnologyTransaction) Execute(ctx t.TransactionContext) *abcit
 		Events:    events,
 		GasUsed:   100,
 		GasWanted: 100,
-		Data:      receipt.Bytes(),
+		Data:      []byte(""),
 	}
 }
 
