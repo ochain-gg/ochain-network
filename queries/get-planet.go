@@ -66,8 +66,7 @@ func ResolveGetPlanetQuery(q []byte, db *database.OChainDatabase) ([]byte, error
 		return []byte(""), err
 	}
 
-	planet.UpdateResources(universe.Speed, time.Now().Unix(), account)
-	planet.UpdateBuildQueue(uint64(time.Now().Unix()))
+	planet.Update(universe.Speed, time.Now().Unix(), account)
 
 	result, err := cbor.Marshal(GetPlanetQueryResponse{
 		Planet:             planet.WithAttributes(),

@@ -19,6 +19,7 @@ type OChainDatabase struct {
 	Technologies               *OChainTechnologyTable
 	Defenses                   *OChainDefenseTable
 	Spaceships                 *OChainSpaceshipTable
+	Fleets                     *OChainFleetTable
 	ResourcesMarket            *OChainResourcesMarketTable
 	UniverseAccountWeeklyUsage *OChainUniverseAccountWeeklyUsageTable
 	Upgrades                   *OChainUpgradeTable
@@ -58,7 +59,7 @@ func (db *OChainDatabase) LoadTables() {
 	db.ResourcesMarket = NewOChainResourcesMarketTable(db.DB)
 	db.UniverseAccountWeeklyUsage = NewOChainUniverseAccountWeeklyUsageTable(db.DB)
 	db.Upgrades = NewOChainUpgradeTable(db.DB)
-	// db.Fleets = NewFleetsTable(db.DB)
+	db.Fleets = NewFleetTable(db.DB)
 	db.State = NewOChainStateTable(db.DB)
 }
 

@@ -176,8 +176,7 @@ func (tx *BuildTransaction) Execute(ctx t.TransactionContext) *abcitypes.ExecTxR
 		Deuterium: 0,
 	}
 
-	planet.UpdateBuildQueue(uint64(ctx.Date.Unix()))
-	planet.UpdateResources(universe.Speed, int64(ctx.Date.Unix()), account)
+	planet.Update(universe.Speed, ctx.Date.Unix(), account)
 
 	var buildEvents []abcitypes.Event
 	for i := 0; i < len(tx.Data.Builds); i++ {
@@ -195,7 +194,7 @@ func (tx *BuildTransaction) Execute(ctx t.TransactionContext) *abcitypes.ExecTxR
 			duration /= (2500 * (1 + planet.BuildingLevel(types.SpaceshipFactoryID)) * uint64(math.Pow(float64(2), float64(planet.BuildingLevel(types.NaniteFactoryID)))) * universe.Speed)
 			duration *= build.Count
 
-			item := planet.AddItemToBuildQueue(build, duration)
+			item := planet.AddItemToBuildQueue(build, int64(duration))
 
 			buildEvents = append(buildEvents, abcitypes.Event{
 				Type: "BuildQueueItemAdded",
@@ -228,7 +227,7 @@ func (tx *BuildTransaction) Execute(ctx t.TransactionContext) *abcitypes.ExecTxR
 			duration /= (2500 * (1 + planet.BuildingLevel(types.SpaceshipFactoryID)) * uint64(math.Pow(float64(2), float64(planet.BuildingLevel(types.NaniteFactoryID)))) * universe.Speed)
 			duration *= build.Count
 
-			item := planet.AddItemToBuildQueue(build, duration)
+			item := planet.AddItemToBuildQueue(build, int64(duration))
 
 			buildEvents = append(buildEvents, abcitypes.Event{
 				Type: "BuildQueueItemAdded",

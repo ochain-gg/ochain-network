@@ -182,6 +182,37 @@ func (fleet *OChainFleetSpaceships) WithAttributes() OChainFleetSpaceshipsWithAt
 	}
 }
 
+func (fleet *OChainFleetSpaceships) Get(id OChainSpaceshipID) uint64 {
+	switch id {
+	case SmallCargoID:
+		return fleet.SmallCargo
+	case LargeCargoID:
+		return fleet.LargeCargo
+	case LightFighterID:
+		return fleet.LightFighter
+	case HeavyFighterID:
+		return fleet.HeavyFighter
+	case CruiserID:
+		return fleet.Cruiser
+	case BattleshipID:
+		return fleet.Battleship
+	case BattlecruiserID:
+		return fleet.Battlecruiser
+	case BomberID:
+		return fleet.Bomber
+	case DestroyerID:
+		return fleet.Destroyer
+	case DeathstarID:
+		return fleet.Deathstar
+	case ReaperID:
+		return fleet.Reaper
+	case RecyclerID:
+		return fleet.Recycler
+	}
+
+	return 0
+}
+
 type OChainPlanetDefencesWithAttributes struct {
 	RocketLauncher  uint64 `cbor:"rocketLauncher"`
 	LightLaser      uint64 `cbor:"lightLaser"`
@@ -218,16 +249,16 @@ type OChainBuildQueueItemWithAttributes struct {
 	BuildType OChainBuildType `cbor:"buildType"`
 	BuildId   string          `cbor:"buildId"`
 	Count     uint64          `cbor:"count"`
-	StartAt   uint64          `cbor:"startAt"`
-	FinishAt  uint64          `cbor:"finishAt"`
+	StartAt   int64           `cbor:"startAt"`
+	FinishAt  int64           `cbor:"finishAt"`
 }
 
 type OChainBuildQueueItem struct {
 	BuildType OChainBuildType `cbor:"1,keyasint"`
 	BuildId   string          `cbor:"2,keyasint"`
 	Count     uint64          `cbor:"3,keyasint"`
-	StartAt   uint64          `cbor:"4,keyasint"`
-	FinishAt  uint64          `cbor:"5,keyasint"`
+	StartAt   int64           `cbor:"4,keyasint"`
+	FinishAt  int64           `cbor:"5,keyasint"`
 }
 
 func (item *OChainBuildQueueItem) WithAttributes() OChainBuildQueueItemWithAttributes {
@@ -466,33 +497,71 @@ func (planet *OChainPlanet) AddSpaceships(id OChainSpaceshipID, count uint64) {
 	}
 }
 
-func (planet *OChainPlanet) RemoveSpaceships(id OChainSpaceshipID, count uint64) {
+func (planet *OChainPlanet) RemoveSpaceships(id OChainSpaceshipID, count uint64) error {
 	switch id {
 	case SmallCargoID:
+		if planet.Spaceships.SmallCargo < count {
+			return errors.New("not enought smallcargo spaceship")
+		}
 		planet.Spaceships.SmallCargo -= count
 	case LargeCargoID:
+		if planet.Spaceships.LargeCargo < count {
+			return errors.New("not enought largecargo spaceship")
+		}
 		planet.Spaceships.LargeCargo -= count
 	case LightFighterID:
+		if planet.Spaceships.LightFighter < count {
+			return errors.New("not enought lightfighter spaceship")
+		}
 		planet.Spaceships.LightFighter -= count
 	case HeavyFighterID:
+		if planet.Spaceships.HeavyFighter < count {
+			return errors.New("not enought heavyfighter spaceship")
+		}
 		planet.Spaceships.HeavyFighter -= count
 	case CruiserID:
+		if planet.Spaceships.Cruiser < count {
+			return errors.New("not enought cruiser spaceship")
+		}
 		planet.Spaceships.Cruiser -= count
 	case BattleshipID:
+		if planet.Spaceships.Battleship < count {
+			return errors.New("not enought battleship spaceship")
+		}
 		planet.Spaceships.Battleship -= count
 	case BattlecruiserID:
+		if planet.Spaceships.Battlecruiser < count {
+			return errors.New("not enought battlecruiser spaceship")
+		}
 		planet.Spaceships.Battlecruiser -= count
 	case BomberID:
+		if planet.Spaceships.Bomber < count {
+			return errors.New("not enought bomber spaceship")
+		}
 		planet.Spaceships.Bomber -= count
 	case DestroyerID:
+		if planet.Spaceships.Destroyer < count {
+			return errors.New("not enought destroyer spaceship")
+		}
 		planet.Spaceships.Destroyer -= count
 	case DeathstarID:
+		if planet.Spaceships.Deathstar < count {
+			return errors.New("not enought deathstar spaceship")
+		}
 		planet.Spaceships.Deathstar -= count
 	case ReaperID:
+		if planet.Spaceships.Reaper < count {
+			return errors.New("not enought reaper spaceship")
+		}
 		planet.Spaceships.Reaper -= count
 	case RecyclerID:
+		if planet.Spaceships.Recycler < count {
+			return errors.New("not enought recycler spaceship")
+		}
 		planet.Spaceships.Recycler -= count
 	}
+
+	return nil
 }
 
 func (planet *OChainPlanet) AddResourceById(id MarketResourceID, amount uint64) {
@@ -569,9 +638,9 @@ func (planet *OChainPlanet) Pay(cost OChainResources) error {
 	return nil
 }
 
-func (planet *OChainPlanet) AddItemToBuildQueue(item OChainBuild, duration uint64) OChainBuildQueueItem {
+func (planet *OChainPlanet) AddItemToBuildQueue(item OChainBuild, duration int64) OChainBuildQueueItem {
 	newState := []OChainBuildQueueItem{}
-	queueFinishingAt := uint64(time.Now().Unix())
+	queueFinishingAt := time.Now().Unix()
 	for i := range planet.BuildQueue {
 		queueItem := planet.BuildQueue[i]
 		if queueFinishingAt < queueItem.FinishAt {
@@ -596,7 +665,12 @@ func (planet *OChainPlanet) AddItemToBuildQueue(item OChainBuild, duration uint6
 	return newItem
 }
 
-func (planet *OChainPlanet) UpdateBuildQueue(timestamp uint64) {
+func (planet *OChainPlanet) Update(speed uint64, timestamp int64, account OChainUniverseAccount) {
+	planet.UpdateResources(speed, timestamp, account)
+	planet.UpdateBuildQueue(timestamp)
+}
+
+func (planet *OChainPlanet) UpdateBuildQueue(timestamp int64) {
 	newState := []OChainBuildQueueItem{}
 	for i := range planet.BuildQueue {
 		item := planet.BuildQueue[i]
@@ -614,19 +688,19 @@ func (planet *OChainPlanet) UpdateBuildQueue(timestamp uint64) {
 				}
 			} else {
 				//if item isn't finished yet
-				itemDuration := (item.FinishAt - item.StartAt) / item.Count
+				itemDuration := (item.FinishAt - item.StartAt) / int64(item.Count)
 				effectiveTime := timestamp - item.StartAt
 
 				itemsFinished := effectiveTime / itemDuration
 				if item.BuildType == OChainDefenseBuild {
-					planet.AddDefenses(OChainDefenseID(item.BuildId), itemsFinished)
+					planet.AddDefenses(OChainDefenseID(item.BuildId), uint64(itemsFinished))
 				}
 				if item.BuildType == OChainSpaceshipBuild {
-					planet.AddSpaceships(OChainSpaceshipID(item.BuildId), itemsFinished)
+					planet.AddSpaceships(OChainSpaceshipID(item.BuildId), uint64(itemsFinished))
 				}
 
-				item.Count -= itemsFinished
-				item.StartAt = item.StartAt + (itemsFinished * itemDuration)
+				item.Count -= uint64(itemsFinished)
+				item.StartAt = item.StartAt + (int64(itemsFinished) * itemDuration)
 
 				newState = append(newState, item)
 			}

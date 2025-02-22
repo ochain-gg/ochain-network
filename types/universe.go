@@ -1,6 +1,9 @@
 package types
 
-import "math"
+import (
+	"errors"
+	"math"
+)
 
 type OChainResourcesWithAttributes struct {
 	OCT       uint64 `cbor:"OCT"`
@@ -25,6 +28,10 @@ func (resource *OChainResources) WithAttributes() OChainResourcesWithAttributes 
 	}
 }
 
+func (resource *OChainResources) Total() uint64 {
+	return resource.OCT + resource.Metal + resource.Crystal + resource.Deuterium
+}
+
 func (resource *OChainResources) Add(r OChainResources) {
 	resource.OCT += r.OCT
 	resource.Metal += r.Metal
@@ -32,11 +39,29 @@ func (resource *OChainResources) Add(r OChainResources) {
 	resource.Deuterium += r.Deuterium
 }
 
-func (resource *OChainResources) Sub(r OChainResources) {
+func (resource *OChainResources) Sub(r OChainResources) error {
+	if resource.OCT < r.OCT {
+		return errors.New("unsufficient oCT")
+	}
+
+	if resource.Metal < r.Metal {
+		return errors.New("unsufficient metal")
+	}
+
+	if resource.Crystal < r.Crystal {
+		return errors.New("unsufficient crystal")
+	}
+
+	if resource.Deuterium < r.Deuterium {
+		return errors.New("unsufficient deuterium")
+	}
+
 	resource.OCT -= r.OCT
 	resource.Metal -= r.Metal
 	resource.Crystal -= r.Crystal
 	resource.Deuterium -= r.Deuterium
+
+	return nil
 }
 
 func (resource *OChainResources) Mul(factor uint64) {
@@ -373,6 +398,7 @@ const (
 )
 
 type OChainSpaceshipID string
+type OChainSpaceshipList [12]OChainSpaceshipID
 
 const (
 	SmallCargoID    OChainSpaceshipID = "SMALL_CARGO"
@@ -388,6 +414,23 @@ const (
 	ReaperID        OChainSpaceshipID = "REAPER"
 	RecyclerID      OChainSpaceshipID = "RECYCLER"
 )
+
+func GetSpaceshipIds() [12]OChainSpaceshipID {
+	return [12]OChainSpaceshipID{
+		SmallCargoID,
+		LargeCargoID,
+		LightFighterID,
+		HeavyFighterID,
+		CruiserID,
+		BattleshipID,
+		BattlecruiserID,
+		BomberID,
+		DestroyerID,
+		DeathstarID,
+		ReaperID,
+		RecyclerID,
+	}
+}
 
 type OChainDefenseID string
 

@@ -124,6 +124,26 @@ func (db *OChainSpaceshipTable) Delete(id string) error {
 	return db.currentTxn.Delete(key)
 }
 
+func (db *OChainSpaceshipTable) GetCargoOf(fleet types.OChainFleet) (uint64, error) {
+	var at uint64 = math.MaxUint64
+	return db.GetCargoOfAt(fleet, at)
+}
+
+func (db *OChainSpaceshipTable) GetCargoOfAt(fleet types.OChainFleet, at uint64) (uint64, error) {
+
+	spaceships, err := db.GetAllAt(at)
+	if err != nil {
+		return 0, err
+	}
+
+	var cargo uint64 = 0
+	for _, spaceship := range spaceships {
+		cargo += spaceship.Stats.Capacity * fleet.GetSpaceships(spaceship.Id)
+	}
+
+	return cargo, nil
+}
+
 func (db *OChainSpaceshipTable) GetAll() ([]types.OChainSpaceship, error) {
 	var at uint64 = math.MaxUint64
 	return db.GetAllAt(at)
