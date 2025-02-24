@@ -2,9 +2,9 @@ package engine
 
 import (
 	abcitypes "github.com/cometbft/cometbft/abci/types"
-	"github.com/ochain-gg/ochain-network/transactions"
-	game_transactions "github.com/ochain-gg/ochain-network/transactions/game"
-	validator_transactions "github.com/ochain-gg/ochain-network/transactions/validator"
+	"github.com/ochain-gg/ochain-network/engine/transactions"
+	planet_transactions "github.com/ochain-gg/ochain-network/engine/transactions/game/planet"
+	validator_transactions "github.com/ochain-gg/ochain-network/engine/transactions/validator"
 	"github.com/ochain-gg/ochain-network/types"
 )
 
@@ -44,7 +44,7 @@ func CheckSystemTx(ctx transactions.TransactionContext, req *abcitypes.CheckTxRe
 		return transaction.Check(ctx)
 
 	case transactions.ExecutePendingUpgrade:
-		transaction, err := game_transactions.ParseExecuteUpgradeTransaction(tx)
+		transaction, err := planet_transactions.ParseExecuteUpgradeTransaction(tx)
 		if err != nil {
 			return &abcitypes.CheckTxResponse{Code: types.ParsingTransactionDataError, GasWanted: 0, GasUsed: 0}
 		}

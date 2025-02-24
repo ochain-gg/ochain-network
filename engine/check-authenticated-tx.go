@@ -2,9 +2,9 @@ package engine
 
 import (
 	abcitypes "github.com/cometbft/cometbft/abci/types"
-	"github.com/ochain-gg/ochain-network/transactions"
-	account_transactions "github.com/ochain-gg/ochain-network/transactions/account"
-	game_transactions "github.com/ochain-gg/ochain-network/transactions/game"
+	"github.com/ochain-gg/ochain-network/engine/transactions"
+	account_transactions "github.com/ochain-gg/ochain-network/engine/transactions/account"
+	planet_transactions "github.com/ochain-gg/ochain-network/engine/transactions/game/planet"
 	"github.com/ochain-gg/ochain-network/types"
 )
 
@@ -85,7 +85,7 @@ func CheckAuthenticatedTx(ctx transactions.TransactionContext, req *abcitypes.Ch
 
 	case transactions.StartBuildingUpgrade:
 
-		transaction, err := game_transactions.ParseUpgradeBuildingTransaction(tx)
+		transaction, err := planet_transactions.ParseUpgradeBuildingTransaction(tx)
 		if err != nil {
 			return &abcitypes.CheckTxResponse{Code: types.ParsingTransactionDataError, GasWanted: 0, GasUsed: 0}
 		}
@@ -94,7 +94,7 @@ func CheckAuthenticatedTx(ctx transactions.TransactionContext, req *abcitypes.Ch
 
 	case transactions.StartTechnologyUpgrade:
 
-		transaction, err := game_transactions.ParseUpgradeTechnologyTransaction(tx)
+		transaction, err := planet_transactions.ParseUpgradeTechnologyTransaction(tx)
 		if err != nil {
 			return &abcitypes.CheckTxResponse{Code: types.ParsingTransactionDataError, GasWanted: 0, GasUsed: 0}
 		}
@@ -102,7 +102,7 @@ func CheckAuthenticatedTx(ctx transactions.TransactionContext, req *abcitypes.Ch
 		return transaction.Check(ctx)
 	case transactions.Build:
 
-		transaction, err := game_transactions.ParseBuildTransaction(tx)
+		transaction, err := planet_transactions.ParseBuildTransaction(tx)
 		if err != nil {
 			return &abcitypes.CheckTxResponse{Code: types.ParsingTransactionDataError, GasWanted: 0, GasUsed: 0}
 		}

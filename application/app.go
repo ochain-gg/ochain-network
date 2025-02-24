@@ -17,10 +17,10 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ochain-gg/ochain-network/config"
 	"github.com/ochain-gg/ochain-network/contracts"
-	"github.com/ochain-gg/ochain-network/database"
 	"github.com/ochain-gg/ochain-network/engine"
+	"github.com/ochain-gg/ochain-network/engine/database"
+	"github.com/ochain-gg/ochain-network/engine/transactions"
 	"github.com/ochain-gg/ochain-network/queries"
-	"github.com/ochain-gg/ochain-network/transactions"
 	"github.com/ochain-gg/ochain-network/types"
 )
 

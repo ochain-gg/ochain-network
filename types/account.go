@@ -171,6 +171,8 @@ type OChainUniverseAccount struct {
 	CreatedAt          int64                     `cbor:"7,keyasint"`
 
 	LastOCTWithdrawalAt int64 `cbor:"8,keyasint"`
+
+	AllianceMemberOf string `cbor:"9,keyasint"`
 }
 
 type OChainUniverseAccountWeeklyUsage struct {

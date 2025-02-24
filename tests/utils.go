@@ -6,7 +6,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ochain-gg/ochain-network/application"
 	ochainCfg "github.com/ochain-gg/ochain-network/config"
-	"github.com/ochain-gg/ochain-network/database"
+	"github.com/ochain-gg/ochain-network/engine/database"
 )
 
 func NewOChainTestingApplication() (*application.OChainApplication, error) {

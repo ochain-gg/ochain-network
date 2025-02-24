@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/fxamacker/cbor/v2"
-	"github.com/ochain-gg/ochain-network/database"
+	"github.com/ochain-gg/ochain-network/engine/database"
 	"github.com/ochain-gg/ochain-network/types"
 )
 

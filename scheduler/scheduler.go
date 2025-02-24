@@ -5,7 +5,7 @@ import (
 
 	"github.com/go-co-op/gocron/v2"
 	"github.com/ochain-gg/ochain-network/config"
-	"github.com/ochain-gg/ochain-network/database"
+	"github.com/ochain-gg/ochain-network/engine/database"
 )
 
 type OChainScheduler struct {

@@ -23,7 +23,7 @@ import (
 	nm "github.com/cometbft/cometbft/node"
 	"github.com/ochain-gg/ochain-network/application"
 	ochainCfg "github.com/ochain-gg/ochain-network/config"
-	"github.com/ochain-gg/ochain-network/database"
+	"github.com/ochain-gg/ochain-network/engine/database"
 	"github.com/ochain-gg/ochain-network/scheduler"
 	"github.com/spf13/viper"
 )
