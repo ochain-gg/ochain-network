@@ -20,7 +20,20 @@ type OChainAlliance struct {
 	Name       string `cbor:"3,keyasint"`
 
 	Level   uint64                 `cbor:"4,keyasint"`
-	Members []OChainAllianceMember `cbor:"4,keyasint"`
+	Members []OChainAllianceMember `cbor:"5,keyasint"`
+	Deleted bool                   `cbor:"6,keyasint"`
+}
+
+type OChainAllianceJoinRequest struct {
+	Id         string `cbor:"1,keyasint"`
+	From       string `cbor:"2,keyasint"`
+	AllianceId string `cbor:"3,keyasint"`
+
+	Accepted    bool   `cbor:"4,keyasint"`
+	Canceled    bool   `cbor:"5,keyasint"`
+	RequestedAt int64  `cbor:"6,keyasint"`
+	AnsweredAt  int64  `cbor:"7,keyasint"`
+	AnsweredBy  string `cbor:"8,keyasint"`
 }
 
 func (alliance *OChainAlliance) IsMember(address string) (bool, OChainAllianceMemberType) {

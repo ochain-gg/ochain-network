@@ -50,8 +50,6 @@ func (tx *UpgradeBuildingTransaction) Check(ctx t.TransactionContext) *abcitypes
 		}
 	}
 
-	//TODO: Check if the technology is not actually upgrading on an other planet
-
 	account, err := ctx.Db.UniverseAccounts.GetAt(tx.Data.Universe, tx.From, uint64(ctx.Date.Unix()))
 	if err != nil {
 		log.Println("EXECUTE UPGRADE START ERROR: " + err.Error())
@@ -168,13 +166,6 @@ func (tx *UpgradeBuildingTransaction) Execute(ctx t.TransactionContext) *abcityp
 
 	log.Println("EXECUTE UPGRADE START ON:")
 	log.Println(building)
-
-	ok := building.MeetRequirements(planet, account)
-	if !ok {
-		return &abcitypes.ExecTxResult{
-			Code: types.InvalidTransactionError,
-		}
-	}
 
 	upgradeToLevel := planet.BuildingLevel(building.Id) + 1
 	upgradeCost := building.GetUpgradeCost(upgradeToLevel)

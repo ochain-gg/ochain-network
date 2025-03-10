@@ -199,6 +199,7 @@ func (tx *CreateFleetTransaction) Execute(ctx t.TransactionContext) *abcitypes.E
 		}
 	}
 
+	//TODO: Check if id already exists
 	fleetId := crypto.Keccak256([]byte(tx.From + fmt.Sprint(tx.Nonce) + fmt.Sprint(ctx.Date.Unix())))
 	fleet := types.OChainFleet{
 		Id:   hex.EncodeToString(fleetId),

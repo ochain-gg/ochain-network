@@ -20,11 +20,11 @@ type OChainDatabase struct {
 	Defenses                   *OChainDefenseTable
 	Spaceships                 *OChainSpaceshipTable
 	Fleets                     *OChainFleetTable
+	Alliance                   *OChainAllianceTable
 	ResourcesMarket            *OChainResourcesMarketTable
 	UniverseAccountWeeklyUsage *OChainUniverseAccountWeeklyUsageTable
 	Upgrades                   *OChainUpgradeTable
-	// Fleets                 *OChainFleetTable
-	State *OChainStateTable
+	State                      *OChainStateTable
 }
 
 func (db *OChainDatabase) Open(path string) error {
@@ -60,6 +60,7 @@ func (db *OChainDatabase) LoadTables() {
 	db.UniverseAccountWeeklyUsage = NewOChainUniverseAccountWeeklyUsageTable(db.DB)
 	db.Upgrades = NewOChainUpgradeTable(db.DB)
 	db.Fleets = NewFleetTable(db.DB)
+	db.Alliance = NewOChainAllianceTable(db.DB)
 	db.State = NewOChainStateTable(db.DB)
 }
 
@@ -81,7 +82,8 @@ func (db *OChainDatabase) NewTransaction(ts uint64) {
 	db.ResourcesMarket.SetCurrentTxn(db.CurrentTxn)
 	db.UniverseAccountWeeklyUsage.SetCurrentTxn(db.CurrentTxn)
 	db.Upgrades.SetCurrentTxn(db.CurrentTxn)
-	// db.Fleets.SetCurrentTxn(db.CurrentTxn)
+	db.Fleets.SetCurrentTxn(db.CurrentTxn)
+	db.Alliance.SetCurrentTxn(db.CurrentTxn)
 	db.State.SetCurrentTxn(db.CurrentTxn)
 }
 
