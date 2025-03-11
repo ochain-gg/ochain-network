@@ -13,9 +13,11 @@ import (
 )
 
 type CreateAllianceTransactionData struct {
-	Name               string `cbor:"1,keyasint"`
-	UniverseId         string `cbor:"2,keyasint"`
-	PlanetCoordinateId string `cbor:"3,keyasint"`
+	UniverseId         string `cbor:"1,keyasint"`
+	PlanetCoordinateId string `cbor:"2,keyasint"`
+	Name               string `cbor:"3,keyasint"`
+	Description        string `cbor:"4,keyasint"`
+	Tag                string `cbor:"5,keyasint"`
 }
 
 type CreateAllianceTransaction struct {
@@ -145,12 +147,14 @@ func (tx *CreateAllianceTransaction) Execute(ctx t.TransactionContext) *abcitype
 
 	allianceId := crypto.Keccak256([]byte(tx.From + fmt.Sprint(tx.Nonce) + fmt.Sprint(ctx.Date.Unix())))
 	alliance := types.OChainAlliance{
-		Id:         hex.EncodeToString(allianceId),
-		UniverseId: tx.Data.UniverseId,
-		Name:       tx.Data.Name,
-		Level:      1,
-		Members:    members,
-		Deleted:    false,
+		Id:          hex.EncodeToString(allianceId),
+		UniverseId:  tx.Data.UniverseId,
+		Name:        tx.Data.Name,
+		Description: tx.Data.Description,
+		Tag:         tx.Data.Tag,
+		Level:       1,
+		Members:     members,
+		Deleted:     false,
 	}
 
 	account.AllianceMemberOf = alliance.Id
@@ -194,6 +198,9 @@ func (tx *CreateAllianceTransaction) Execute(ctx t.TransactionContext) *abcitype
 			Attributes: []abcitypes.EventAttribute{
 				{Key: "account", Value: tx.From, Index: true},
 				{Key: "universe", Value: tx.Data.UniverseId, Index: true},
+				{Key: "name", Value: tx.Data.Name, Index: true},
+				{Key: "description", Value: tx.Data.Description, Index: true},
+				{Key: "tag", Value: tx.Data.Tag, Index: true},
 				{Key: "allianceId", Value: alliance.Id},
 			},
 		},

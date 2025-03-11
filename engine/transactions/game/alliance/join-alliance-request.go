@@ -61,7 +61,7 @@ func (tx *JoinAllianceRequestTransaction) Check(ctx t.TransactionContext) *abcit
 	}
 
 	// Check if alliance exists
-	_, err = ctx.Db.Alliance.GetAt(tx.Data.AllianceId, uint64(ctx.Date.Unix()))
+	alliance, err := ctx.Db.Alliance.GetAt(tx.Data.AllianceId, uint64(ctx.Date.Unix()))
 	if err != nil {
 		return &abcitypes.CheckTxResponse{
 			Code: types.InvalidTransactionError,
@@ -71,6 +71,12 @@ func (tx *JoinAllianceRequestTransaction) Check(ctx t.TransactionContext) *abcit
 	// Check if player already has a pending request
 	hasRequest, err := ctx.Db.Alliance.HasPendingRequestAt(tx.From, uint64(ctx.Date.Unix()))
 	if err != nil || hasRequest {
+		return &abcitypes.CheckTxResponse{
+			Code: types.InvalidTransactionError,
+		}
+	}
+
+	if alliance.GetMaxAllianceSize() >= uint64(len(alliance.Members)) {
 		return &abcitypes.CheckTxResponse{
 			Code: types.InvalidTransactionError,
 		}

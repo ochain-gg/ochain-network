@@ -1,5 +1,7 @@
 package types
 
+import "math"
+
 type OChainAllianceMemberType uint64
 
 const (
@@ -15,13 +17,15 @@ type OChainAllianceMember struct {
 }
 
 type OChainAlliance struct {
-	Id         string `cbor:"1,keyasint"`
-	UniverseId string `cbor:"2,keyasint"`
-	Name       string `cbor:"3,keyasint"`
+	Id          string `cbor:"1,keyasint"`
+	UniverseId  string `cbor:"2,keyasint"`
+	Tag         string `cbor:"3,keyasint"`
+	Name        string `cbor:"4,keyasint"`
+	Description string `cbor:"5,keyasint"`
 
-	Level   uint64                 `cbor:"4,keyasint"`
-	Members []OChainAllianceMember `cbor:"5,keyasint"`
-	Deleted bool                   `cbor:"6,keyasint"`
+	Level   uint64                 `cbor:"6,keyasint"`
+	Members []OChainAllianceMember `cbor:"7,keyasint"`
+	Deleted bool                   `cbor:"8,keyasint"`
 }
 
 type OChainAllianceJoinRequest struct {
@@ -34,6 +38,10 @@ type OChainAllianceJoinRequest struct {
 	RequestedAt int64  `cbor:"6,keyasint"`
 	AnsweredAt  int64  `cbor:"7,keyasint"`
 	AnsweredBy  string `cbor:"8,keyasint"`
+}
+
+func (alliance *OChainAlliance) GetMaxAllianceSize() uint64 {
+	return uint64(math.Pow(2, float64(3+alliance.Level)))
 }
 
 func (alliance *OChainAlliance) IsMember(address string) (bool, OChainAllianceMemberType) {
@@ -58,6 +66,22 @@ func (alliance *OChainAlliance) RemoveMember(address string) {
 	for _, member := range alliance.Members {
 		if address != member.Address {
 			newMemberList = append(newMemberList, member)
+		}
+	}
+
+	alliance.Members = newMemberList
+}
+
+func (alliance *OChainAlliance) ChangeRole(address string, role OChainAllianceMemberType) {
+	newMemberList := []OChainAllianceMember{}
+	for _, member := range alliance.Members {
+		if address != member.Address {
+			newMemberList = append(newMemberList, member)
+		} else {
+			newMemberList = append(newMemberList, OChainAllianceMember{
+				Address: address,
+				Role:    member.Role,
+			})
 		}
 	}
 

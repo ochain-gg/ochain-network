@@ -96,6 +96,12 @@ func (tx *AnswerJoinAllianceRequestTransaction) Check(ctx t.TransactionContext) 
 				Code: types.InvalidTransactionError,
 			}
 		}
+
+		if alliance.GetMaxAllianceSize() >= uint64(len(alliance.Members)) {
+			return &abcitypes.CheckTxResponse{
+				Code: types.InvalidTransactionError,
+			}
+		}
 	}
 
 	return &abcitypes.CheckTxResponse{
