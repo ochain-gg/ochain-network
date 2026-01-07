@@ -14,9 +14,9 @@ services:
       - LOG=${LOG:-tendermint.log}
     command: [
       "-config", "/config",
-      "-chainId", "https://ethereum-sepolia.core.chainstack.com/ddf6b01951847ded1aac7e14b82c5b0c",
-      "-evmRpc", "11155111",
-      "-portalAddress", "0x4Dd9d772C67fbC858918f364E5CB9e0B6E53Fd44",
+      "-chainId", "84532",
+      "-evmRpc", "https://base-sepolia.g.alchemy.com/v2/xBenb5WixfhG7vmhwV7tnOI6Iy9LytSw",
+      "-portalAddress", "0x629c04197012af8e1c4eb92DF8CdA1ed71774488",
     ]
     volumes:
       - ./docker-data/node0:/data

@@ -108,6 +108,14 @@ func CheckAuthenticatedTx(ctx transactions.TransactionContext, req *abcitypes.Ch
 		}
 
 		return transaction.Check(ctx)
+	case transactions.SwapResources:
+
+		transaction, err := planet_transactions.ParseSwapResourcesTransaction(tx)
+		if err != nil {
+			return &abcitypes.CheckTxResponse{Code: types.ParsingTransactionDataError, GasWanted: 0, GasUsed: 0}
+		}
+
+		return transaction.Check(ctx)
 	}
 
 	return &abcitypes.CheckTxResponse{Code: types.NotImplemented, GasWanted: 0, GasUsed: 0}

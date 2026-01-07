@@ -401,18 +401,20 @@ type OChainSpaceshipID string
 type OChainSpaceshipList [12]OChainSpaceshipID
 
 const (
-	SmallCargoID    OChainSpaceshipID = "SMALL_CARGO"
-	LargeCargoID    OChainSpaceshipID = "LARGE_CARGO"
-	LightFighterID  OChainSpaceshipID = "LIGHT_FIGHTER"
-	HeavyFighterID  OChainSpaceshipID = "HEAVY_FIGHTER"
-	CruiserID       OChainSpaceshipID = "CRUISER"
-	BattleshipID    OChainSpaceshipID = "BATTLESHIP"
+	SmallCargoID   OChainSpaceshipID = "SMALL_CARGO"
+	LargeCargoID   OChainSpaceshipID = "LARGE_CARGO"
+	LightFighterID OChainSpaceshipID = "LIGHT_FIGHTER"
+	HeavyFighterID OChainSpaceshipID = "HEAVY_FIGHTER"
+	DeathstarID    OChainSpaceshipID = "DEATHSTAR"
+	RecyclerID     OChainSpaceshipID = "RECYCLER"
+	BattleshipID   OChainSpaceshipID = "BATTLESHIP"
+	CruiserID      OChainSpaceshipID = "CRUISER"
+
 	BattlecruiserID OChainSpaceshipID = "BATTLECRUISER"
 	BomberID        OChainSpaceshipID = "BOMBER"
 	DestroyerID     OChainSpaceshipID = "DESTROYER"
-	DeathstarID     OChainSpaceshipID = "DEATHSTAR"
-	ReaperID        OChainSpaceshipID = "REAPER"
-	RecyclerID      OChainSpaceshipID = "RECYCLER"
+
+	ReaperID OChainSpaceshipID = "REAPER"
 )
 
 func GetSpaceshipIds() [12]OChainSpaceshipID {

@@ -115,23 +115,23 @@ func (market *OChainResourcesMarket) SwapResources(from MarketResourceID, to Mar
 func (market *OChainResourcesMarket) calculateCurvedMintReturn(resourceId MarketResourceID, amount uint64) (uint64, error) {
 	switch resourceId {
 	case MetalResourceID:
-		mintAmount, err := calculatePurchaseReturn(market.MetalSupplyMinted, market.MetalPoolBalance, market.MetalReserveRatio, amount)
-		if err != nil {
-			return 0, err
+		mintAmount := calculatePurchaseReturn(market.MetalSupplyMinted, market.MetalPoolBalance, market.MetalReserveRatio, amount)
+		if mintAmount == 0 {
+			return 0, errors.New("returned amount is 0")
 		}
 
 		return mintAmount, nil
 	case CrystalResourceID:
-		mintAmount, err := calculatePurchaseReturn(market.CrystalSupplyMinted, market.CrystalPoolBalance, market.CrystalReserveRatio, amount)
-		if err != nil {
-			return 0, err
+		mintAmount := calculatePurchaseReturn(market.CrystalSupplyMinted, market.CrystalPoolBalance, market.CrystalReserveRatio, amount)
+		if mintAmount == 0 {
+			return 0, errors.New("returned amount is 0")
 		}
 
 		return mintAmount, nil
 	case DeuteriumResourceID:
-		mintAmount, err := calculatePurchaseReturn(market.DeuteriumSupplyMinted, market.DeuteriumPoolBalance, market.DeuteriumReserveRatio, amount)
-		if err != nil {
-			return 0, err
+		mintAmount := calculatePurchaseReturn(market.DeuteriumSupplyMinted, market.DeuteriumPoolBalance, market.DeuteriumReserveRatio, amount)
+		if mintAmount == 0 {
+			return 0, errors.New("returned amount is 0")
 		}
 
 		return mintAmount, nil
@@ -144,23 +144,23 @@ func (market *OChainResourcesMarket) calculateCurvedBurnReturn(resourceId Market
 
 	switch resourceId {
 	case MetalResourceID:
-		returnedAmount, err := calculateSaleReturn(market.MetalSupplyMinted, market.MetalPoolBalance, market.MetalReserveRatio, amount)
-		if err != nil {
-			return 0, err
+		returnedAmount := calculateSaleReturn(market.MetalSupplyMinted, market.MetalPoolBalance, market.MetalReserveRatio, amount)
+		if returnedAmount == 0 {
+			return 0, errors.New("returned amount is 0")
 		}
 
 		return returnedAmount, nil
 	case CrystalResourceID:
-		returnedAmount, err := calculateSaleReturn(market.CrystalSupplyMinted, market.CrystalPoolBalance, market.CrystalReserveRatio, amount)
-		if err != nil {
-			return 0, err
+		returnedAmount := calculateSaleReturn(market.CrystalSupplyMinted, market.CrystalPoolBalance, market.CrystalReserveRatio, amount)
+		if returnedAmount == 0 {
+			return 0, errors.New("returned amount is 0")
 		}
 
 		return returnedAmount, nil
 	case DeuteriumResourceID:
-		returnedAmount, err := calculateSaleReturn(market.DeuteriumSupplyMinted, market.DeuteriumPoolBalance, market.DeuteriumReserveRatio, amount)
-		if err != nil {
-			return 0, err
+		returnedAmount := calculateSaleReturn(market.DeuteriumSupplyMinted, market.DeuteriumPoolBalance, market.DeuteriumReserveRatio, amount)
+		if returnedAmount == 0 {
+			return 0, errors.New("returned amount is 0")
 		}
 
 		return returnedAmount, nil
@@ -240,17 +240,12 @@ func (market *OChainResourcesMarket) curvedBurn(resourceId MarketResourceID, amo
   - @return purchase return amount: supply * ((1 + _depositAmount / _reserveBalance) ^ (_reserveRatio / MAX_RESERVE_RATIO) - 1)
     PurchaseReturn = ContinuousTokenSupply * ((1 + ReserveTokensReceived / ReserveTokenBalance) ^ (ReserveRatio - 1)
 */
-func calculatePurchaseReturn(supply uint64, reserveBalance uint64, reserveRatio float64, amount uint64) (uint64, error) {
-	if reserveRatio == 1 {
-		return supply * amount / reserveBalance, nil
+func calculatePurchaseReturn(supply uint64, reserveBalance uint64, reserveRatio float64, amount uint64) uint64 {
+	if reserveBalance == 0 || supply == 0 || reserveRatio == 0 {
+		return 0
 	}
 
-	return uint64(
-		float64(supply) * math.Pow(
-			(1+float64(amount))/float64(reserveBalance),
-			reserveRatio-1,
-		),
-	), nil
+	return uint64(float64(supply) * (math.Pow(1+(float64(amount)/float64(reserveBalance)), reserveRatio) - 1))
 }
 
 /**
@@ -267,10 +262,13 @@ func calculatePurchaseReturn(supply uint64, reserveBalance uint64, reserveRatio 
  *
  * @return sale return amount
  */
-func calculateSaleReturn(supply uint64, reserveBalance uint64, reserveRatio float64, amount uint64) (uint64, error) {
-	return uint64(
-		float64(reserveBalance) * (1 - math.Pow(1.0-float64(amount)/float64(supply), 1/reserveRatio)),
-	), nil
+func calculateSaleReturn(supply uint64, reserveBalance uint64, reserveRatio float64, amount uint64) uint64 {
+
+	if reserveBalance == 0 || supply == 0 || reserveRatio == 0 || amount > supply {
+		return 0
+	}
+
+	return uint64(float64(reserveBalance) * (1 - math.Pow(1-float64(amount)/float64(supply), 1/reserveRatio)))
 }
 
 // Continuous Token Price = Reserve Token Balance / (Continuous Token Supply x Reserve Ratio)

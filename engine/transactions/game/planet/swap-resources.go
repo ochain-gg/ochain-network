@@ -2,6 +2,7 @@ package planet_transactions
 
 import (
 	"fmt"
+	"log"
 
 	abcitypes "github.com/cometbft/cometbft/abci/types"
 	"github.com/fxamacker/cbor/v2"
@@ -44,12 +45,18 @@ func (tx *SwapResourcesTransaction) Transaction() (t.Transaction, error) {
 
 func (tx *SwapResourcesTransaction) Check(ctx t.TransactionContext) *abcitypes.CheckTxResponse {
 
+	log.Println("Start check tx")
+	log.Println(tx.Data.Universe)
+	log.Println(tx.From)
+
 	account, err := ctx.Db.UniverseAccounts.GetAt(tx.Data.Universe, tx.From, uint64(ctx.Date.Unix()))
 	if err != nil {
 		return &abcitypes.CheckTxResponse{
 			Code: types.InvalidTransactionError,
 		}
 	}
+
+	log.Println("account is loaded")
 
 	universe, err := ctx.Db.Universes.GetAt(tx.Data.Universe, uint64(ctx.Date.Unix()))
 	if err != nil {
@@ -58,6 +65,8 @@ func (tx *SwapResourcesTransaction) Check(ctx t.TransactionContext) *abcitypes.C
 		}
 	}
 
+	log.Println("universe is loaded")
+
 	planet, err := ctx.Db.Planets.GetAt(tx.Data.Universe, tx.Data.Planet, uint64(ctx.Date.Unix()))
 	if err != nil {
 		return &abcitypes.CheckTxResponse{
@@ -65,7 +74,10 @@ func (tx *SwapResourcesTransaction) Check(ctx t.TransactionContext) *abcitypes.C
 		}
 	}
 
+	log.Println("planet is loaded")
+
 	planet.UpdateResources(universe.Speed, int64(ctx.Date.Unix()), account)
+	log.Println("resources is updated")
 
 	switch tx.Data.From {
 	case types.OCTResourceID:
@@ -98,7 +110,11 @@ func (tx *SwapResourcesTransaction) Check(ctx t.TransactionContext) *abcitypes.C
 		}
 	}
 
-	return nil
+	log.Println("check fine")
+
+	return &abcitypes.CheckTxResponse{
+		Code: types.NoError,
+	}
 }
 
 func (tx *SwapResourcesTransaction) Execute(ctx t.TransactionContext) *abcitypes.ExecTxResult {

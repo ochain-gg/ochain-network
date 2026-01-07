@@ -14,6 +14,11 @@ func FinalizeTx(ctx transactions.TransactionContext, tx []byte) (*abcitypes.Exec
 	log.Println("FINALIZE TX DATA RECEIVED: ", string(tx))
 
 	txBytes, err := hex.DecodeString(string(tx))
+	if err != nil {
+		log.Println("finalize tx failed: " + err.Error())
+		return &abcitypes.ExecTxResult{Code: types.ParsingTransactionError}, nil
+	}
+
 	transac, err := transactions.ParseTransaction(txBytes)
 	if err != nil {
 		log.Println("finalize tx failed: " + err.Error())

@@ -160,17 +160,17 @@ func (app *OChainApplication) InitChain(_ context.Context, chain *abcitypes.Init
 		UniverseId: mainUniverse.Id,
 		FeesRate:   200,
 
-		MetalReserveRatio: float64(0.9),
-		MetalPoolBalance:  uint64(100_000),        // 100k token for this reserve
-		MetalSupplyMinted: uint64(10_000_000_000), // 10B minted at init
+		MetalReserveRatio: float64(0.5),
+		MetalPoolBalance:  uint64(100_000_000_000_000), // 1M token for this reserve
+		MetalSupplyMinted: uint64(1_000_000_000),       // 400B minted at init
 
-		CrystalReserveRatio: float64(0.9),
-		CrystalPoolBalance:  uint64(100_000_000_000_000), // 100k token for this reserve
-		CrystalSupplyMinted: uint64(5_000_000_000),       // 5B minted at init
+		CrystalReserveRatio: float64(0.5),
+		CrystalPoolBalance:  uint64(100_000_000_000_000), // 1M token for this reserve
+		CrystalSupplyMinted: uint64(800_000_000),         // 500B minted at init
 
-		DeuteriumReserveRatio: float64(0.9),
-		DeuteriumPoolBalance:  uint64(100_000_000_000_000), // 100k token for this reserve
-		DeuteriumSupplyMinted: uint64(2_000_000_000),       // 2B minted at init
+		DeuteriumReserveRatio: float64(0.5),
+		DeuteriumPoolBalance:  uint64(100_000_000_000_000), // 1M token for this reserve
+		DeuteriumSupplyMinted: uint64(200_000_000),         // 1T minted at init
 	}
 
 	mainUniverse.ResourcesMarketEnabled = true
@@ -221,7 +221,7 @@ func (app *OChainApplication) FinalizeBlock(_ context.Context, req *abcitypes.Fi
 		execTxResult, valUpdates := engine.FinalizeTx(txCtx, tx)
 
 		txs[i] = execTxResult
-		for i := 0; i < len(valUpdates); i++ {
+		for i := range valUpdates {
 			app.ValUpdates = append(app.ValUpdates, valUpdates[i])
 		}
 

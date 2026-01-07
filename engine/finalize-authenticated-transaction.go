@@ -140,6 +140,20 @@ func FinalizeAuthenticatedTx(ctx transactions.TransactionContext, tx transaction
 
 		return transaction.Execute(ctx), valUpdates
 
+	case transactions.SwapResources:
+
+		transaction, err := planet_transactions.ParseSwapResourcesTransaction(tx)
+		if err != nil {
+			return &abcitypes.ExecTxResult{Code: types.ParsingTransactionDataError}, valUpdates
+		}
+
+		checkResult := transaction.Check(ctx)
+		if checkResult.Code != types.NoError {
+			return &abcitypes.ExecTxResult{Code: checkResult.Code, GasWanted: 0, GasUsed: 0}, valUpdates
+		}
+
+		return transaction.Execute(ctx), valUpdates
+
 	}
 
 	return &abcitypes.ExecTxResult{Code: types.NotImplemented, GasWanted: 0}, valUpdates

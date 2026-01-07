@@ -39,6 +39,9 @@ func ResolveGetSwapRateQuery(q []byte, db *database.OChainDatabase) ([]byte, err
 	}
 
 	amountOut, err := market.GetSwapAmountOut(parameters.From, parameters.To, parameters.Amount)
+	if err != nil {
+		return []byte(""), err
+	}
 
 	result, err := cbor.Marshal(GetSwapRateQueryResponse{
 		UniverseId: parameters.UniverseId,
