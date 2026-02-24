@@ -31,6 +31,10 @@ type RegisterAccountTransaction struct {
 	Signature []byte                         `cbor:"5,keyasint"`
 }
 
+func (tx *RegisterAccountTransaction) GetType() t.TransactionType {
+	return t.RegisterAccount
+}
+
 func (tx *RegisterAccountTransaction) Transaction() (t.Transaction, error) {
 	txData, err := cbor.Marshal(tx.Data)
 	if err != nil {
@@ -196,19 +200,29 @@ func (tx *RegisterAccountTransaction) Execute(ctx t.TransactionContext) *abcityp
 	}
 }
 
-func ParseRegisterAccountTransaction(tx t.Transaction) (RegisterAccountTransaction, error) {
+func ParseRegisterAccountTransaction(tx t.Transaction) (*RegisterAccountTransaction, error) {
 	var txData RegisterAccountTransactionData
 	err := cbor.Unmarshal(tx.Data, &txData)
 
 	if err != nil {
-		return RegisterAccountTransaction{}, err
+		log.Printf("[ParseRegisterAccountTransaction] CBOR unmarshal error: %v", err)
+		log.Printf("[ParseRegisterAccountTransaction] Transaction data length: %d bytes", len(tx.Data))
+		log.Printf("[ParseRegisterAccountTransaction] Transaction data (hex): %x", tx.Data)
+		return nil, fmt.Errorf("failed to unmarshal transaction data: %w", err)
 	}
 
-	return RegisterAccountTransaction{
+	log.Printf("[ParseRegisterAccountTransaction] Successfully parsed transaction for address: %s", txData.Address)
+
+	return &RegisterAccountTransaction{
 		Type:      tx.Type,
 		From:      tx.From,
 		Nonce:     tx.Nonce,
 		Data:      txData,
 		Signature: tx.Signature,
 	}, nil
+}
+
+// ParseRegisterAccountTransactionHandler is a wrapper that returns ITransactionHandler for registry
+func ParseRegisterAccountTransactionHandler(tx t.Transaction) (t.ITransactionHandler, error) {
+	return ParseRegisterAccountTransaction(tx)
 }

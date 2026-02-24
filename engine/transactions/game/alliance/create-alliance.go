@@ -28,6 +28,10 @@ type CreateAllianceTransaction struct {
 	Signature []byte                        `cbor:"5,keyasint"`
 }
 
+func (tx *CreateAllianceTransaction) GetType() t.TransactionType {
+	return t.CreateAlliance
+}
+
 func (tx *CreateAllianceTransaction) Transaction() (t.Transaction, error) {
 	txData, err := cbor.Marshal(tx.Data)
 	if err != nil {
@@ -215,19 +219,24 @@ func (tx *CreateAllianceTransaction) Execute(ctx t.TransactionContext) *abcitype
 	}
 }
 
-func ParseCreateAllianceTransaction(tx t.Transaction) (CreateAllianceTransaction, error) {
+func ParseCreateAllianceTransaction(tx t.Transaction) (*CreateAllianceTransaction, error) {
 	var txData CreateAllianceTransactionData
 	err := cbor.Unmarshal(tx.Data, &txData)
 
 	if err != nil {
-		return CreateAllianceTransaction{}, err
+		return nil, err
 	}
 
-	return CreateAllianceTransaction{
+	return &CreateAllianceTransaction{
 		Type:      tx.Type,
 		From:      tx.From,
 		Nonce:     tx.Nonce,
 		Data:      txData,
 		Signature: tx.Signature,
 	}, nil
+}
+
+// ParseCreateAllianceTransactionHandler is a wrapper that returns ITransactionHandler for registry
+func ParseCreateAllianceTransactionHandler(tx t.Transaction) (t.ITransactionHandler, error) {
+	return ParseCreateAllianceTransaction(tx)
 }

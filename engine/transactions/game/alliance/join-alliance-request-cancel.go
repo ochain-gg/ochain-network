@@ -20,6 +20,10 @@ type CancelJoinAllianceRequestTransaction struct {
 	Signature []byte                                   `cbor:"5,keyasint"`
 }
 
+func (tx *CancelJoinAllianceRequestTransaction) GetType() t.TransactionType {
+	return t.CancelJoinAllianceRequest
+}
+
 func (tx *CancelJoinAllianceRequestTransaction) Transaction() (t.Transaction, error) {
 	txData, err := cbor.Marshal(tx.Data)
 	if err != nil {
@@ -116,19 +120,24 @@ func (tx *CancelJoinAllianceRequestTransaction) Execute(ctx t.TransactionContext
 	}
 }
 
-func ParseCancelJoinAllianceRequestTransaction(tx t.Transaction) (CancelJoinAllianceRequestTransaction, error) {
+func ParseCancelJoinAllianceRequestTransaction(tx t.Transaction) (*CancelJoinAllianceRequestTransaction, error) {
 	var txData CancelJoinAllianceRequestTransactionData
 	err := cbor.Unmarshal(tx.Data, &txData)
 
 	if err != nil {
-		return CancelJoinAllianceRequestTransaction{}, err
+		return nil, err
 	}
 
-	return CancelJoinAllianceRequestTransaction{
+	return &CancelJoinAllianceRequestTransaction{
 		Type:      tx.Type,
 		From:      tx.From,
 		Nonce:     tx.Nonce,
 		Data:      txData,
 		Signature: tx.Signature,
 	}, nil
+}
+
+// ParseCancelJoinAllianceRequestTransactionHandler is a wrapper that returns ITransactionHandler for registry
+func ParseCancelJoinAllianceRequestTransactionHandler(tx t.Transaction) (t.ITransactionHandler, error) {
+	return ParseCancelJoinAllianceRequestTransaction(tx)
 }

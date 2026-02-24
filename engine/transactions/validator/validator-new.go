@@ -25,6 +25,10 @@ type OChainNewValidatorTransaction struct {
 	Data OChainNewValidatorTransactionData
 }
 
+func (tx *OChainNewValidatorTransaction) GetType() t.TransactionType {
+	return t.NewValidator
+}
+
 func (tx *OChainNewValidatorTransaction) Check(ctx t.TransactionContext) *abcitypes.CheckTxResponse {
 
 	client, err := ethclient.Dial(ctx.Config.EVMRpc)
@@ -190,17 +194,22 @@ func (tx *OChainNewValidatorTransaction) Transaction() (t.Transaction, error) {
 	}, nil
 }
 
-func ParseOChainNewValidatorTransaction(tx t.Transaction) (OChainNewValidatorTransaction, error) {
+func ParseOChainNewValidatorTransaction(tx t.Transaction) (*OChainNewValidatorTransaction, error) {
 
 	var txData OChainNewValidatorTransactionData
 	err := cbor.Unmarshal([]byte(tx.Data), &txData)
 
 	if err != nil {
-		return OChainNewValidatorTransaction{}, err
+		return nil, err
 	}
 
-	return OChainNewValidatorTransaction{
+	return &OChainNewValidatorTransaction{
 		Type: tx.Type,
 		Data: txData,
 	}, nil
+}
+
+// ParseOChainNewValidatorTransactionHandler is a wrapper that returns ITransactionHandler for registry
+func ParseOChainNewValidatorTransactionHandler(tx t.Transaction) (t.ITransactionHandler, error) {
+	return ParseOChainNewValidatorTransaction(tx)
 }

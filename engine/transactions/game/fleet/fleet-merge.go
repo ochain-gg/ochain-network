@@ -22,6 +22,10 @@ type MergeFleetTransaction struct {
 	Signature []byte                    `cbor:"5,keyasint"`
 }
 
+func (tx *MergeFleetTransaction) GetType() t.TransactionType {
+	return t.MergeFleets
+}
+
 func (tx *MergeFleetTransaction) Transaction() (t.Transaction, error) {
 	txData, err := cbor.Marshal(tx.Data)
 	if err != nil {
@@ -163,19 +167,24 @@ func (tx *MergeFleetTransaction) Execute(ctx t.TransactionContext) *abcitypes.Ex
 	}
 }
 
-func ParseMergeFleetTransaction(tx t.Transaction) (MergeFleetTransaction, error) {
+func ParseMergeFleetTransaction(tx t.Transaction) (*MergeFleetTransaction, error) {
 	var txData MergeFleetTransactionData
 	err := cbor.Unmarshal(tx.Data, &txData)
 
 	if err != nil {
-		return MergeFleetTransaction{}, err
+		return nil, err
 	}
 
-	return MergeFleetTransaction{
+	return &MergeFleetTransaction{
 		Type:      tx.Type,
 		From:      tx.From,
 		Nonce:     tx.Nonce,
 		Data:      txData,
 		Signature: tx.Signature,
 	}, nil
+}
+
+// ParseMergeFleetTransactionHandler is a wrapper that returns ITransactionHandler for registry
+func ParseMergeFleetTransactionHandler(tx t.Transaction) (t.ITransactionHandler, error) {
+	return ParseMergeFleetTransaction(tx)
 }

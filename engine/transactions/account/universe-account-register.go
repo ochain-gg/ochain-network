@@ -25,6 +25,10 @@ type RegisterUniverseAccountTransaction struct {
 	Signature []byte                                 `cbor:"5,keyasint"`
 }
 
+func (tx *RegisterUniverseAccountTransaction) GetType() t.TransactionType {
+	return t.RegisterUniverseAccount
+}
+
 func (tx *RegisterUniverseAccountTransaction) Transaction() (t.Transaction, error) {
 	txData, err := cbor.Marshal(tx.Data)
 	if err != nil {
@@ -306,19 +310,24 @@ func (tx *RegisterUniverseAccountTransaction) Execute(ctx t.TransactionContext) 
 	}
 }
 
-func ParseRegisterUniverseAccountTransaction(tx t.Transaction) (RegisterUniverseAccountTransaction, error) {
+func ParseRegisterUniverseAccountTransaction(tx t.Transaction) (*RegisterUniverseAccountTransaction, error) {
 	var txData RegisterUniverseAccountTransactionData
 	err := cbor.Unmarshal(tx.Data, &txData)
 
 	if err != nil {
-		return RegisterUniverseAccountTransaction{}, err
+		return nil, err
 	}
 
-	return RegisterUniverseAccountTransaction{
+	return &RegisterUniverseAccountTransaction{
 		Type:      tx.Type,
 		From:      tx.From,
 		Nonce:     tx.Nonce,
 		Data:      txData,
 		Signature: tx.Signature,
 	}, nil
+}
+
+// ParseRegisterUniverseAccountTransactionHandler is a wrapper that returns ITransactionHandler for registry
+func ParseRegisterUniverseAccountTransactionHandler(tx t.Transaction) (t.ITransactionHandler, error) {
+	return ParseRegisterUniverseAccountTransaction(tx)
 }

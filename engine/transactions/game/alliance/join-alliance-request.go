@@ -21,6 +21,10 @@ type JoinAllianceRequestTransaction struct {
 	Signature []byte                             `cbor:"5,keyasint"`
 }
 
+func (tx *JoinAllianceRequestTransaction) GetType() t.TransactionType {
+	return t.JoinAllianceRequest
+}
+
 func (tx *JoinAllianceRequestTransaction) Transaction() (t.Transaction, error) {
 	txData, err := cbor.Marshal(tx.Data)
 	if err != nil {
@@ -160,19 +164,24 @@ func (tx *JoinAllianceRequestTransaction) Execute(ctx t.TransactionContext) *abc
 	}
 }
 
-func ParseJoinAllianceRequestTransaction(tx t.Transaction) (JoinAllianceRequestTransaction, error) {
+func ParseJoinAllianceRequestTransaction(tx t.Transaction) (*JoinAllianceRequestTransaction, error) {
 	var txData JoinAllianceRequestTransactionData
 	err := cbor.Unmarshal(tx.Data, &txData)
 
 	if err != nil {
-		return JoinAllianceRequestTransaction{}, err
+		return nil, err
 	}
 
-	return JoinAllianceRequestTransaction{
+	return &JoinAllianceRequestTransaction{
 		Type:      tx.Type,
 		From:      tx.From,
 		Nonce:     tx.Nonce,
 		Data:      txData,
 		Signature: tx.Signature,
 	}, nil
+}
+
+// ParseJoinAllianceRequestTransactionHandler is a wrapper that returns ITransactionHandler for registry
+func ParseJoinAllianceRequestTransactionHandler(tx t.Transaction) (t.ITransactionHandler, error) {
+	return ParseJoinAllianceRequestTransaction(tx)
 }

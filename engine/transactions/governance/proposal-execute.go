@@ -23,6 +23,10 @@ type ExecuteProposalTransaction struct {
 	Signature []byte                          `cbor:"5,keyasint"`
 }
 
+func (tx *ExecuteProposalTransaction) GetType() t.TransactionType {
+	return t.ExecuteProposal
+}
+
 func (tx *ExecuteProposalTransaction) Transaction() (t.Transaction, error) {
 	txData, err := cbor.Marshal(tx.Data)
 	if err != nil {
@@ -396,19 +400,24 @@ func (tx *ExecuteProposalTransaction) Execute(ctx t.TransactionContext) *abcityp
 	}
 }
 
-func ParseExecuteProposalTransaction(tx t.Transaction) (ExecuteProposalTransaction, error) {
+func ParseExecuteProposalTransaction(tx t.Transaction) (*ExecuteProposalTransaction, error) {
 	var txData ExecuteProposalTransactionData
 	err := cbor.Unmarshal(tx.Data, &txData)
 
 	if err != nil {
-		return ExecuteProposalTransaction{}, err
+		return nil, err
 	}
 
-	return ExecuteProposalTransaction{
+	return &ExecuteProposalTransaction{
 		Type:      tx.Type,
 		From:      tx.From,
 		Nonce:     tx.Nonce,
 		Data:      txData,
 		Signature: tx.Signature,
 	}, nil
+}
+
+// ParseExecuteProposalTransactionHandler is a wrapper that returns ITransactionHandler for registry
+func ParseExecuteProposalTransactionHandler(tx t.Transaction) (t.ITransactionHandler, error) {
+	return ParseExecuteProposalTransaction(tx)
 }

@@ -3,9 +3,6 @@ package engine
 import (
 	abcitypes "github.com/cometbft/cometbft/abci/types"
 	"github.com/ochain-gg/ochain-network/engine/transactions"
-	account_transactions "github.com/ochain-gg/ochain-network/engine/transactions/account"
-	governance_transactions "github.com/ochain-gg/ochain-network/engine/transactions/governance"
-	planet_transactions "github.com/ochain-gg/ochain-network/engine/transactions/game/planet"
 	"github.com/ochain-gg/ochain-network/types"
 )
 
@@ -56,190 +53,20 @@ func FinalizeAuthenticatedTx(ctx transactions.TransactionContext, tx transaction
 		}
 	}
 
-	switch tx.Type {
-	case transactions.RegisterAccount:
-
-		transaction, err := account_transactions.ParseRegisterAccountTransaction(tx)
-		if err != nil {
-			return &abcitypes.ExecTxResult{Code: types.ParsingTransactionDataError}, valUpdates
-		}
-
-		checkResult := transaction.Check(ctx)
-		if checkResult.Code != types.NoError {
-			return &abcitypes.ExecTxResult{Code: checkResult.Code, GasWanted: 0, GasUsed: 0}, valUpdates
-		}
-
-		return transaction.Execute(ctx), valUpdates
-
-	case transactions.RegisterUniverseAccount:
-
-		transaction, err := account_transactions.ParseRegisterUniverseAccountTransaction(tx)
-		if err != nil {
-			return &abcitypes.ExecTxResult{Code: types.ParsingTransactionDataError}, valUpdates
-		}
-
-		checkResult := transaction.Check(ctx)
-		if checkResult.Code != types.NoError {
-			return &abcitypes.ExecTxResult{Code: checkResult.Code, GasWanted: 0, GasUsed: 0}, valUpdates
-		}
-
-		return transaction.Execute(ctx), valUpdates
-
-	case transactions.ClaimFaucet:
-
-		transaction, err := account_transactions.ParseClaimFaucetTransaction(tx)
-		if err != nil {
-			return &abcitypes.ExecTxResult{Code: types.ParsingTransactionDataError}, valUpdates
-		}
-
-		checkResult := transaction.Check(ctx)
-		if checkResult.Code != types.NoError {
-			return &abcitypes.ExecTxResult{Code: checkResult.Code, GasWanted: 0, GasUsed: 0}, valUpdates
-		}
-
-		return transaction.Execute(ctx), valUpdates
-
-	case transactions.StartBuildingUpgrade:
-
-		transaction, err := planet_transactions.ParseUpgradeBuildingTransaction(tx)
-		if err != nil {
-			return &abcitypes.ExecTxResult{Code: types.ParsingTransactionDataError}, valUpdates
-		}
-
-		checkResult := transaction.Check(ctx)
-		if checkResult.Code != types.NoError {
-			return &abcitypes.ExecTxResult{Code: checkResult.Code, GasWanted: 0, GasUsed: 0}, valUpdates
-		}
-
-		return transaction.Execute(ctx), valUpdates
-
-	case transactions.StartTechnologyUpgrade:
-
-		transaction, err := planet_transactions.ParseUpgradeTechnologyTransaction(tx)
-		if err != nil {
-			return &abcitypes.ExecTxResult{Code: types.ParsingTransactionDataError}, valUpdates
-		}
-
-		checkResult := transaction.Check(ctx)
-		if checkResult.Code != types.NoError {
-			return &abcitypes.ExecTxResult{Code: checkResult.Code, GasWanted: 0, GasUsed: 0}, valUpdates
-		}
-
-		return transaction.Execute(ctx), valUpdates
-
-	case transactions.Build:
-
-		transaction, err := planet_transactions.ParseBuildTransaction(tx)
-		if err != nil {
-			return &abcitypes.ExecTxResult{Code: types.ParsingTransactionDataError}, valUpdates
-		}
-
-		checkResult := transaction.Check(ctx)
-		if checkResult.Code != types.NoError {
-			return &abcitypes.ExecTxResult{Code: checkResult.Code, GasWanted: 0, GasUsed: 0}, valUpdates
-		}
-
-		return transaction.Execute(ctx), valUpdates
-
-	case transactions.SwapResources:
-
-		transaction, err := planet_transactions.ParseSwapResourcesTransaction(tx)
-		if err != nil {
-			return &abcitypes.ExecTxResult{Code: types.ParsingTransactionDataError}, valUpdates
-		}
-
-		checkResult := transaction.Check(ctx)
-		if checkResult.Code != types.NoError {
-			return &abcitypes.ExecTxResult{Code: checkResult.Code, GasWanted: 0, GasUsed: 0}, valUpdates
-		}
-
-		return transaction.Execute(ctx), valUpdates
-
-	case transactions.GovernanceStake:
-
-		transaction, err := governance_transactions.ParseStakeTransaction(tx)
-		if err != nil {
-			return &abcitypes.ExecTxResult{Code: types.ParsingTransactionDataError}, valUpdates
-		}
-
-		checkResult := transaction.Check(ctx)
-		if checkResult.Code != types.NoError {
-			return &abcitypes.ExecTxResult{Code: checkResult.Code, GasWanted: 0, GasUsed: 0}, valUpdates
-		}
-
-		return transaction.Execute(ctx), valUpdates
-
-	case transactions.GovernanceUnstakeStart:
-
-		transaction, err := governance_transactions.ParseUnstakeStartTransaction(tx)
-		if err != nil {
-			return &abcitypes.ExecTxResult{Code: types.ParsingTransactionDataError}, valUpdates
-		}
-
-		checkResult := transaction.Check(ctx)
-		if checkResult.Code != types.NoError {
-			return &abcitypes.ExecTxResult{Code: checkResult.Code, GasWanted: 0, GasUsed: 0}, valUpdates
-		}
-
-		return transaction.Execute(ctx), valUpdates
-
-	case transactions.GovernanceUnstakeExecute:
-
-		transaction, err := governance_transactions.ParseUnstakeExecuteTransaction(tx)
-		if err != nil {
-			return &abcitypes.ExecTxResult{Code: types.ParsingTransactionDataError}, valUpdates
-		}
-
-		checkResult := transaction.Check(ctx)
-		if checkResult.Code != types.NoError {
-			return &abcitypes.ExecTxResult{Code: checkResult.Code, GasWanted: 0, GasUsed: 0}, valUpdates
-		}
-
-		return transaction.Execute(ctx), valUpdates
-
-	case transactions.CreateGovernanceProposal:
-
-		transaction, err := governance_transactions.ParseCreateProposalTransaction(tx)
-		if err != nil {
-			return &abcitypes.ExecTxResult{Code: types.ParsingTransactionDataError}, valUpdates
-		}
-
-		checkResult := transaction.Check(ctx)
-		if checkResult.Code != types.NoError {
-			return &abcitypes.ExecTxResult{Code: checkResult.Code, GasWanted: 0, GasUsed: 0}, valUpdates
-		}
-
-		return transaction.Execute(ctx), valUpdates
-
-	case transactions.VoteOnProposal:
-
-		transaction, err := governance_transactions.ParseVoteOnProposalTransaction(tx)
-		if err != nil {
-			return &abcitypes.ExecTxResult{Code: types.ParsingTransactionDataError}, valUpdates
-		}
-
-		checkResult := transaction.Check(ctx)
-		if checkResult.Code != types.NoError {
-			return &abcitypes.ExecTxResult{Code: checkResult.Code, GasWanted: 0, GasUsed: 0}, valUpdates
-		}
-
-		return transaction.Execute(ctx), valUpdates
-
-	case transactions.ExecuteProposal:
-
-		transaction, err := governance_transactions.ParseExecuteProposalTransaction(tx)
-		if err != nil {
-			return &abcitypes.ExecTxResult{Code: types.ParsingTransactionDataError}, valUpdates
-		}
-
-		checkResult := transaction.Check(ctx)
-		if checkResult.Code != types.NoError {
-			return &abcitypes.ExecTxResult{Code: checkResult.Code, GasWanted: 0, GasUsed: 0}, valUpdates
-		}
-
-		return transaction.Execute(ctx), valUpdates
-
+	// Use registry to parse, check, and execute transaction
+	if !transactions.IsRegistered(tx.Type) {
+		return &abcitypes.ExecTxResult{Code: types.NotImplemented, GasWanted: 0}, valUpdates
 	}
 
-	return &abcitypes.ExecTxResult{Code: types.NotImplemented, GasWanted: 0}, valUpdates
+	handler, err := transactions.Parse(tx)
+	if err != nil {
+		return &abcitypes.ExecTxResult{Code: types.ParsingTransactionDataError}, valUpdates
+	}
+
+	checkResult := handler.Check(ctx)
+	if checkResult.Code != types.NoError {
+		return &abcitypes.ExecTxResult{Code: checkResult.Code, GasWanted: 0, GasUsed: 0}, valUpdates
+	}
+
+	return handler.Execute(ctx), valUpdates
 }

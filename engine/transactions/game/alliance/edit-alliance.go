@@ -23,6 +23,10 @@ type EditAllianceTransaction struct {
 	Signature []byte                      `cbor:"5,keyasint"`
 }
 
+func (tx *EditAllianceTransaction) GetType() t.TransactionType {
+	return t.EditAlliance
+}
+
 func (tx *EditAllianceTransaction) Transaction() (t.Transaction, error) {
 	txData, err := cbor.Marshal(tx.Data)
 	if err != nil {
@@ -118,19 +122,24 @@ func (tx *EditAllianceTransaction) Execute(ctx t.TransactionContext) *abcitypes.
 	}
 }
 
-func ParseEditAllianceTransaction(tx t.Transaction) (EditAllianceTransaction, error) {
+func ParseEditAllianceTransaction(tx t.Transaction) (*EditAllianceTransaction, error) {
 	var txData EditAllianceTransactionData
 	err := cbor.Unmarshal(tx.Data, &txData)
 
 	if err != nil {
-		return EditAllianceTransaction{}, err
+		return nil, err
 	}
 
-	return EditAllianceTransaction{
+	return &EditAllianceTransaction{
 		Type:      tx.Type,
 		From:      tx.From,
 		Nonce:     tx.Nonce,
 		Data:      txData,
 		Signature: tx.Signature,
 	}, nil
+}
+
+// ParseEditAllianceTransactionHandler is a wrapper that returns ITransactionHandler for registry
+func ParseEditAllianceTransactionHandler(tx t.Transaction) (t.ITransactionHandler, error) {
+	return ParseEditAllianceTransaction(tx)
 }

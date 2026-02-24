@@ -24,7 +24,23 @@ type OChainCreditDepositTransaction struct {
 	Data OChainCreditDepositTransactionData
 }
 
-func (tx OChainCreditDepositTransaction) Check(ctx t.TransactionContext) *abcitypes.CheckTxResponse {
+func (tx *OChainCreditDepositTransaction) GetType() t.TransactionType {
+	return t.OChainCreditDeposit
+}
+
+func (tx *OChainCreditDepositTransaction) Transaction() (t.Transaction, error) {
+	txData, err := cbor.Marshal(tx.Data)
+	if err != nil {
+		return t.Transaction{}, err
+	}
+
+	return t.Transaction{
+		Type: tx.Type,
+		Data: txData,
+	}, nil
+}
+
+func (tx *OChainCreditDepositTransaction) Check(ctx t.TransactionContext) *abcitypes.CheckTxResponse {
 
 	client, err := ethclient.Dial(ctx.Config.EVMRpc)
 	if err != nil {
@@ -89,7 +105,7 @@ func (tx OChainCreditDepositTransaction) Check(ctx t.TransactionContext) *abcity
 
 }
 
-func (tx OChainCreditDepositTransaction) Execute(ctx t.TransactionContext) *abcitypes.ExecTxResult {
+func (tx *OChainCreditDepositTransaction) Execute(ctx t.TransactionContext) *abcitypes.ExecTxResult {
 	result := tx.Check(ctx)
 	if result.Code != types.NoError {
 		return &abcitypes.ExecTxResult{
@@ -182,16 +198,21 @@ func (tx OChainCreditDepositTransaction) Execute(ctx t.TransactionContext) *abci
 	}
 }
 
-func ParseOChainCreditDepositTransaction(tx t.Transaction) (OChainCreditDepositTransaction, error) {
+func ParseOChainCreditDepositTransaction(tx t.Transaction) (*OChainCreditDepositTransaction, error) {
 	var txData OChainCreditDepositTransactionData
 	err := cbor.Unmarshal(tx.Data, &txData)
 
 	if err != nil {
-		return OChainCreditDepositTransaction{}, err
+		return nil, err
 	}
 
-	return OChainCreditDepositTransaction{
+	return &OChainCreditDepositTransaction{
 		Type: tx.Type,
 		Data: txData,
 	}, nil
+}
+
+// ParseOChainCreditDepositTransactionHandler is a wrapper that returns ITransactionHandler for registry
+func ParseOChainCreditDepositTransactionHandler(tx t.Transaction) (t.ITransactionHandler, error) {
+	return ParseOChainCreditDepositTransaction(tx)
 }

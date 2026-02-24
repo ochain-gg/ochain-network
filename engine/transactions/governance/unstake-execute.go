@@ -22,6 +22,10 @@ type UnstakeExecuteTransaction struct {
 	Signature []byte                         `cbor:"5,keyasint"`
 }
 
+func (tx *UnstakeExecuteTransaction) GetType() t.TransactionType {
+	return t.GovernanceUnstakeExecute
+}
+
 func (tx *UnstakeExecuteTransaction) Transaction() (t.Transaction, error) {
 	txData, err := cbor.Marshal(tx.Data)
 	if err != nil {
@@ -148,19 +152,24 @@ func (tx *UnstakeExecuteTransaction) Execute(ctx t.TransactionContext) *abcitype
 	}
 }
 
-func ParseUnstakeExecuteTransaction(tx t.Transaction) (UnstakeExecuteTransaction, error) {
+func ParseUnstakeExecuteTransaction(tx t.Transaction) (*UnstakeExecuteTransaction, error) {
 	var txData UnstakeExecuteTransactionData
 	err := cbor.Unmarshal(tx.Data, &txData)
 
 	if err != nil {
-		return UnstakeExecuteTransaction{}, err
+		return nil, err
 	}
 
-	return UnstakeExecuteTransaction{
+	return &UnstakeExecuteTransaction{
 		Type:      tx.Type,
 		From:      tx.From,
 		Nonce:     tx.Nonce,
 		Data:      txData,
 		Signature: tx.Signature,
 	}, nil
+}
+
+// ParseUnstakeExecuteTransactionHandler is a wrapper that returns ITransactionHandler for registry
+func ParseUnstakeExecuteTransactionHandler(tx t.Transaction) (t.ITransactionHandler, error) {
+	return ParseUnstakeExecuteTransaction(tx)
 }

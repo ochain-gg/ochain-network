@@ -24,6 +24,10 @@ type LendFleetCargoTransaction struct {
 	Signature []byte                        `cbor:"5,keyasint"`
 }
 
+func (tx *LendFleetCargoTransaction) GetType() t.TransactionType {
+	return t.LandingFleetInOrbit
+}
+
 func (tx *LendFleetCargoTransaction) Transaction() (t.Transaction, error) {
 	txData, err := cbor.Marshal(tx.Data)
 	if err != nil {
@@ -184,19 +188,24 @@ func (tx *LendFleetCargoTransaction) Execute(ctx t.TransactionContext) *abcitype
 	}
 }
 
-func ParseLendFleetCargoTransaction(tx t.Transaction) (LendFleetCargoTransaction, error) {
+func ParseLendFleetCargoTransaction(tx t.Transaction) (*LendFleetCargoTransaction, error) {
 	var txData LendFleetCargoTransactionData
 	err := cbor.Unmarshal(tx.Data, &txData)
 
 	if err != nil {
-		return LendFleetCargoTransaction{}, err
+		return nil, err
 	}
 
-	return LendFleetCargoTransaction{
+	return &LendFleetCargoTransaction{
 		Type:      tx.Type,
 		From:      tx.From,
 		Nonce:     tx.Nonce,
 		Data:      txData,
 		Signature: tx.Signature,
 	}, nil
+}
+
+// ParseLendFleetCargoTransactionHandler is a wrapper that returns ITransactionHandler for registry
+func ParseLendFleetCargoTransactionHandler(tx t.Transaction) (t.ITransactionHandler, error) {
+	return ParseLendFleetCargoTransaction(tx)
 }

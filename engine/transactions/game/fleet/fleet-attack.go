@@ -6,7 +6,6 @@ import (
 	abcitypes "github.com/cometbft/cometbft/abci/types"
 	"github.com/fxamacker/cbor/v2"
 
-	"github.com/ochain-gg/ochain-network/application"
 	t "github.com/ochain-gg/ochain-network/engine/transactions"
 	"github.com/ochain-gg/ochain-network/types"
 )
@@ -25,6 +24,10 @@ type FleetAttackTransaction struct {
 	Nonce     uint64                     `cbor:"3,keyasint"`
 	Data      FleetAttackTransactionData `cbor:"4,keyasint"`
 	Signature []byte                     `cbor:"5,keyasint"`
+}
+
+func (tx *FleetAttackTransaction) GetType() t.TransactionType {
+	return t.Fight
 }
 
 func (tx *FleetAttackTransaction) Transaction() (t.Transaction, error) {
@@ -106,6 +109,21 @@ func (tx *FleetAttackTransaction) Execute(ctx t.TransactionContext) *abcitypes.E
 	if result.Code != types.NoError {
 		return &abcitypes.ExecTxResult{
 			Code: result.GetCode(),
+		}
+	}
+
+	// Load spaceships and defenses from database
+	spaceships, err := ctx.Db.Spaceships.GetAllAt(uint64(ctx.Date.Unix()))
+	if err != nil {
+		return &abcitypes.ExecTxResult{
+			Code: types.InvalidTransactionError,
+		}
+	}
+
+	defenses, err := ctx.Db.Defenses.GetAllAt(uint64(ctx.Date.Unix()))
+	if err != nil {
+		return &abcitypes.ExecTxResult{
+			Code: types.InvalidTransactionError,
 		}
 	}
 
@@ -195,8 +213,8 @@ func (tx *FleetAttackTransaction) Execute(ctx t.TransactionContext) *abcitypes.E
 			fleetAccount,
 			&fleet.Spaceships,
 			nil,
-			application.DefaultSpaceships,
-			application.DefaultDefenses,
+			spaceships,
+			defenses,
 		)
 		attackerParticipants = append(attackerParticipants, participant)
 	}
@@ -207,8 +225,8 @@ func (tx *FleetAttackTransaction) Execute(ctx t.TransactionContext) *abcitypes.E
 		defenderAccount,
 		&targetPlanet.Spaceships,
 		&targetPlanet.Defenses,
-		application.DefaultSpaceships,
-		application.DefaultDefenses,
+		spaceships,
+		defenses,
 	)
 
 	// Add defending fleets to defender participant
@@ -229,8 +247,8 @@ func (tx *FleetAttackTransaction) Execute(ctx t.TransactionContext) *abcitypes.E
 			fleetAccount,
 			&fleet.Spaceships,
 			nil,
-			application.DefaultSpaceships,
-			application.DefaultDefenses,
+			spaceships,
+			defenses,
 		)
 
 		// Merge fleet participant units into defender participant
@@ -254,7 +272,7 @@ func (tx *FleetAttackTransaction) Execute(ctx t.TransactionContext) *abcitypes.E
 	debrisField := types.CalculateDebrisField(
 		battleResult.AttackerRemaining,
 		battleResult.DefenderRemaining,
-		application.DefaultSpaceships,
+		spaceships,
 	)
 
 	// Apply battle results to all attacking fleets
@@ -309,7 +327,7 @@ func (tx *FleetAttackTransaction) Execute(ctx t.TransactionContext) *abcitypes.E
 		var totalCapacity uint64 = 0
 		for _, unit := range battleResult.AttackerRemaining.Units {
 			if !unit.IsDefense {
-				for _, ship := range application.DefaultSpaceships {
+				for _, ship := range spaceships {
 					if string(ship.Id) == unit.Type {
 						totalCapacity += ship.Stats.Capacity * unit.Count
 						break
@@ -371,19 +389,24 @@ func (tx *FleetAttackTransaction) Execute(ctx t.TransactionContext) *abcitypes.E
 	}
 }
 
-func ParseFleetAttackTransaction(tx t.Transaction) (FleetAttackTransaction, error) {
+func ParseFleetAttackTransaction(tx t.Transaction) (*FleetAttackTransaction, error) {
 	var txData FleetAttackTransactionData
 	err := cbor.Unmarshal(tx.Data, &txData)
 
 	if err != nil {
-		return FleetAttackTransaction{}, err
+		return nil, err
 	}
 
-	return FleetAttackTransaction{
+	return &FleetAttackTransaction{
 		Type:      tx.Type,
 		From:      tx.From,
 		Nonce:     tx.Nonce,
 		Data:      txData,
 		Signature: tx.Signature,
 	}, nil
+}
+
+// ParseFleetAttackTransactionHandler is a wrapper that returns ITransactionHandler for registry
+func ParseFleetAttackTransactionHandler(tx t.Transaction) (t.ITransactionHandler, error) {
+	return ParseFleetAttackTransaction(tx)
 }

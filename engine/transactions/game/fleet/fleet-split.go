@@ -28,6 +28,10 @@ type SplitFleetTransaction struct {
 	Signature []byte                    `cbor:"5,keyasint"`
 }
 
+func (tx *SplitFleetTransaction) GetType() t.TransactionType {
+	return t.SplitFleet
+}
+
 func (tx *SplitFleetTransaction) Transaction() (t.Transaction, error) {
 	txData, err := cbor.Marshal(tx.Data)
 	if err != nil {
@@ -292,19 +296,24 @@ func (tx *SplitFleetTransaction) Execute(ctx t.TransactionContext) *abcitypes.Ex
 	}
 }
 
-func ParseSplitFleetTransaction(tx t.Transaction) (SplitFleetTransaction, error) {
+func ParseSplitFleetTransaction(tx t.Transaction) (*SplitFleetTransaction, error) {
 	var txData SplitFleetTransactionData
 	err := cbor.Unmarshal(tx.Data, &txData)
 
 	if err != nil {
-		return SplitFleetTransaction{}, err
+		return nil, err
 	}
 
-	return SplitFleetTransaction{
+	return &SplitFleetTransaction{
 		Type:      tx.Type,
 		From:      tx.From,
 		Nonce:     tx.Nonce,
 		Data:      txData,
 		Signature: tx.Signature,
 	}, nil
+}
+
+// ParseSplitFleetTransactionHandler is a wrapper that returns ITransactionHandler for registry
+func ParseSplitFleetTransactionHandler(tx t.Transaction) (t.ITransactionHandler, error) {
+	return ParseSplitFleetTransaction(tx)
 }

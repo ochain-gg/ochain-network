@@ -24,6 +24,10 @@ type AssignAllianceRoleTransaction struct {
 	Signature []byte                            `cbor:"5,keyasint"`
 }
 
+func (tx *AssignAllianceRoleTransaction) GetType() t.TransactionType {
+	return t.AssignAllianceRole
+}
+
 func (tx *AssignAllianceRoleTransaction) Transaction() (t.Transaction, error) {
 	txData, err := cbor.Marshal(tx.Data)
 	if err != nil {
@@ -167,19 +171,24 @@ func (tx *AssignAllianceRoleTransaction) Execute(ctx t.TransactionContext) *abci
 	}
 }
 
-func ParseAssignAllianceRoleTransaction(tx t.Transaction) (AssignAllianceRoleTransaction, error) {
+func ParseAssignAllianceRoleTransaction(tx t.Transaction) (*AssignAllianceRoleTransaction, error) {
 	var txData AssignAllianceRoleTransactionData
 	err := cbor.Unmarshal(tx.Data, &txData)
 
 	if err != nil {
-		return AssignAllianceRoleTransaction{}, err
+		return nil, err
 	}
 
-	return AssignAllianceRoleTransaction{
+	return &AssignAllianceRoleTransaction{
 		Type:      tx.Type,
 		From:      tx.From,
 		Nonce:     tx.Nonce,
 		Data:      txData,
 		Signature: tx.Signature,
 	}, nil
+}
+
+// ParseAssignAllianceRoleTransactionHandler is a wrapper that returns ITransactionHandler for registry
+func ParseAssignAllianceRoleTransactionHandler(tx t.Transaction) (t.ITransactionHandler, error) {
+	return ParseAssignAllianceRoleTransaction(tx)
 }

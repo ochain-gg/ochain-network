@@ -1,11 +1,10 @@
 package engine
 
 import (
+	"log"
+
 	abcitypes "github.com/cometbft/cometbft/abci/types"
 	"github.com/ochain-gg/ochain-network/engine/transactions"
-	account_transactions "github.com/ochain-gg/ochain-network/engine/transactions/account"
-	governance_transactions "github.com/ochain-gg/ochain-network/engine/transactions/governance"
-	planet_transactions "github.com/ochain-gg/ochain-network/engine/transactions/game/planet"
 	"github.com/ochain-gg/ochain-network/types"
 )
 
@@ -56,122 +55,18 @@ func CheckAuthenticatedTx(ctx transactions.TransactionContext, req *abcitypes.Ch
 		}
 	}
 
-	switch tx.Type {
-	case transactions.RegisterAccount:
-
-		transaction, err := account_transactions.ParseRegisterAccountTransaction(tx)
-		if err != nil {
-			return &abcitypes.CheckTxResponse{Code: types.ParsingTransactionDataError, GasWanted: 0, GasUsed: 0}
-		}
-
-		return transaction.Check(ctx)
-
-	case transactions.RegisterUniverseAccount:
-
-		transaction, err := account_transactions.ParseRegisterUniverseAccountTransaction(tx)
-		if err != nil {
-			return &abcitypes.CheckTxResponse{Code: types.ParsingTransactionDataError, GasWanted: 0, GasUsed: 0}
-		}
-
-		return transaction.Check(ctx)
-
-	case transactions.ClaimFaucet:
-
-		transaction, err := account_transactions.ParseClaimFaucetTransaction(tx)
-		if err != nil {
-			return &abcitypes.CheckTxResponse{Code: types.ParsingTransactionDataError, GasWanted: 0, GasUsed: 0}
-		}
-
-		return transaction.Check(ctx)
-
-	case transactions.StartBuildingUpgrade:
-
-		transaction, err := planet_transactions.ParseUpgradeBuildingTransaction(tx)
-		if err != nil {
-			return &abcitypes.CheckTxResponse{Code: types.ParsingTransactionDataError, GasWanted: 0, GasUsed: 0}
-		}
-
-		return transaction.Check(ctx)
-
-	case transactions.StartTechnologyUpgrade:
-
-		transaction, err := planet_transactions.ParseUpgradeTechnologyTransaction(tx)
-		if err != nil {
-			return &abcitypes.CheckTxResponse{Code: types.ParsingTransactionDataError, GasWanted: 0, GasUsed: 0}
-		}
-
-		return transaction.Check(ctx)
-	case transactions.Build:
-
-		transaction, err := planet_transactions.ParseBuildTransaction(tx)
-		if err != nil {
-			return &abcitypes.CheckTxResponse{Code: types.ParsingTransactionDataError, GasWanted: 0, GasUsed: 0}
-		}
-
-		return transaction.Check(ctx)
-	case transactions.SwapResources:
-
-		transaction, err := planet_transactions.ParseSwapResourcesTransaction(tx)
-		if err != nil {
-			return &abcitypes.CheckTxResponse{Code: types.ParsingTransactionDataError, GasWanted: 0, GasUsed: 0}
-		}
-
-		return transaction.Check(ctx)
-
-	case transactions.GovernanceStake:
-
-		transaction, err := governance_transactions.ParseStakeTransaction(tx)
-		if err != nil {
-			return &abcitypes.CheckTxResponse{Code: types.ParsingTransactionDataError, GasWanted: 0, GasUsed: 0}
-		}
-
-		return transaction.Check(ctx)
-
-	case transactions.GovernanceUnstakeStart:
-
-		transaction, err := governance_transactions.ParseUnstakeStartTransaction(tx)
-		if err != nil {
-			return &abcitypes.CheckTxResponse{Code: types.ParsingTransactionDataError, GasWanted: 0, GasUsed: 0}
-		}
-
-		return transaction.Check(ctx)
-
-	case transactions.GovernanceUnstakeExecute:
-
-		transaction, err := governance_transactions.ParseUnstakeExecuteTransaction(tx)
-		if err != nil {
-			return &abcitypes.CheckTxResponse{Code: types.ParsingTransactionDataError, GasWanted: 0, GasUsed: 0}
-		}
-
-		return transaction.Check(ctx)
-
-	case transactions.CreateGovernanceProposal:
-
-		transaction, err := governance_transactions.ParseCreateProposalTransaction(tx)
-		if err != nil {
-			return &abcitypes.CheckTxResponse{Code: types.ParsingTransactionDataError, GasWanted: 0, GasUsed: 0}
-		}
-
-		return transaction.Check(ctx)
-
-	case transactions.VoteOnProposal:
-
-		transaction, err := governance_transactions.ParseVoteOnProposalTransaction(tx)
-		if err != nil {
-			return &abcitypes.CheckTxResponse{Code: types.ParsingTransactionDataError, GasWanted: 0, GasUsed: 0}
-		}
-
-		return transaction.Check(ctx)
-
-	case transactions.ExecuteProposal:
-
-		transaction, err := governance_transactions.ParseExecuteProposalTransaction(tx)
-		if err != nil {
-			return &abcitypes.CheckTxResponse{Code: types.ParsingTransactionDataError, GasWanted: 0, GasUsed: 0}
-		}
-
-		return transaction.Check(ctx)
+	// Use registry to parse and check transaction
+	if !transactions.IsRegistered(tx.Type) {
+		log.Printf("[CheckAuthenticatedTx] Transaction type %d is not registered", tx.Type)
+		return &abcitypes.CheckTxResponse{Code: types.NotImplemented, GasWanted: 0, GasUsed: 0}
 	}
 
-	return &abcitypes.CheckTxResponse{Code: types.NotImplemented, GasWanted: 0, GasUsed: 0}
+	handler, err := transactions.Parse(tx)
+	if err != nil {
+		log.Printf("[CheckAuthenticatedTx] Failed to parse transaction type %d: %v", tx.Type, err)
+		return &abcitypes.CheckTxResponse{Code: types.ParsingTransactionDataError, GasWanted: 0, GasUsed: 0}
+	}
+
+	log.Printf("[CheckAuthenticatedTx] Successfully parsed transaction type %d", tx.Type)
+	return handler.Check(ctx)
 }

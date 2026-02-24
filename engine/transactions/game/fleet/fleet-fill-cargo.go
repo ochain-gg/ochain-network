@@ -25,6 +25,10 @@ type FeelFleetCargoTransaction struct {
 	Signature []byte                        `cbor:"5,keyasint"`
 }
 
+func (tx *FeelFleetCargoTransaction) GetType() t.TransactionType {
+	return t.FillCargo
+}
+
 func (tx *FeelFleetCargoTransaction) Transaction() (t.Transaction, error) {
 	txData, err := cbor.Marshal(tx.Data)
 	if err != nil {
@@ -213,19 +217,24 @@ func (tx *FeelFleetCargoTransaction) Execute(ctx t.TransactionContext) *abcitype
 	}
 }
 
-func ParseFeelFleetCargoTransaction(tx t.Transaction) (FeelFleetCargoTransaction, error) {
+func ParseFeelFleetCargoTransaction(tx t.Transaction) (*FeelFleetCargoTransaction, error) {
 	var txData FeelFleetCargoTransactionData
 	err := cbor.Unmarshal(tx.Data, &txData)
 
 	if err != nil {
-		return FeelFleetCargoTransaction{}, err
+		return nil, err
 	}
 
-	return FeelFleetCargoTransaction{
+	return &FeelFleetCargoTransaction{
 		Type:      tx.Type,
 		From:      tx.From,
 		Nonce:     tx.Nonce,
 		Data:      txData,
 		Signature: tx.Signature,
 	}, nil
+}
+
+// ParseFeelFleetCargoTransactionHandler is a wrapper that returns ITransactionHandler for registry
+func ParseFeelFleetCargoTransactionHandler(tx t.Transaction) (t.ITransactionHandler, error) {
+	return ParseFeelFleetCargoTransaction(tx)
 }

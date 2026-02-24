@@ -22,6 +22,10 @@ type StakeTransaction struct {
 	Signature []byte               `cbor:"5,keyasint"`
 }
 
+func (tx *StakeTransaction) GetType() t.TransactionType {
+	return t.GovernanceStake
+}
+
 func (tx *StakeTransaction) Transaction() (t.Transaction, error) {
 	txData, err := cbor.Marshal(tx.Data)
 	if err != nil {
@@ -132,19 +136,24 @@ func (tx *StakeTransaction) Execute(ctx t.TransactionContext) *abcitypes.ExecTxR
 	}
 }
 
-func ParseStakeTransaction(tx t.Transaction) (StakeTransaction, error) {
+func ParseStakeTransaction(tx t.Transaction) (*StakeTransaction, error) {
 	var txData StakeTransactionData
 	err := cbor.Unmarshal(tx.Data, &txData)
 
 	if err != nil {
-		return StakeTransaction{}, err
+		return nil, err
 	}
 
-	return StakeTransaction{
+	return &StakeTransaction{
 		Type:      tx.Type,
 		From:      tx.From,
 		Nonce:     tx.Nonce,
 		Data:      txData,
 		Signature: tx.Signature,
 	}, nil
+}
+
+// ParseStakeTransactionHandler is a wrapper that returns ITransactionHandler for registry
+func ParseStakeTransactionHandler(tx t.Transaction) (t.ITransactionHandler, error) {
+	return ParseStakeTransaction(tx)
 }

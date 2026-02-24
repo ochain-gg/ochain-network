@@ -22,7 +22,7 @@ import (
 type TransactionType uint16
 
 const (
-	MaxTransactionType uint64 = 41
+	MaxTransactionType uint64 = 50
 
 	//System transactions (Unauthenticated)
 	NewValidator          TransactionType = 0
@@ -67,6 +67,7 @@ const (
 	Build                  TransactionType = 21
 
 	//Fleet transactions
+	CreateFleet                  TransactionType = 22
 	FillCargo                    TransactionType = 23
 	UnfillCargo                  TransactionType = 24
 	SendFleetInOrbit             TransactionType = 25
@@ -84,8 +85,14 @@ const (
 	Fight TransactionType = 35
 
 	//Alliance transactions
-	CreateAlliance  TransactionType = 36
-	StakeOnAlliance TransactionType = 37
+	CreateAlliance              TransactionType = 36
+	StakeOnAlliance             TransactionType = 37
+	EditAlliance                TransactionType = 42
+	AssignAllianceRole          TransactionType = 43
+	UpgradeAlliance             TransactionType = 44
+	JoinAllianceRequest         TransactionType = 45
+	AnswerJoinAllianceRequest   TransactionType = 46
+	CancelJoinAllianceRequest   TransactionType = 47
 
 	//Market transations
 	SwapResources TransactionType = 38

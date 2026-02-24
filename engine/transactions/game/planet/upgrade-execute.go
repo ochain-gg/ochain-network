@@ -24,6 +24,10 @@ type ExecuteUpgradeTransaction struct {
 	Data ExecuteUpgradeTransactionData `cbor:"4,keyasint"`
 }
 
+func (tx *ExecuteUpgradeTransaction) GetType() t.TransactionType {
+	return t.ExecutePendingUpgrade
+}
+
 func (tx *ExecuteUpgradeTransaction) Transaction() (t.Transaction, error) {
 	txData, err := cbor.Marshal(tx.Data)
 	if err != nil {
@@ -218,16 +222,21 @@ func (tx *ExecuteUpgradeTransaction) Execute(ctx t.TransactionContext) *abcitype
 	}
 }
 
-func ParseExecuteUpgradeTransaction(tx t.Transaction) (ExecuteUpgradeTransaction, error) {
+func ParseExecuteUpgradeTransaction(tx t.Transaction) (*ExecuteUpgradeTransaction, error) {
 	var txData ExecuteUpgradeTransactionData
 	err := cbor.Unmarshal(tx.Data, &txData)
 
 	if err != nil {
-		return ExecuteUpgradeTransaction{}, err
+		return nil, err
 	}
 
-	return ExecuteUpgradeTransaction{
+	return &ExecuteUpgradeTransaction{
 		Type: tx.Type,
 		Data: txData,
 	}, nil
+}
+
+// ParseExecuteUpgradeTransactionHandler is a wrapper that returns ITransactionHandler for registry
+func ParseExecuteUpgradeTransactionHandler(tx t.Transaction) (t.ITransactionHandler, error) {
+	return ParseExecuteUpgradeTransaction(tx)
 }

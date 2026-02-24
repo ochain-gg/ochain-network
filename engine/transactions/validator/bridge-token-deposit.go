@@ -24,7 +24,23 @@ type OChainTokenDepositTransaction struct {
 	Data OChainTokenDepositTransactionData
 }
 
-func (tx OChainTokenDepositTransaction) Check(ctx t.TransactionContext) *abcitypes.CheckTxResponse {
+func (tx *OChainTokenDepositTransaction) GetType() t.TransactionType {
+	return t.OChainTokenDeposit
+}
+
+func (tx *OChainTokenDepositTransaction) Transaction() (t.Transaction, error) {
+	txData, err := cbor.Marshal(tx.Data)
+	if err != nil {
+		return t.Transaction{}, err
+	}
+
+	return t.Transaction{
+		Type: tx.Type,
+		Data: txData,
+	}, nil
+}
+
+func (tx *OChainTokenDepositTransaction) Check(ctx t.TransactionContext) *abcitypes.CheckTxResponse {
 
 	client, err := ethclient.Dial(ctx.Config.EVMRpc)
 	if err != nil {
@@ -89,7 +105,7 @@ func (tx OChainTokenDepositTransaction) Check(ctx t.TransactionContext) *abcityp
 
 }
 
-func (tx OChainTokenDepositTransaction) Execute(ctx t.TransactionContext) *abcitypes.ExecTxResult {
+func (tx *OChainTokenDepositTransaction) Execute(ctx t.TransactionContext) *abcitypes.ExecTxResult {
 	result := tx.Check(ctx)
 	if result.Code != types.NoError {
 		return &abcitypes.ExecTxResult{
@@ -182,29 +198,21 @@ func (tx OChainTokenDepositTransaction) Execute(ctx t.TransactionContext) *abcit
 	}
 }
 
-func (tx OChainTokenDepositTransaction) Transaction() (t.Transaction, error) {
+func ParseOChainTokenDepositTransaction(tx t.Transaction) (*OChainTokenDepositTransaction, error) {
+	var txData OChainTokenDepositTransactionData
+	err := cbor.Unmarshal(tx.Data, &txData)
 
-	txData, err := cbor.Marshal(tx.Data)
 	if err != nil {
-		return t.Transaction{}, err
+		return nil, err
 	}
 
-	return t.Transaction{
+	return &OChainTokenDepositTransaction{
 		Type: tx.Type,
 		Data: txData,
 	}, nil
 }
 
-func ParseOChainTokenDepositTransaction(tx t.Transaction) (OChainTokenDepositTransaction, error) {
-	var txData OChainTokenDepositTransactionData
-	err := cbor.Unmarshal(tx.Data, &txData)
-
-	if err != nil {
-		return OChainTokenDepositTransaction{}, err
-	}
-
-	return OChainTokenDepositTransaction{
-		Type: tx.Type,
-		Data: txData,
-	}, nil
+// ParseOChainTokenDepositTransactionHandler is a wrapper that returns ITransactionHandler for registry
+func ParseOChainTokenDepositTransactionHandler(tx t.Transaction) (t.ITransactionHandler, error) {
+	return ParseOChainTokenDepositTransaction(tx)
 }

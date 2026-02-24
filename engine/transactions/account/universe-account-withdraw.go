@@ -23,6 +23,10 @@ type UniverseAccountWithdrawTransaction struct {
 	Signature []byte                                 `cbor:"5,keyasint"`
 }
 
+func (tx *UniverseAccountWithdrawTransaction) GetType() t.TransactionType {
+	return t.UniverseOChainTokenWithdraw
+}
+
 func (tx *UniverseAccountWithdrawTransaction) Transaction() (t.Transaction, error) {
 	txData, err := cbor.Marshal(tx.Data)
 	if err != nil {
@@ -80,7 +84,9 @@ func (tx *UniverseAccountWithdrawTransaction) Check(ctx t.TransactionContext) *a
 		}
 	}
 
-	return nil
+	return &abcitypes.CheckTxResponse{
+		Code: types.NoError,
+	}
 }
 
 func (tx *UniverseAccountWithdrawTransaction) Execute(ctx t.TransactionContext) *abcitypes.ExecTxResult {
@@ -200,19 +206,24 @@ func (tx *UniverseAccountWithdrawTransaction) Execute(ctx t.TransactionContext) 
 	}
 }
 
-func ParseUniverseAccountWithdrawTransaction(tx t.Transaction) (UniverseAccountWithdrawTransaction, error) {
+func ParseUniverseAccountWithdrawTransaction(tx t.Transaction) (*UniverseAccountWithdrawTransaction, error) {
 	var txData UniverseAccountWithdrawTransactionData
 	err := cbor.Unmarshal(tx.Data, &txData)
 
 	if err != nil {
-		return UniverseAccountWithdrawTransaction{}, err
+		return nil, err
 	}
 
-	return UniverseAccountWithdrawTransaction{
+	return &UniverseAccountWithdrawTransaction{
 		Type:      tx.Type,
 		From:      tx.From,
 		Nonce:     tx.Nonce,
 		Data:      txData,
 		Signature: tx.Signature,
 	}, nil
+}
+
+// ParseUniverseAccountWithdrawTransactionHandler is a wrapper that returns ITransactionHandler for registry
+func ParseUniverseAccountWithdrawTransactionHandler(tx t.Transaction) (t.ITransactionHandler, error) {
+	return ParseUniverseAccountWithdrawTransaction(tx)
 }

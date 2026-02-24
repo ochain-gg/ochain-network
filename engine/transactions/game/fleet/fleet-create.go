@@ -28,6 +28,10 @@ type CreateFleetTransaction struct {
 	Signature []byte                     `cbor:"5,keyasint"`
 }
 
+func (tx *CreateFleetTransaction) GetType() t.TransactionType {
+	return t.CreateFleet
+}
+
 func (tx *CreateFleetTransaction) Transaction() (t.Transaction, error) {
 	txData, err := cbor.Marshal(tx.Data)
 	if err != nil {
@@ -269,19 +273,24 @@ func (tx *CreateFleetTransaction) Execute(ctx t.TransactionContext) *abcitypes.E
 	}
 }
 
-func ParseCreateFleetTransaction(tx t.Transaction) (CreateFleetTransaction, error) {
+func ParseCreateFleetTransaction(tx t.Transaction) (*CreateFleetTransaction, error) {
 	var txData CreateFleetTransactionData
 	err := cbor.Unmarshal(tx.Data, &txData)
 
 	if err != nil {
-		return CreateFleetTransaction{}, err
+		return nil, err
 	}
 
-	return CreateFleetTransaction{
+	return &CreateFleetTransaction{
 		Type:      tx.Type,
 		From:      tx.From,
 		Nonce:     tx.Nonce,
 		Data:      txData,
 		Signature: tx.Signature,
 	}, nil
+}
+
+// ParseCreateFleetTransactionHandler is a wrapper that returns ITransactionHandler for registry
+func ParseCreateFleetTransactionHandler(tx t.Transaction) (t.ITransactionHandler, error) {
+	return ParseCreateFleetTransaction(tx)
 }

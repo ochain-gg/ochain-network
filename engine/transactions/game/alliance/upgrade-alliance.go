@@ -24,6 +24,10 @@ type UpgradeAllianceTransaction struct {
 	Signature []byte                         `cbor:"5,keyasint"`
 }
 
+func (tx *UpgradeAllianceTransaction) GetType() t.TransactionType {
+	return t.UpgradeAlliance
+}
+
 func (tx *UpgradeAllianceTransaction) Transaction() (t.Transaction, error) {
 	txData, err := cbor.Marshal(tx.Data)
 	if err != nil {
@@ -214,19 +218,24 @@ func (tx *UpgradeAllianceTransaction) Execute(ctx t.TransactionContext) *abcityp
 	}
 }
 
-func ParseUpgradeAllianceTransaction(tx t.Transaction) (UpgradeAllianceTransaction, error) {
+func ParseUpgradeAllianceTransaction(tx t.Transaction) (*UpgradeAllianceTransaction, error) {
 	var txData UpgradeAllianceTransactionData
 	err := cbor.Unmarshal(tx.Data, &txData)
 
 	if err != nil {
-		return UpgradeAllianceTransaction{}, err
+		return nil, err
 	}
 
-	return UpgradeAllianceTransaction{
+	return &UpgradeAllianceTransaction{
 		Type:      tx.Type,
 		From:      tx.From,
 		Nonce:     tx.Nonce,
 		Data:      txData,
 		Signature: tx.Signature,
 	}, nil
+}
+
+// ParseUpgradeAllianceTransactionHandler is a wrapper that returns ITransactionHandler for registry
+func ParseUpgradeAllianceTransactionHandler(tx t.Transaction) (t.ITransactionHandler, error) {
+	return ParseUpgradeAllianceTransaction(tx)
 }

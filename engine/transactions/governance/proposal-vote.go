@@ -23,6 +23,10 @@ type VoteOnProposalTransaction struct {
 	Signature []byte                         `cbor:"5,keyasint"`
 }
 
+func (tx *VoteOnProposalTransaction) GetType() t.TransactionType {
+	return t.VoteOnProposal
+}
+
 func (tx *VoteOnProposalTransaction) Transaction() (t.Transaction, error) {
 	txData, err := cbor.Marshal(tx.Data)
 	if err != nil {
@@ -199,19 +203,24 @@ func (tx *VoteOnProposalTransaction) Execute(ctx t.TransactionContext) *abcitype
 	}
 }
 
-func ParseVoteOnProposalTransaction(tx t.Transaction) (VoteOnProposalTransaction, error) {
+func ParseVoteOnProposalTransaction(tx t.Transaction) (*VoteOnProposalTransaction, error) {
 	var txData VoteOnProposalTransactionData
 	err := cbor.Unmarshal(tx.Data, &txData)
 
 	if err != nil {
-		return VoteOnProposalTransaction{}, err
+		return nil, err
 	}
 
-	return VoteOnProposalTransaction{
+	return &VoteOnProposalTransaction{
 		Type:      tx.Type,
 		From:      tx.From,
 		Nonce:     tx.Nonce,
 		Data:      txData,
 		Signature: tx.Signature,
 	}, nil
+}
+
+// ParseVoteOnProposalTransactionHandler is a wrapper that returns ITransactionHandler for registry
+func ParseVoteOnProposalTransactionHandler(tx t.Transaction) (t.ITransactionHandler, error) {
+	return ParseVoteOnProposalTransaction(tx)
 }

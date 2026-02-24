@@ -28,6 +28,10 @@ type SwapResourcesTransaction struct {
 	Signature []byte                       `cbor:"5,keyasint"`
 }
 
+func (tx *SwapResourcesTransaction) GetType() t.TransactionType {
+	return t.SwapResources
+}
+
 func (tx *SwapResourcesTransaction) Transaction() (t.Transaction, error) {
 	txData, err := cbor.Marshal(tx.Data)
 	if err != nil {
@@ -245,19 +249,24 @@ func (tx *SwapResourcesTransaction) Execute(ctx t.TransactionContext) *abcitypes
 	}
 }
 
-func ParseSwapResourcesTransaction(tx t.Transaction) (SwapResourcesTransaction, error) {
+func ParseSwapResourcesTransaction(tx t.Transaction) (*SwapResourcesTransaction, error) {
 	var txData SwapResourcesTransactionData
 	err := cbor.Unmarshal(tx.Data, &txData)
 
 	if err != nil {
-		return SwapResourcesTransaction{}, err
+		return nil, err
 	}
 
-	return SwapResourcesTransaction{
+	return &SwapResourcesTransaction{
 		Type:      tx.Type,
 		From:      tx.From,
 		Nonce:     tx.Nonce,
 		Data:      txData,
 		Signature: tx.Signature,
 	}, nil
+}
+
+// ParseSwapResourcesTransactionHandler is a wrapper that returns ITransactionHandler for registry
+func ParseSwapResourcesTransactionHandler(tx t.Transaction) (t.ITransactionHandler, error) {
+	return ParseSwapResourcesTransaction(tx)
 }

@@ -26,6 +26,10 @@ type UpgradeBuildingTransaction struct {
 	Signature []byte                         `cbor:"5,keyasint"`
 }
 
+func (tx *UpgradeBuildingTransaction) GetType() t.TransactionType {
+	return t.StartBuildingUpgrade
+}
+
 func (tx *UpgradeBuildingTransaction) Transaction() (t.Transaction, error) {
 	txData, err := cbor.Marshal(tx.Data)
 	if err != nil {
@@ -241,19 +245,24 @@ func (tx *UpgradeBuildingTransaction) Execute(ctx t.TransactionContext) *abcityp
 	}
 }
 
-func ParseUpgradeBuildingTransaction(tx t.Transaction) (UpgradeBuildingTransaction, error) {
+func ParseUpgradeBuildingTransaction(tx t.Transaction) (*UpgradeBuildingTransaction, error) {
 	var txData UpgradeBuildingTransactionData
 	err := cbor.Unmarshal(tx.Data, &txData)
 
 	if err != nil {
-		return UpgradeBuildingTransaction{}, err
+		return nil, err
 	}
 
-	return UpgradeBuildingTransaction{
+	return &UpgradeBuildingTransaction{
 		Type:      tx.Type,
 		From:      tx.From,
 		Nonce:     tx.Nonce,
 		Data:      txData,
 		Signature: tx.Signature,
 	}, nil
+}
+
+// ParseUpgradeBuildingTransactionHandler is a wrapper that returns ITransactionHandler for registry
+func ParseUpgradeBuildingTransactionHandler(tx t.Transaction) (t.ITransactionHandler, error) {
+	return ParseUpgradeBuildingTransaction(tx)
 }

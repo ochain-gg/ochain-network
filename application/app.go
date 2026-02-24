@@ -49,6 +49,11 @@ func NewOChainApplication(config config.OChainConfig, db *database.OChainDatabas
 		return &OChainApplication{}, err
 	}
 
+	// Log registered transaction handlers for debugging
+	registeredTypes := transactions.GetRegisteredTypes()
+	log.Printf("Registered transaction handlers count: %d", len(registeredTypes))
+	log.Printf("Registered transaction types: %v", registeredTypes)
+
 	return &OChainApplication{
 		config:           config,
 		state:            &state,

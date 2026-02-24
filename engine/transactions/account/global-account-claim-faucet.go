@@ -22,6 +22,10 @@ type ClaimFaucetTransaction struct {
 	Signature []byte                     `cbor:"5,keyasint"`
 }
 
+func (tx *ClaimFaucetTransaction) GetType() t.TransactionType {
+	return t.ClaimFaucet
+}
+
 func (tx *ClaimFaucetTransaction) Transaction() (t.Transaction, error) {
 	txData, err := cbor.Marshal(tx.Data)
 	if err != nil {
@@ -112,12 +116,17 @@ func (tx *ClaimFaucetTransaction) Execute(ctx t.TransactionContext) *abcitypes.E
 	}
 }
 
-func ParseClaimFaucetTransaction(tx t.Transaction) (ClaimFaucetTransaction, error) {
-	return ClaimFaucetTransaction{
+func ParseClaimFaucetTransaction(tx t.Transaction) (*ClaimFaucetTransaction, error) {
+	return &ClaimFaucetTransaction{
 		Type:      tx.Type,
 		From:      tx.From,
 		Nonce:     tx.Nonce,
 		Data:      ClaimFaucetTransactionData{},
 		Signature: tx.Signature,
 	}, nil
+}
+
+// ParseClaimFaucetTransactionHandler is a wrapper that returns ITransactionHandler for registry
+func ParseClaimFaucetTransactionHandler(tx t.Transaction) (t.ITransactionHandler, error) {
+	return ParseClaimFaucetTransaction(tx)
 }

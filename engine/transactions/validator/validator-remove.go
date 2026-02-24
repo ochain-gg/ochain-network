@@ -24,6 +24,10 @@ type OChainRemoveValidatorTransaction struct {
 	Data OChainRemoveValidatorTransactionData
 }
 
+func (tx *OChainRemoveValidatorTransaction) GetType() t.TransactionType {
+	return t.RemoveValidator
+}
+
 func (tx *OChainRemoveValidatorTransaction) Check(ctx t.TransactionContext) *abcitypes.CheckTxResponse {
 
 	data, err := tx.FetchData(ctx)
@@ -156,17 +160,22 @@ func (tx OChainRemoveValidatorTransaction) Transaction() (t.Transaction, error) 
 	}, nil
 }
 
-func ParseOChainRemoveValidatorTransaction(tx t.Transaction) (OChainRemoveValidatorTransaction, error) {
+func ParseOChainRemoveValidatorTransaction(tx t.Transaction) (*OChainRemoveValidatorTransaction, error) {
 
 	var txData OChainRemoveValidatorTransactionData
 	err := cbor.Unmarshal(tx.Data, &txData)
 
 	if err != nil {
-		return OChainRemoveValidatorTransaction{}, err
+		return nil, err
 	}
 
-	return OChainRemoveValidatorTransaction{
+	return &OChainRemoveValidatorTransaction{
 		Type: tx.Type,
 		Data: txData,
 	}, nil
+}
+
+// ParseOChainRemoveValidatorTransactionHandler is a wrapper that returns ITransactionHandler for registry
+func ParseOChainRemoveValidatorTransactionHandler(tx t.Transaction) (t.ITransactionHandler, error) {
+	return ParseOChainRemoveValidatorTransaction(tx)
 }

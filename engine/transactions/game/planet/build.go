@@ -25,6 +25,10 @@ type BuildTransaction struct {
 	Signature []byte               `cbor:"5,keyasint"`
 }
 
+func (tx *BuildTransaction) GetType() t.TransactionType {
+	return t.Build
+}
+
 func (tx *BuildTransaction) Transaction() (t.Transaction, error) {
 	txData, err := cbor.Marshal(tx.Data)
 	if err != nil {
@@ -302,19 +306,24 @@ func (tx *BuildTransaction) Execute(ctx t.TransactionContext) *abcitypes.ExecTxR
 	}
 }
 
-func ParseBuildTransaction(tx t.Transaction) (BuildTransaction, error) {
+func ParseBuildTransaction(tx t.Transaction) (*BuildTransaction, error) {
 	var txData BuildTransactionData
 	err := cbor.Unmarshal(tx.Data, &txData)
 
 	if err != nil {
-		return BuildTransaction{}, err
+		return nil, err
 	}
 
-	return BuildTransaction{
+	return &BuildTransaction{
 		Type:      tx.Type,
 		From:      tx.From,
 		Nonce:     tx.Nonce,
 		Data:      txData,
 		Signature: tx.Signature,
 	}, nil
+}
+
+// ParseBuildTransactionHandler is a wrapper that returns ITransactionHandler for registry
+func ParseBuildTransactionHandler(tx t.Transaction) (t.ITransactionHandler, error) {
+	return ParseBuildTransaction(tx)
 }
