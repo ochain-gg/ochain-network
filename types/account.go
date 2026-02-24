@@ -31,6 +31,8 @@ type OChainGlobalAccount struct {
 
 	LastTransactionHour  uint64 `cbor:"9,keyasint"`
 	LastTransactionCount uint64 `cbor:"10,keyasint"`
+
+	DailyLoginStreak uint64 `cbor:"11,keyasint"`
 }
 
 type OChainGlobalAccountWithAttributes struct {
@@ -46,6 +48,7 @@ type OChainGlobalAccountWithAttributes struct {
 	CreatedAt               int64                                `cbor:"createdAt"`
 	LastTransactionHour     uint64                               `cbor:"lastTransactionHour"`
 	LastTransactionCount    uint64                               `cbor:"lastTransactionCount"`
+	DailyLoginStreak        uint64                               `cbor:"dailyLoginStreak"`
 }
 
 func (acc *OChainGlobalAccount) WithAttributes() OChainGlobalAccountWithAttributes {
@@ -62,6 +65,7 @@ func (acc *OChainGlobalAccount) WithAttributes() OChainGlobalAccountWithAttribut
 		CreatedAt:               acc.CreatedAt,
 		LastTransactionHour:     acc.LastTransactionHour,
 		LastTransactionCount:    acc.LastTransactionCount,
+		DailyLoginStreak:        acc.DailyLoginStreak,
 	}
 }
 
