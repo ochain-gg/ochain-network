@@ -22,7 +22,7 @@ import (
 type TransactionType uint16
 
 const (
-	MaxTransactionType uint64 = 31
+	MaxTransactionType uint64 = 41
 
 	//System transactions (Unauthenticated)
 	NewValidator          TransactionType = 0
@@ -46,51 +46,54 @@ const (
 	/**
 	 * Governance transactions
 	 */
-	CreateGovernanceProposal TransactionType = 11
-	VoteOnProposal           TransactionType = 12
-	ExecuteProposal          TransactionType = 13
+	GovernanceStake          TransactionType = 11
+	GovernanceUnstakeStart   TransactionType = 12
+	GovernanceUnstakeExecute TransactionType = 13
+	CreateGovernanceProposal TransactionType = 14
+	VoteOnProposal           TransactionType = 15
+	ExecuteProposal          TransactionType = 16
 
 	/**
 	 * Game transactions
 	 */
 
 	//Universe account
-	RegisterUniverseAccount TransactionType = 14
+	RegisterUniverseAccount TransactionType = 17
 
 	//Planet transactions
-	MintPlanet             TransactionType = 15
-	StartBuildingUpgrade   TransactionType = 16
-	StartTechnologyUpgrade TransactionType = 17
-	Build                  TransactionType = 18
+	MintPlanet             TransactionType = 18
+	StartBuildingUpgrade   TransactionType = 19
+	StartTechnologyUpgrade TransactionType = 20
+	Build                  TransactionType = 21
 
 	//Fleet transactions
-	FillCargo                    TransactionType = 20
-	UnfillCargo                  TransactionType = 21
-	SendFleetInOrbit             TransactionType = 22
-	LandingFleetInOrbit          TransactionType = 23
-	MergeFleets                  TransactionType = 24
-	SplitFleet                   TransactionType = 25
-	RecycleRemnant               TransactionType = 26
-	IntergalacticPortalFleetMove TransactionType = 27
-	ChangeFleetMode              TransactionType = 28
-	AcceptFleetMode              TransactionType = 29
-	MoveFleet                    TransactionType = 30
-	CancelFleetMove              TransactionType = 31
+	FillCargo                    TransactionType = 23
+	UnfillCargo                  TransactionType = 24
+	SendFleetInOrbit             TransactionType = 25
+	LandingFleetInOrbit          TransactionType = 26
+	MergeFleets                  TransactionType = 27
+	SplitFleet                   TransactionType = 28
+	RecycleRemnant               TransactionType = 29
+	IntergalacticPortalFleetMove TransactionType = 30
+	ChangeFleetMode              TransactionType = 31
+	AcceptFleetMode              TransactionType = 32
+	MoveFleet                    TransactionType = 33
+	CancelFleetMove              TransactionType = 34
 
 	//Fight transactions
-	Fight TransactionType = 32
+	Fight TransactionType = 35
 
 	//Alliance transactions
-	CreateAlliance  TransactionType = 33
-	StakeOnAlliance TransactionType = 34
+	CreateAlliance  TransactionType = 36
+	StakeOnAlliance TransactionType = 37
 
 	//Market transations
-	SwapResources TransactionType = 35
+	SwapResources TransactionType = 38
 
 	//Global <-> universes transations
-	UniverseOChainTokenDeposit  TransactionType = 36
-	UniverseOChainTokenWithdraw TransactionType = 37
-	ClaimFaucet                 TransactionType = 38
+	UniverseOChainTokenDeposit  TransactionType = 39
+	UniverseOChainTokenWithdraw TransactionType = 40
+	ClaimFaucet                 TransactionType = 41
 )
 
 type TransactionContext struct {
@@ -157,6 +160,8 @@ func (tx *Transaction) Sign(key []byte) error {
 	if err != nil {
 		return err
 	}
+
+	signature[64] += 27
 
 	tx.Signature = signature
 	return nil

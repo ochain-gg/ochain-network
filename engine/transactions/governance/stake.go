@@ -1,126 +1,150 @@
 package governance_transactions
 
-// import (
-// 	abcitypes "github.com/cometbft/cometbft/abci/types"
-// 	"github.com/fxamacker/cbor/v2"
-// 	t "github.com/ochain-gg/ochain-network/engine/transactions"
-// 	"github.com/ochain-gg/ochain-network/types"
-// )
+import (
+	"fmt"
 
-// type StakeOChainTokenTransactionData struct {
-// 	Amount string `cbor:"1,keyasint"`
-// }
+	abcitypes "github.com/cometbft/cometbft/abci/types"
+	"github.com/fxamacker/cbor/v2"
 
-// type StakeOChainTokenTransaction struct {
-// 	Type      t.TransactionType               `cbor:"1,keyasint"`
-// 	From      string                          `cbor:"2,keyasint"`
-// 	Nonce     uint64                          `cbor:"3,keyasint"`
-// 	Data      StakeOChainTokenTransactionData `cbor:"4,keyasint"`
-// 	Signature []byte                          `cbor:"5,keyasint"`
-// }
+	t "github.com/ochain-gg/ochain-network/engine/transactions"
+	"github.com/ochain-gg/ochain-network/types"
+)
 
-// func (tx *StakeOChainTokenTransaction) Check(ctx t.TransactionContext) *abcitypes.CheckTxResponse {
-// 	globalAccount, err := ctx.Db.GlobalsAccounts.Get(tx.From)
-// 	if err != nil {
-// 		return &abcitypes.CheckTxResponse{
-// 			Code: types.InvalidTransactionError,
-// 		}
-// 	}
+type StakeTransactionData struct {
+	Amount uint64 `cbor:"1,keyasint"`
+}
 
-// 	if globalAccount.TokenBalance < tx.Data.Amount {
-// 		return &abcitypes.CheckTxResponse{
-// 			Code: types.InvalidTransactionError,
-// 		}
-// 	}
+type StakeTransaction struct {
+	Type      t.TransactionType    `cbor:"1,keyasint"`
+	From      string               `cbor:"2,keyasint"`
+	Nonce     uint64               `cbor:"3,keyasint"`
+	Data      StakeTransactionData `cbor:"4,keyasint"`
+	Signature []byte               `cbor:"5,keyasint"`
+}
 
-// 	return &abcitypes.CheckTxResponse{
-// 		Code: types.NoError,
-// 	}
-// }
+func (tx *StakeTransaction) Transaction() (t.Transaction, error) {
+	txData, err := cbor.Marshal(tx.Data)
+	if err != nil {
+		return t.Transaction{}, err
+	}
 
-// func (tx *StakeOChainTokenTransaction) Execute(ctx t.TransactionContext) *abcitypes.ExecTxResult {
-// 	response := tx.Check(ctx)
-// 	if response.Code != types.NoError {
-// 		return &abcitypes.ExecTxResult{
-// 			Code: response.Code,
-// 		}
-// 	}
+	return t.Transaction{
+		Type:      tx.Type,
+		From:      tx.From,
+		Nonce:     tx.Nonce,
+		Data:      txData,
+		Signature: tx.Signature,
+	}, nil
+}
 
-// 	globalAccount, err := ctx.Db.GlobalsAccounts.Get(tx.From)
-// 	if err == nil {
-// 		return &abcitypes.ExecTxResult{
-// 			Code: types.InvalidTransactionError,
-// 		}
-// 	}
+func (tx *StakeTransaction) Check(ctx t.TransactionContext) *abcitypes.CheckTxResponse {
+	// Check if account exists
+	account, err := ctx.Db.GlobalsAccounts.Get(tx.From)
+	if err != nil {
+		return &abcitypes.CheckTxResponse{
+			Code: types.GlobalAccountNotFoundError,
+		}
+	}
 
-// 	globalAccount.TokenBalance -= tx.Data.Amount
-// 	globalAccount.StackedBalance += tx.Data.Amount
+	// Check if amount is valid
+	if tx.Data.Amount == 0 {
+		return &abcitypes.CheckTxResponse{
+			Code: types.InvalidAmountError,
+		}
+	}
 
-// 	txGasCost, err := globalAccount.ApplyGasCost(uint64(ctx.Date.Unix()))
-// 	if err != nil {
-// 		return &abcitypes.ExecTxResult{
-// 			Code: types.GasCostHigherThanBalance,
-// 		}
-// 	}
+	// Check if account has sufficient token balance
+	if account.TokenBalance < tx.Data.Amount {
+		return &abcitypes.CheckTxResponse{
+			Code: types.InsufficientBalanceError,
+		}
+	}
 
-// 	err = ctx.Db.GlobalsAccounts.Update(globalAccount)
-// 	if err != nil {
-// 		return &abcitypes.ExecTxResult{
-// 			Code: types.InvalidTransactionError,
-// 		}
-// 	}
+	return &abcitypes.CheckTxResponse{
+		Code: types.NoError,
+	}
+}
 
-// 	events := []abcitypes.Event{
-// 		{
-// 			Type: "OChainTokenStacked",
-// 			Attributes: []abcitypes.EventAttribute{
-// 				{Key: "account", Value: tx.From, Index: true},
-// 				{Key: "amount", Value: string(tx.Data.Amount), Index: true},
-// 			},
-// 		},
-// 	}
+func (tx *StakeTransaction) Execute(ctx t.TransactionContext) *abcitypes.ExecTxResult {
+	response := tx.Check(ctx)
+	if response.Code != types.NoError {
+		return &abcitypes.ExecTxResult{
+			Code: response.Code,
+		}
+	}
 
-// 	receipt := t.TransactionReceipt{
-// 		GasCost: txGasCost,
-// 	}
+	// Get account
+	account, err := ctx.Db.GlobalsAccounts.Get(tx.From)
+	if err != nil {
+		return &abcitypes.ExecTxResult{
+			Code: types.GlobalAccountNotFoundError,
+		}
+	}
 
-// 	return &abcitypes.ExecTxResult{
-// 		Code:      types.NoError,
-// 		Events:    events,
-// 		GasUsed:   100,
-// 		GasWanted: 100,
-// 		Data:      receipt.Bytes(),
-// 	}
-// }
+	// Calculate gas cost
+	gasCost, err := account.ApplyGasCost(uint64(ctx.Date.Unix()))
+	if err != nil {
+		return &abcitypes.ExecTxResult{
+			Code: types.GasCostHigherThanBalance,
+		}
+	}
 
-// func (tx *StakeOChainTokenTransaction) Transaction() (t.Transaction, error) {
-// 	txData, err := cbor.Marshal(tx.Data)
-// 	if err != nil {
-// 		return t.Transaction{}, err
-// 	}
+	// Update account balances
+	account.TokenBalance -= tx.Data.Amount
+	account.StackedBalance += tx.Data.Amount
 
-// 	return t.Transaction{
-// 		Type:      tx.Type,
-// 		From:      tx.From,
-// 		Nonce:     tx.Nonce,
-// 		Data:      txData,
-// 		Signature: tx.Signature,
-// 	}, nil
-// }
+	// Update account in database
+	err = ctx.Db.GlobalsAccounts.Update(account)
+	if err != nil {
+		return &abcitypes.ExecTxResult{
+			Code: types.DatabaseOperationError,
+		}
+	}
 
-// func ParseStakeOChainTokenTransaction(tx t.Transaction) (StakeOChainTokenTransaction, error) {
-// 	var txData StakeOChainTokenTransactionData
-// 	err := cbor.Unmarshal(tx.Data, &txData)
+	events := []abcitypes.Event{
+		{
+			Type: "TokensStaked",
+			Attributes: []abcitypes.EventAttribute{
+				{Key: "address", Value: tx.From, Index: true},
+				{Key: "amount", Value: fmt.Sprint(tx.Data.Amount)},
+				{Key: "newStakedBalance", Value: fmt.Sprint(account.StackedBalance)},
+			},
+		},
+	}
 
-// 	if err != nil {
-// 		return StakeOChainTokenTransaction{}, err
-// 	}
+	receipt := t.TransactionReceipt{
+		GasCost: gasCost,
+	}
 
-// 	return StakeOChainTokenTransaction{
-// 		Type:      tx.Type,
-// 		From:      tx.From,
-// 		Nonce:     tx.Nonce,
-// 		Data:      txData,
-// 		Signature: tx.Signature,
-// 	}, nil
-// }
+	receiptBytes, err := cbor.Marshal(receipt)
+	if err != nil {
+		return &abcitypes.ExecTxResult{
+			Code: types.SerializationError,
+		}
+	}
+
+	return &abcitypes.ExecTxResult{
+		Code:      types.NoError,
+		Events:    events,
+		GasUsed:   int64(gasCost),
+		GasWanted: int64(gasCost),
+		Data:      receiptBytes,
+	}
+}
+
+func ParseStakeTransaction(tx t.Transaction) (StakeTransaction, error) {
+	var txData StakeTransactionData
+	err := cbor.Unmarshal(tx.Data, &txData)
+
+	if err != nil {
+		return StakeTransaction{}, err
+	}
+
+	return StakeTransaction{
+		Type:      tx.Type,
+		From:      tx.From,
+		Nonce:     tx.Nonce,
+		Data:      txData,
+		Signature: tx.Signature,
+	}, nil
+}

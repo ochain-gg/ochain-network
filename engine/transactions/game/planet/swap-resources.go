@@ -52,7 +52,7 @@ func (tx *SwapResourcesTransaction) Check(ctx t.TransactionContext) *abcitypes.C
 	account, err := ctx.Db.UniverseAccounts.GetAt(tx.Data.Universe, tx.From, uint64(ctx.Date.Unix()))
 	if err != nil {
 		return &abcitypes.CheckTxResponse{
-			Code: types.InvalidTransactionError,
+			Code: types.GlobalAccountNotFoundError,
 		}
 	}
 
@@ -128,21 +128,21 @@ func (tx *SwapResourcesTransaction) Execute(ctx t.TransactionContext) *abcitypes
 	globalAccount, err := ctx.Db.GlobalsAccounts.GetAt(tx.From, uint64(ctx.Date.Unix()))
 	if err != nil {
 		return &abcitypes.ExecTxResult{
-			Code: types.InvalidTransactionError,
+			Code: types.GlobalAccountNotFoundError,
 		}
 	}
 
 	account, err := ctx.Db.UniverseAccounts.GetAt(tx.Data.Universe, tx.From, uint64(ctx.Date.Unix()))
 	if err != nil {
 		return &abcitypes.ExecTxResult{
-			Code: types.InvalidTransactionError,
+			Code: types.UniverseAccountNotFoundError,
 		}
 	}
 
 	universe, err := ctx.Db.Universes.GetAt(tx.Data.Universe, uint64(ctx.Date.Unix()))
 	if err != nil {
 		return &abcitypes.ExecTxResult{
-			Code: types.InvalidTransactionError,
+			Code: types.UniverseNotFoundError,
 		}
 	}
 

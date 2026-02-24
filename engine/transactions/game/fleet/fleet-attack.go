@@ -1,22 +1,22 @@
 package fleet_transactions
 
 import (
-	"encoding/hex"
 	"fmt"
 
 	abcitypes "github.com/cometbft/cometbft/abci/types"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/fxamacker/cbor/v2"
 
+	"github.com/ochain-gg/ochain-network/application"
 	t "github.com/ochain-gg/ochain-network/engine/transactions"
 	"github.com/ochain-gg/ochain-network/types"
 )
 
 type FleetAttackTransactionData struct {
-	UniverseId string `cbor:"1,keyasint"`
-	FleetId    string `cbor:"1,keyasint"`
-	TargetType string `cbor:"1,keyasint"`
-	TargetId   string `cbor:"1,keyasint"`
+	UniverseId      string `cbor:"1,keyasint"`
+	FleetId         string `cbor:"2,keyasint"`
+	TargetGalaxy    uint64 `cbor:"3,keyasint"`
+	TargetSolar     uint64 `cbor:"4,keyasint"`
+	TargetPlanet    uint64 `cbor:"5,keyasint"`
 }
 
 type FleetAttackTransaction struct {
@@ -47,125 +47,52 @@ func (tx *FleetAttackTransaction) Check(ctx t.TransactionContext) *abcitypes.Che
 	account, err := ctx.Db.UniverseAccounts.GetAt(tx.Data.UniverseId, tx.From, uint64(ctx.Date.Unix()))
 	if err != nil {
 		return &abcitypes.CheckTxResponse{
-			Code: types.InvalidTransactionError,
+			Code: types.UniverseAccountNotFoundError,
 		}
 	}
 
 	universe, err := ctx.Db.Universes.GetAt(tx.Data.UniverseId, uint64(ctx.Date.Unix()))
 	if err != nil {
 		return &abcitypes.CheckTxResponse{
-			Code: types.InvalidTransactionError,
+			Code: types.UniverseNotFoundError,
 		}
 	}
 
 	fleet, err := ctx.Db.Fleets.Get(universe.Id, account, tx.Data.FleetId)
 	if err != nil {
 		return &abcitypes.CheckTxResponse{
-			Code: types.InvalidTransactionError,
+			Code: types.FleetNotFoundError,
 		}
 	}
 
 	//Verify fleet ownership
 	if fleet.Owner != tx.From {
 		return &abcitypes.CheckTxResponse{
-			Code: types.InvalidTransactionError,
+			Code: types.FleetOwnershipError,
 		}
 	}
 
 	//Verify fleet isn't traveling
 	if fleet.IsTraveling(ctx.Date.Unix()) {
 		return &abcitypes.CheckTxResponse{
-			Code: types.InvalidTransactionError,
+			Code: types.FleetInTransitError,
 		}
 	}
 
-	//Verify spaceship avaibility
-	for _, spaceshipId := range types.GetSpaceshipIds() {
-		if fleet.Spaceships.Get(spaceshipId) < tx.Data.Spaceships.Get(spaceshipId) {
-			return &abcitypes.CheckTxResponse{
-				Code: types.InvalidTransactionError,
-			}
-		}
-	}
-
-	//Verify max fleets isn't reach
-	maxFleet := 1 + (account.Technologies.Computer / 2)
-	accountFleets, err := ctx.Db.Fleets.GetAccountFleetAt(universe.Id, account, uint64(ctx.Date.Unix()))
+	//Verify target coordinates are valid
+	targetCoordId := types.CoordinateId(tx.Data.TargetGalaxy, tx.Data.TargetSolar, tx.Data.TargetPlanet)
+	_, err = ctx.Db.Planets.Get(tx.Data.UniverseId, targetCoordId)
 	if err != nil {
 		return &abcitypes.CheckTxResponse{
-			Code: types.InvalidTransactionError,
+			Code: types.PlanetNotFoundError,
 		}
 	}
 
-	if len(accountFleets) > int(maxFleet) {
+	//Verify fleet is at target position (not traveling to it)
+	fleetCoordId := fleet.Destination.CoordinateId()
+	if fleetCoordId != targetCoordId {
 		return &abcitypes.CheckTxResponse{
-			Code: types.InvalidTransactionError,
-		}
-	}
-
-	fleetId := crypto.Keccak256([]byte(tx.From + fmt.Sprint(tx.Nonce) + fmt.Sprint(ctx.Date.Unix())))
-	newFleet := types.OChainFleet{
-		Id:   hex.EncodeToString(fleetId),
-		Name: tx.Data.Name,
-
-		Owner:      tx.From,
-		Universe:   tx.Data.UniverseId,
-		Spaceships: tx.Data.Spaceships,
-		Cargo:      tx.Data.Cargo,
-
-		Departure: types.OChainFleetPosition{
-			Galaxy:      fleet.Destination.Galaxy,
-			SolarSystem: fleet.Destination.SolarSystem,
-			Planet:      fleet.Destination.Planet,
-		},
-		Destination: types.OChainFleetPosition{
-			Galaxy:      fleet.Destination.Galaxy,
-			SolarSystem: fleet.Destination.SolarSystem,
-			Planet:      fleet.Destination.Planet,
-		},
-
-		BeginTravelAt:  ctx.Date.Unix(),
-		TravelDuration: 0,
-	}
-
-	//Verify available cargo
-	splitedFleetAvailableCargo, err := ctx.Db.Spaceships.GetCargoOfAt(fleet, uint64(ctx.Date.Unix()))
-	if err != nil {
-		return &abcitypes.CheckTxResponse{
-			Code: types.InvalidTransactionError,
-		}
-	}
-
-	newFleetAvailableCargo, err := ctx.Db.Spaceships.GetCargoOfAt(newFleet, uint64(ctx.Date.Unix()))
-	if err != nil {
-		return &abcitypes.CheckTxResponse{
-			Code: types.InvalidTransactionError,
-		}
-	}
-
-	//Check if splitted fleet isn't empty
-	if splitedFleetAvailableCargo-newFleetAvailableCargo == 0 {
-		return &abcitypes.CheckTxResponse{
-			Code: types.InvalidTransactionError,
-		}
-	}
-
-	if splitedFleetAvailableCargo-newFleetAvailableCargo < fleet.Cargo.Total()-tx.Data.Cargo.Total() {
-		return &abcitypes.CheckTxResponse{
-			Code: types.InvalidTransactionError,
-		}
-	}
-
-	if newFleetAvailableCargo < tx.Data.Cargo.Total() {
-		return &abcitypes.CheckTxResponse{
-			Code: types.InvalidTransactionError,
-		}
-	}
-
-	payable := fleet.CanPay(tx.Data.Cargo)
-	if !payable {
-		return &abcitypes.CheckTxResponse{
-			Code: types.InvalidTransactionError,
+			Code: types.FleetNotAtTargetPositionError,
 		}
 	}
 
@@ -182,7 +109,8 @@ func (tx *FleetAttackTransaction) Execute(ctx t.TransactionContext) *abcitypes.E
 		}
 	}
 
-	account, err := ctx.Db.UniverseAccounts.GetAt(tx.Data.UniverseId, tx.From, uint64(ctx.Date.Unix()))
+	// Load data
+	attackerAccount, err := ctx.Db.UniverseAccounts.GetAt(tx.Data.UniverseId, tx.From, uint64(ctx.Date.Unix()))
 	if err != nil {
 		return &abcitypes.ExecTxResult{
 			Code: types.InvalidTransactionError,
@@ -196,88 +124,240 @@ func (tx *FleetAttackTransaction) Execute(ctx t.TransactionContext) *abcitypes.E
 		}
 	}
 
-	fleet, err := ctx.Db.Fleets.Get(universe.Id, account, tx.Data.FleetId)
+	attackingFleet, err := ctx.Db.Fleets.Get(universe.Id, attackerAccount, tx.Data.FleetId)
 	if err != nil {
 		return &abcitypes.ExecTxResult{
 			Code: types.InvalidTransactionError,
 		}
 	}
 
-	for _, spaceshipId := range types.GetSpaceshipIds() {
-		err = fleet.RemoveSpaceships(spaceshipId, tx.Data.Spaceships.Get(spaceshipId))
-		if err != nil {
-			return &abcitypes.ExecTxResult{
-				Code: types.InvalidTransactionError,
+	// Get target planet
+	targetCoordId := types.CoordinateId(tx.Data.TargetGalaxy, tx.Data.TargetSolar, tx.Data.TargetPlanet)
+	targetPlanet, err := ctx.Db.Planets.Get(tx.Data.UniverseId, targetCoordId)
+	if err != nil {
+		return &abcitypes.ExecTxResult{
+			Code: types.InvalidTransactionError,
+		}
+	}
+
+	// Get defender account
+	defenderAccount, err := ctx.Db.UniverseAccounts.GetAt(tx.Data.UniverseId, targetPlanet.Owner, uint64(ctx.Date.Unix()))
+	if err != nil {
+		return &abcitypes.ExecTxResult{
+			Code: types.InvalidTransactionError,
+		}
+	}
+
+	// Get all fleets at the target position
+	allFleets, err := ctx.Db.Fleets.GetAllAt(tx.Data.UniverseId, uint64(ctx.Date.Unix()))
+	if err != nil {
+		return &abcitypes.ExecTxResult{
+			Code: types.InvalidTransactionError,
+		}
+	}
+
+	// Separate fleets into attackers and defenders
+	var attackingFleets []types.OChainFleet
+	var defendingFleets []types.OChainFleet
+
+	for _, fleet := range allFleets {
+		fleetCoordId := fleet.Destination.CoordinateId()
+		if fleetCoordId == targetCoordId && !fleet.IsTraveling(ctx.Date.Unix()) {
+			// Fleet is at target position and not traveling
+			if fleet.Mode == types.OChainFleetAttackMode {
+				attackingFleets = append(attackingFleets, fleet)
+			} else if fleet.Mode == types.OChainFleetDefenseMode {
+				defendingFleets = append(defendingFleets, fleet)
 			}
 		}
 	}
 
-	err = fleet.Cargo.Sub(tx.Data.Cargo)
-	if err != nil {
-		return &abcitypes.ExecTxResult{
-			Code: types.InvalidTransactionError,
+	// Create battle participants
+	// Attackers: all fleets in attack mode at this position
+	var attackerParticipants []*types.BattleParticipant
+	attackerAccounts := make(map[string]types.OChainUniverseAccount)
+
+	for _, fleet := range attackingFleets {
+		var fleetAccount types.OChainUniverseAccount
+		if fleet.Owner == tx.From {
+			fleetAccount = attackerAccount
+		} else {
+			acc, err := ctx.Db.UniverseAccounts.GetAt(tx.Data.UniverseId, fleet.Owner, uint64(ctx.Date.Unix()))
+			if err != nil {
+				continue // Skip if account not found
+			}
+			fleetAccount = acc
+		}
+		attackerAccounts[fleet.Owner] = fleetAccount
+
+		participant := types.CreateBattleParticipant(
+			fleet.Owner,
+			fleetAccount,
+			&fleet.Spaceships,
+			nil,
+			application.DefaultSpaceships,
+			application.DefaultDefenses,
+		)
+		attackerParticipants = append(attackerParticipants, participant)
+	}
+
+	// Defenders: planet defenses + planet ships + defending fleets
+	defenderParticipant := types.CreateBattleParticipant(
+		targetPlanet.Owner,
+		defenderAccount,
+		&targetPlanet.Spaceships,
+		&targetPlanet.Defenses,
+		application.DefaultSpaceships,
+		application.DefaultDefenses,
+	)
+
+	// Add defending fleets to defender participant
+	for _, fleet := range defendingFleets {
+		var fleetAccount types.OChainUniverseAccount
+		if fleet.Owner == targetPlanet.Owner {
+			fleetAccount = defenderAccount
+		} else {
+			acc, err := ctx.Db.UniverseAccounts.GetAt(tx.Data.UniverseId, fleet.Owner, uint64(ctx.Date.Unix()))
+			if err != nil {
+				continue
+			}
+			fleetAccount = acc
+		}
+
+		fleetParticipant := types.CreateBattleParticipant(
+			fleet.Owner,
+			fleetAccount,
+			&fleet.Spaceships,
+			nil,
+			application.DefaultSpaceships,
+			application.DefaultDefenses,
+		)
+
+		// Merge fleet participant units into defender participant
+		defenderParticipant.Units = append(defenderParticipant.Units, fleetParticipant.Units...)
+		defenderParticipant.TotalInitialUnits += fleetParticipant.TotalInitialUnits
+		defenderParticipant.TotalRemainingUnits += fleetParticipant.TotalRemainingUnits
+	}
+
+	// Merge all attackers into one participant
+	attackerParticipant := attackerParticipants[0]
+	for i := 1; i < len(attackerParticipants); i++ {
+		attackerParticipant.Units = append(attackerParticipant.Units, attackerParticipants[i].Units...)
+		attackerParticipant.TotalInitialUnits += attackerParticipants[i].TotalInitialUnits
+		attackerParticipant.TotalRemainingUnits += attackerParticipants[i].TotalRemainingUnits
+	}
+
+	// Execute battle
+	battleResult := types.ExecuteBattle(attackerParticipant, defenderParticipant)
+
+	// Calculate debris field
+	debrisField := types.CalculateDebrisField(
+		battleResult.AttackerRemaining,
+		battleResult.DefenderRemaining,
+		application.DefaultSpaceships,
+	)
+
+	// Apply battle results to all attacking fleets
+	for _, fleet := range attackingFleets {
+		types.ApplyBattleResultToFleet(&fleet, battleResult.AttackerRemaining)
+
+		// Update or delete fleet
+		if fleet.Spaceships.SmallCargo == 0 && fleet.Spaceships.LargeCargo == 0 &&
+			fleet.Spaceships.LightFighter == 0 && fleet.Spaceships.HeavyFighter == 0 &&
+			fleet.Spaceships.Cruiser == 0 && fleet.Spaceships.Battleship == 0 &&
+			fleet.Spaceships.Battlecruiser == 0 && fleet.Spaceships.Bomber == 0 &&
+			fleet.Spaceships.Destroyer == 0 && fleet.Spaceships.Deathstar == 0 &&
+			fleet.Spaceships.Reaper == 0 && fleet.Spaceships.Recycler == 0 {
+			// Fleet completely destroyed
+			fleetAcc := attackerAccounts[fleet.Owner]
+			ctx.Db.Fleets.Delete(tx.Data.UniverseId, fleetAcc, fleet.Id)
+		} else {
+			fleetAcc := attackerAccounts[fleet.Owner]
+			ctx.Db.Fleets.Update(tx.Data.UniverseId, fleetAcc, fleet)
 		}
 	}
 
-	fleetId := crypto.Keccak256([]byte(tx.From + fmt.Sprint(tx.Nonce) + fmt.Sprint(ctx.Date.Unix())))
-	newFleet := types.OChainFleet{
-		Id:   hex.EncodeToString(fleetId),
-		Name: tx.Data.Name,
+	// Apply battle results to planet
+	types.ApplyBattleResultToPlanet(&targetPlanet, battleResult.DefenderRemaining)
+	ctx.Db.Planets.Update(tx.Data.UniverseId, targetPlanet)
 
-		Owner:      tx.From,
-		Universe:   tx.Data.UniverseId,
-		Spaceships: tx.Data.Spaceships,
-		Cargo:      tx.Data.Cargo,
+	// Apply battle results to defending fleets
+	for _, fleet := range defendingFleets {
+		types.ApplyBattleResultToFleet(&fleet, battleResult.DefenderRemaining)
 
-		Departure: types.OChainFleetPosition{
-			Galaxy:      fleet.Destination.Galaxy,
-			SolarSystem: fleet.Destination.SolarSystem,
-			Planet:      fleet.Destination.Planet,
-		},
-		Destination: types.OChainFleetPosition{
-			Galaxy:      fleet.Destination.Galaxy,
-			SolarSystem: fleet.Destination.SolarSystem,
-			Planet:      fleet.Destination.Planet,
-		},
+		fleetAcc, _ := ctx.Db.UniverseAccounts.GetAt(tx.Data.UniverseId, fleet.Owner, uint64(ctx.Date.Unix()))
 
-		BeginTravelAt:  ctx.Date.Unix(),
-		TravelDuration: 0,
-	}
-
-	err = ctx.Db.Fleets.Insert(universe.Id, account, newFleet)
-	if err != nil {
-		return &abcitypes.ExecTxResult{
-			Code: types.InvalidTransactionError,
+		if fleet.Spaceships.SmallCargo == 0 && fleet.Spaceships.LargeCargo == 0 &&
+			fleet.Spaceships.LightFighter == 0 && fleet.Spaceships.HeavyFighter == 0 &&
+			fleet.Spaceships.Cruiser == 0 && fleet.Spaceships.Battleship == 0 &&
+			fleet.Spaceships.Battlecruiser == 0 && fleet.Spaceships.Bomber == 0 &&
+			fleet.Spaceships.Destroyer == 0 && fleet.Spaceships.Deathstar == 0 &&
+			fleet.Spaceships.Reaper == 0 && fleet.Spaceships.Recycler == 0 {
+			ctx.Db.Fleets.Delete(tx.Data.UniverseId, fleetAcc, fleet.Id)
+		} else {
+			ctx.Db.Fleets.Update(tx.Data.UniverseId, fleetAcc, fleet)
 		}
 	}
 
-	err = ctx.Db.Fleets.Update(universe.Id, account, fleet)
-	if err != nil {
-		return &abcitypes.ExecTxResult{
-			Code: types.InvalidTransactionError,
+	// Handle loot if attacker wins
+	var loot types.OChainResources
+	if battleResult.AttackerWins {
+		// Calculate loot based on protection level (assuming 0% protection for now)
+		maxLoot := targetPlanet.Resources
+
+		// Calculate cargo capacity of surviving attacking ships
+		var totalCapacity uint64 = 0
+		for _, unit := range battleResult.AttackerRemaining.Units {
+			if !unit.IsDefense {
+				for _, ship := range application.DefaultSpaceships {
+					if string(ship.Id) == unit.Type {
+						totalCapacity += ship.Stats.Capacity * unit.Count
+						break
+					}
+				}
+			}
 		}
+
+		// Take resources up to cargo capacity
+		if maxLoot.Metal+maxLoot.Crystal+maxLoot.Deuterium <= totalCapacity {
+			loot = maxLoot
+			targetPlanet.Resources = types.OChainResources{}
+		} else {
+			// Proportional distribution
+			total := maxLoot.Metal + maxLoot.Crystal + maxLoot.Deuterium
+			loot.Metal = (maxLoot.Metal * totalCapacity) / total
+			loot.Crystal = (maxLoot.Crystal * totalCapacity) / total
+			loot.Deuterium = (maxLoot.Deuterium * totalCapacity) / total
+
+			targetPlanet.Resources.Metal -= loot.Metal
+			targetPlanet.Resources.Crystal -= loot.Crystal
+			targetPlanet.Resources.Deuterium -= loot.Deuterium
+		}
+
+		// Add loot to attacking fleet
+		attackingFleet.Cargo.Add(loot)
+		ctx.Db.Fleets.Update(tx.Data.UniverseId, attackerAccount, attackingFleet)
+		ctx.Db.Planets.Update(tx.Data.UniverseId, targetPlanet)
 	}
 
-	s, err := cbor.Marshal(newFleet.Spaceships.WithAttributes())
-	if err != nil {
-		return &abcitypes.ExecTxResult{
-			Code: types.InvalidTransactionError,
-		}
-	}
-
+	// Create events
 	events := []abcitypes.Event{
 		{
-			Type: "FleetSplited",
+			Type: "BattleExecuted",
 			Attributes: []abcitypes.EventAttribute{
-				{Key: "account", Value: tx.From, Index: true},
+				{Key: "attacker", Value: tx.From, Index: true},
+				{Key: "defender", Value: targetPlanet.Owner, Index: true},
 				{Key: "universe", Value: tx.Data.UniverseId, Index: true},
-				{Key: "splitedFleet", Value: fleet.Id, Index: true},
-				{Key: "newFleet", Value: newFleet.Id, Index: true},
-				{Key: "spaceships", Value: hex.EncodeToString(s), Index: true},
-				{Key: "oct", Value: fmt.Sprint(fleet.Cargo.OCT)},
-				{Key: "metal", Value: fmt.Sprint(fleet.Cargo.Metal)},
-				{Key: "crystal", Value: fmt.Sprint(fleet.Cargo.Crystal)},
-				{Key: "deuterium", Value: fmt.Sprint(fleet.Cargo.Deuterium)},
+				{Key: "targetCoordinates", Value: targetCoordId, Index: true},
+				{Key: "rounds", Value: fmt.Sprint(battleResult.Rounds)},
+				{Key: "attackerWins", Value: fmt.Sprint(battleResult.AttackerWins)},
+				{Key: "defenderWins", Value: fmt.Sprint(battleResult.DefenderWins)},
+				{Key: "draw", Value: fmt.Sprint(battleResult.Draw)},
+				{Key: "debrisMetal", Value: fmt.Sprint(debrisField.Metal)},
+				{Key: "debrisCrystal", Value: fmt.Sprint(debrisField.Crystal)},
+				{Key: "lootMetal", Value: fmt.Sprint(loot.Metal)},
+				{Key: "lootCrystal", Value: fmt.Sprint(loot.Crystal)},
+				{Key: "lootDeuterium", Value: fmt.Sprint(loot.Deuterium)},
 			},
 		},
 	}
@@ -285,8 +365,8 @@ func (tx *FleetAttackTransaction) Execute(ctx t.TransactionContext) *abcitypes.E
 	return &abcitypes.ExecTxResult{
 		Code:      types.NoError,
 		Events:    events,
-		GasUsed:   100,
-		GasWanted: 100,
+		GasUsed:   1000,
+		GasWanted: 1000,
 		Data:      []byte(""),
 	}
 }

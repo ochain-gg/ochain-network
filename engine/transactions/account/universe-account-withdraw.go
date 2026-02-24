@@ -42,21 +42,21 @@ func (tx *UniverseAccountWithdrawTransaction) Check(ctx t.TransactionContext) *a
 	_, err := ctx.Db.GlobalsAccounts.GetAt(tx.From, uint64(ctx.Date.Unix()))
 	if err != nil {
 		return &abcitypes.CheckTxResponse{
-			Code: types.InvalidTransactionError,
+			Code: types.GlobalAccountNotFoundError,
 		}
 	}
 
 	_, err = ctx.Db.UniverseAccounts.GetAt(tx.Data.Universe, tx.From, uint64(ctx.Date.Unix()))
 	if err != nil {
 		return &abcitypes.CheckTxResponse{
-			Code: types.InvalidTransactionError,
+			Code: types.UniverseAccountNotFoundError,
 		}
 	}
 
 	planet, err := ctx.Db.Planets.GetAt(tx.Data.Universe, tx.Data.Planet, uint64(ctx.Date.Unix()))
 	if err != nil {
 		return &abcitypes.CheckTxResponse{
-			Code: types.InvalidTransactionError,
+			Code: types.PlanetNotFoundError,
 		}
 	}
 
@@ -64,19 +64,19 @@ func (tx *UniverseAccountWithdrawTransaction) Check(ctx t.TransactionContext) *a
 	weeklyUsage, err := ctx.Db.UniverseAccountWeeklyUsage.GetAt(tx.Data.Universe, tx.From, year, week, uint64(ctx.Date.Unix()))
 	if err != nil {
 		return &abcitypes.CheckTxResponse{
-			Code: types.InvalidTransactionError,
+			Code: types.DatabaseOperationError,
 		}
 	}
 
 	if weeklyUsage.WithdrawalsExecuted >= types.MaxWeeklyOCTWithdrawals {
 		return &abcitypes.CheckTxResponse{
-			Code: types.InvalidTransactionError,
+			Code: types.RateLimitExceededError,
 		}
 	}
 
 	if planet.Resources.OCT < tx.Data.Amount {
 		return &abcitypes.CheckTxResponse{
-			Code: types.InvalidTransactionError,
+			Code: types.InsufficientBalanceError,
 		}
 	}
 
@@ -96,28 +96,28 @@ func (tx *UniverseAccountWithdrawTransaction) Execute(ctx t.TransactionContext) 
 	globalAccount, err := ctx.Db.GlobalsAccounts.GetAt(tx.From, currentDate)
 	if err != nil {
 		return &abcitypes.ExecTxResult{
-			Code: types.InvalidTransactionError,
+			Code: types.GlobalAccountNotFoundError,
 		}
 	}
 
 	universe, err := ctx.Db.Universes.GetAt(tx.Data.Universe, currentDate)
 	if err != nil {
 		return &abcitypes.ExecTxResult{
-			Code: types.InvalidTransactionError,
+			Code: types.UniverseNotFoundError,
 		}
 	}
 
 	account, err := ctx.Db.UniverseAccounts.GetAt(universe.Id, tx.From, currentDate)
 	if err != nil {
 		return &abcitypes.ExecTxResult{
-			Code: types.InvalidTransactionError,
+			Code: types.UniverseAccountNotFoundError,
 		}
 	}
 
 	planet, err := ctx.Db.Planets.GetAt(tx.Data.Universe, tx.Data.Planet, currentDate)
 	if err != nil {
 		return &abcitypes.ExecTxResult{
-			Code: types.InvalidTransactionError,
+			Code: types.PlanetNotFoundError,
 		}
 	}
 
@@ -125,7 +125,7 @@ func (tx *UniverseAccountWithdrawTransaction) Execute(ctx t.TransactionContext) 
 	weeklyUsage, err := ctx.Db.UniverseAccountWeeklyUsage.GetAt(tx.Data.Universe, tx.From, year, week, uint64(ctx.Date.Unix()))
 	if err != nil {
 		return &abcitypes.ExecTxResult{
-			Code: types.InvalidTransactionError,
+			Code: types.DatabaseOperationError,
 		}
 	}
 
@@ -138,21 +138,21 @@ func (tx *UniverseAccountWithdrawTransaction) Execute(ctx t.TransactionContext) 
 	err = ctx.Db.GlobalsAccounts.Update(globalAccount)
 	if err != nil {
 		return &abcitypes.ExecTxResult{
-			Code: types.InvalidTransactionError,
+			Code: types.DatabaseOperationError,
 		}
 	}
 
 	err = ctx.Db.Planets.Update(tx.Data.Universe, planet)
 	if err != nil {
 		return &abcitypes.ExecTxResult{
-			Code: types.InvalidTransactionError,
+			Code: types.DatabaseOperationError,
 		}
 	}
 
 	err = ctx.Db.UniverseAccountWeeklyUsage.Upsert(weeklyUsage)
 	if err != nil {
 		return &abcitypes.ExecTxResult{
-			Code: types.InvalidTransactionError,
+			Code: types.DatabaseOperationError,
 		}
 	}
 

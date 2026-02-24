@@ -25,10 +25,18 @@ type OChainDatabase struct {
 	UniverseAccountWeeklyUsage *OChainUniverseAccountWeeklyUsageTable
 	Upgrades                   *OChainUpgradeTable
 	State                      *OChainStateTable
+	PendingUnstakes            *OChainPendingUnstakeTable
+	GovernanceProposals        *OChainGovernanceProposalTable
+	GovernanceVotes            *OChainGovernanceProposalVoteTable
 }
 
 func (db *OChainDatabase) Open(path string) error {
-	opts := badger.DefaultOptions(path)
+	var opts badger.Options
+	if path != "" {
+		opts = badger.DefaultOptions(path)
+	} else {
+		opts = badger.DefaultOptions("").WithInMemory(true).WithLogger(nil)
+	}
 
 	bdb, err := badger.OpenManaged(opts)
 	if err != nil {
@@ -62,6 +70,9 @@ func (db *OChainDatabase) LoadTables() {
 	db.Fleets = NewFleetTable(db.DB)
 	db.Alliance = NewOChainAllianceTable(db.DB)
 	db.State = NewOChainStateTable(db.DB)
+	db.PendingUnstakes = NewOChainPendingUnstakeTable(db.DB)
+	db.GovernanceProposals = NewOChainGovernanceProposalTable(db.DB)
+	db.GovernanceVotes = NewOChainGovernanceProposalVoteTable(db.DB)
 }
 
 func (db *OChainDatabase) NewTransaction(ts uint64) {
@@ -85,6 +96,9 @@ func (db *OChainDatabase) NewTransaction(ts uint64) {
 	db.Fleets.SetCurrentTxn(db.CurrentTxn)
 	db.Alliance.SetCurrentTxn(db.CurrentTxn)
 	db.State.SetCurrentTxn(db.CurrentTxn)
+	db.PendingUnstakes.SetCurrentTxn(db.CurrentTxn)
+	db.GovernanceProposals.SetCurrentTxn(db.CurrentTxn)
+	db.GovernanceVotes.SetCurrentTxn(db.CurrentTxn)
 }
 
 func (db *OChainDatabase) CommitTransaction() error {

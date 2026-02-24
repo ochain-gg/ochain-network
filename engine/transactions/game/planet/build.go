@@ -44,28 +44,28 @@ func (tx *BuildTransaction) Check(ctx t.TransactionContext) *abcitypes.CheckTxRe
 	_, err := ctx.Db.GlobalsAccounts.GetAt(tx.From, uint64(ctx.Date.Unix()))
 	if err != nil {
 		return &abcitypes.CheckTxResponse{
-			Code: types.InvalidTransactionError,
+			Code: types.GlobalAccountNotFoundError,
 		}
 	}
 
 	account, err := ctx.Db.UniverseAccounts.GetAt(tx.Data.UniverseId, tx.From, uint64(ctx.Date.Unix()))
 	if err != nil {
 		return &abcitypes.CheckTxResponse{
-			Code: types.InvalidTransactionError,
+			Code: types.UniverseAccountNotFoundError,
 		}
 	}
 
 	universe, err := ctx.Db.Universes.GetAt(tx.Data.UniverseId, uint64(ctx.Date.Unix()))
 	if err != nil {
 		return &abcitypes.CheckTxResponse{
-			Code: types.InvalidTransactionError,
+			Code: types.UniverseNotFoundError,
 		}
 	}
 
 	planet, err := ctx.Db.Planets.GetAt(tx.Data.UniverseId, tx.Data.PlanetCoordinateId, uint64(ctx.Date.Unix()))
 	if err != nil {
 		return &abcitypes.CheckTxResponse{
-			Code: types.InvalidTransactionError,
+			Code: types.PlanetNotFoundError,
 		}
 	}
 
@@ -83,14 +83,14 @@ func (tx *BuildTransaction) Check(ctx t.TransactionContext) *abcitypes.CheckTxRe
 			spaceship, err := ctx.Db.Spaceships.GetAt(build.BuildId, uint64(ctx.Date.Unix()))
 			if err != nil {
 				return &abcitypes.CheckTxResponse{
-					Code: types.InvalidTransactionError,
+					Code: types.SpaceshipNotFoundError,
 				}
 			}
 
 			ok := spaceship.MeetRequirements(planet, account)
 			if !ok {
 				return &abcitypes.CheckTxResponse{
-					Code: types.InvalidTransactionError,
+					Code: types.RequirementsNotMetError,
 				}
 			}
 
@@ -103,14 +103,14 @@ func (tx *BuildTransaction) Check(ctx t.TransactionContext) *abcitypes.CheckTxRe
 			defense, err := ctx.Db.Defenses.GetAt(build.BuildId, uint64(ctx.Date.Unix()))
 			if err != nil {
 				return &abcitypes.CheckTxResponse{
-					Code: types.InvalidTransactionError,
+					Code: types.DefenseNotFoundError,
 				}
 			}
 
 			ok := defense.MeetRequirements(planet, account)
 			if !ok {
 				return &abcitypes.CheckTxResponse{
-					Code: types.InvalidTransactionError,
+					Code: types.RequirementsNotMetError,
 				}
 			}
 
@@ -124,7 +124,7 @@ func (tx *BuildTransaction) Check(ctx t.TransactionContext) *abcitypes.CheckTxRe
 	payable := planet.CanPay(totalCost)
 	if !payable {
 		return &abcitypes.CheckTxResponse{
-			Code: types.InvalidTransactionError,
+			Code: types.InsufficientResourcesError,
 		}
 	}
 
@@ -144,28 +144,28 @@ func (tx *BuildTransaction) Execute(ctx t.TransactionContext) *abcitypes.ExecTxR
 	globalAccount, err := ctx.Db.GlobalsAccounts.GetAt(tx.From, uint64(ctx.Date.Unix()))
 	if err != nil {
 		return &abcitypes.ExecTxResult{
-			Code: types.InvalidTransactionError,
+			Code: types.GlobalAccountNotFoundError,
 		}
 	}
 
 	account, err := ctx.Db.UniverseAccounts.GetAt(tx.Data.UniverseId, tx.From, uint64(ctx.Date.Unix()))
 	if err != nil {
 		return &abcitypes.ExecTxResult{
-			Code: types.InvalidTransactionError,
+			Code: types.UniverseAccountNotFoundError,
 		}
 	}
 
 	universe, err := ctx.Db.Universes.GetAt(tx.Data.UniverseId, uint64(ctx.Date.Unix()))
 	if err != nil {
 		return &abcitypes.ExecTxResult{
-			Code: types.InvalidTransactionError,
+			Code: types.UniverseNotFoundError,
 		}
 	}
 
 	planet, err := ctx.Db.Planets.GetAt(tx.Data.UniverseId, tx.Data.PlanetCoordinateId, uint64(ctx.Date.Unix()))
 	if err != nil {
 		return &abcitypes.ExecTxResult{
-			Code: types.InvalidTransactionError,
+			Code: types.PlanetNotFoundError,
 		}
 	}
 
@@ -186,7 +186,7 @@ func (tx *BuildTransaction) Execute(ctx t.TransactionContext) *abcitypes.ExecTxR
 			spaceship, err := ctx.Db.Spaceships.GetAt(build.BuildId, uint64(ctx.Date.Unix()))
 			if err != nil {
 				return &abcitypes.ExecTxResult{
-					Code: types.InvalidTransactionError,
+					Code: types.SpaceshipNotFoundError,
 				}
 			}
 

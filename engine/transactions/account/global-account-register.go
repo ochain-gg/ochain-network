@@ -53,7 +53,7 @@ func (tx *RegisterAccountTransaction) Check(ctx t.TransactionContext) *abcitypes
 	_, err := ctx.Db.GlobalsAccounts.Get(tx.Data.Address)
 	if err == nil {
 		return &abcitypes.CheckTxResponse{
-			Code: types.InvalidTransactionError,
+			Code: types.AccountAlreadyExistsError,
 		}
 	}
 
@@ -84,7 +84,7 @@ func (tx *RegisterAccountTransaction) Check(ctx t.TransactionContext) *abcitypes
 	domainSeparator, err := typedData.HashStruct("EIP712Domain", typedData.Domain.Map())
 	if err != nil {
 		return &abcitypes.CheckTxResponse{
-			Code: types.InvalidTransactionError,
+			Code: types.InvalidDataFormatError,
 		}
 	}
 
@@ -93,7 +93,7 @@ func (tx *RegisterAccountTransaction) Check(ctx t.TransactionContext) *abcitypes
 	typedDataHash, err := typedData.HashStruct(typedData.PrimaryType, typedData.Message)
 	if err != nil {
 		return &abcitypes.CheckTxResponse{
-			Code: types.InvalidTransactionError,
+			Code: types.InvalidDataFormatError,
 		}
 	}
 
@@ -110,7 +110,7 @@ func (tx *RegisterAccountTransaction) Check(ctx t.TransactionContext) *abcitypes
 	sigPubkey, err := crypto.SigToPub(sighash, signature)
 	if err != nil {
 		return &abcitypes.CheckTxResponse{
-			Code: types.InvalidTransactionError,
+			Code: types.SignatureVerificationError,
 		}
 	}
 
@@ -118,7 +118,7 @@ func (tx *RegisterAccountTransaction) Check(ctx t.TransactionContext) *abcitypes
 	log.Println("[RegisterAccountTransaction] signer address: " + address.String())
 	if address != common.HexToAddress("0x190144001306820e9BdF6eB2dB8d747B4fCE7980") {
 		return &abcitypes.CheckTxResponse{
-			Code: types.InvalidTransactionError,
+			Code: types.SignatureVerificationError,
 		}
 	}
 
@@ -156,7 +156,7 @@ func (tx *RegisterAccountTransaction) Execute(ctx t.TransactionContext) *abcityp
 	err := ctx.Db.GlobalsAccounts.Insert(account)
 	if err != nil {
 		return &abcitypes.ExecTxResult{
-			Code: types.InvalidTransactionError,
+			Code: types.DatabaseOperationError,
 		}
 	}
 
@@ -183,7 +183,7 @@ func (tx *RegisterAccountTransaction) Execute(ctx t.TransactionContext) *abcityp
 	receiptBytes, err := cbor.Marshal(receipt)
 	if err != nil {
 		return &abcitypes.ExecTxResult{
-			Code: types.InvalidTransactionError,
+			Code: types.SerializationError,
 		}
 	}
 

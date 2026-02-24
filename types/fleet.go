@@ -18,6 +18,14 @@ type OChainFleetPosition struct {
 	Planet      uint64 `cbor:"5,keyasint"`
 }
 
+type OChainFleetMode uint
+
+const (
+	OChainFleetNeutralMode OChainFleetMode = 0
+	OChainFleetAttackMode  OChainFleetMode = 1
+	OChainFleetDefenseMode OChainFleetMode = 2
+)
+
 func (position *OChainFleetPosition) CoordinateId() string {
 	return fmt.Sprint(position.Galaxy) + "_" + fmt.Sprint(position.SolarSystem) + "_" + fmt.Sprint(position.Planet)
 }
@@ -57,6 +65,8 @@ type OChainFleet struct {
 
 	Departure   OChainFleetPosition `cbor:"7,keyasint"`
 	Destination OChainFleetPosition `cbor:"8,keyasint"`
+
+	Mode OChainFleetMode `cbor:"8,keyasint"`
 
 	BeginTravelAt  int64 `cbor:"9,keyasint"`
 	TravelDuration int64 `cbor:"10,keyasint"`

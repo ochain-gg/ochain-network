@@ -46,7 +46,7 @@ func (tx *UpgradeBuildingTransaction) Check(ctx t.TransactionContext) *abcitypes
 	if err != nil {
 		log.Println("EXECUTE UPGRADE START ERROR: " + err.Error())
 		return &abcitypes.CheckTxResponse{
-			Code: types.InvalidTransactionError,
+			Code: types.GlobalAccountNotFoundError,
 		}
 	}
 

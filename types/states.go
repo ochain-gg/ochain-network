@@ -7,9 +7,10 @@ type OChainState struct {
 	LatestPortalUpdate        uint64 `cbor:"4,keyasint"`
 	AvailableTokensInTreasury uint64 `cbor:"5,keyasint"`
 
-	OCTTotalSupply               uint64 `cbor:"6,keyasint"`
-	OCTExternalCirculatingSupply uint64 `cbor:"7,keyasint"`
-	OCTInGameCirculatingSupply   uint64 `cbor:"8,keyasint"`
+	OCTTotalSupply                   uint64 `cbor:"6,keyasint"`
+	OCTExternalCirculatingSupply     uint64 `cbor:"7,keyasint"`
+	OCTInGameCirculatingSupply       uint64 `cbor:"8,keyasint"`
+	TotalGovernanceProposalsCreated  uint64 `cbor:"9,keyasint"`
 }
 
 func (state *OChainState) SetHeight(height int64) {

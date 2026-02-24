@@ -34,32 +34,32 @@ func (tx OChainTokenDepositTransaction) Check(ctx t.TransactionContext) *abcityp
 	remoteTx, _, err := client.TransactionByHash(context.Background(), common.HexToHash(tx.Data.RemoteTransactionHash))
 	if err != nil {
 		return &abcitypes.CheckTxResponse{
-			Code: types.InvalidTransactionError,
+			Code: types.EntityNotFoundError,
 		}
 	}
 
 	if remoteTx.ChainId().Uint64() != ctx.Config.EVMChainId {
 		return &abcitypes.CheckTxResponse{
-			Code: types.InvalidTransactionError,
+			Code: types.BusinessRuleViolationError,
 		}
 	}
 
 	if *remoteTx.To() != common.HexToAddress(ctx.Config.EVMPortalAddress) {
 		return &abcitypes.CheckTxResponse{
-			Code: types.InvalidTransactionError,
+			Code: types.BusinessRuleViolationError,
 		}
 	}
 
 	remoteTxReceipt, err := client.TransactionReceipt(context.Background(), common.HexToHash(tx.Data.RemoteTransactionHash))
 	if err != nil {
 		return &abcitypes.CheckTxResponse{
-			Code: types.InvalidTransactionError,
+			Code: types.EntityNotFoundError,
 		}
 	}
 
 	if remoteTxReceipt.Status != 1 {
 		return &abcitypes.CheckTxResponse{
-			Code: types.InvalidTransactionError,
+			Code: types.BusinessRuleViolationError,
 		}
 	}
 
@@ -67,7 +67,7 @@ func (tx OChainTokenDepositTransaction) Check(ctx t.TransactionContext) *abcityp
 	portal, err := contracts.NewOChainPortal(address, client)
 	if err != nil {
 		return &abcitypes.CheckTxResponse{
-			Code: types.InvalidTransactionError,
+			Code: types.InternalServerError,
 		}
 	}
 
@@ -84,7 +84,7 @@ func (tx OChainTokenDepositTransaction) Check(ctx t.TransactionContext) *abcityp
 	}
 
 	return &abcitypes.CheckTxResponse{
-		Code: types.InvalidTransactionError,
+		Code: types.EntityNotFoundError,
 	}
 
 }
@@ -105,32 +105,32 @@ func (tx OChainTokenDepositTransaction) Execute(ctx t.TransactionContext) *abcit
 	remoteTx, _, err := client.TransactionByHash(context.Background(), common.HexToHash(tx.Data.RemoteTransactionHash))
 	if err != nil {
 		return &abcitypes.ExecTxResult{
-			Code: types.InvalidTransactionError,
+			Code: types.EntityNotFoundError,
 		}
 	}
 
 	if remoteTx.ChainId().Uint64() != ctx.Config.EVMChainId {
 		return &abcitypes.ExecTxResult{
-			Code: types.InvalidTransactionError,
+			Code: types.BusinessRuleViolationError,
 		}
 	}
 
 	if *remoteTx.To() != common.HexToAddress(ctx.Config.EVMPortalAddress) {
 		return &abcitypes.ExecTxResult{
-			Code: types.InvalidTransactionError,
+			Code: types.BusinessRuleViolationError,
 		}
 	}
 
 	remoteTxReceipt, err := client.TransactionReceipt(context.Background(), common.HexToHash(tx.Data.RemoteTransactionHash))
 	if err != nil {
 		return &abcitypes.ExecTxResult{
-			Code: types.InvalidTransactionError,
+			Code: types.EntityNotFoundError,
 		}
 	}
 
 	if remoteTxReceipt.Status != 1 {
 		return &abcitypes.ExecTxResult{
-			Code: types.InvalidTransactionError,
+			Code: types.BusinessRuleViolationError,
 		}
 	}
 
@@ -138,7 +138,7 @@ func (tx OChainTokenDepositTransaction) Execute(ctx t.TransactionContext) *abcit
 	portal, err := contracts.NewOChainPortal(address, client)
 	if err != nil {
 		return &abcitypes.ExecTxResult{
-			Code: types.InvalidTransactionError,
+			Code: types.InternalServerError,
 		}
 	}
 
@@ -152,7 +152,7 @@ func (tx OChainTokenDepositTransaction) Execute(ctx t.TransactionContext) *abcit
 		_, err = ctx.Db.BridgeTransactions.GetAt(tx.Data.RemoteTransactionHash, uint64(ctx.Date.Unix()))
 		if err == nil {
 			return &abcitypes.ExecTxResult{
-				Code: types.InvalidTransactionError,
+				Code: types.EntityAlreadyExistsError,
 			}
 		}
 
@@ -168,7 +168,7 @@ func (tx OChainTokenDepositTransaction) Execute(ctx t.TransactionContext) *abcit
 		err = ctx.Db.BridgeTransactions.Insert(creditDepositTx)
 		if err != nil {
 			return &abcitypes.ExecTxResult{
-				Code: types.InvalidTransactionError,
+				Code: types.DatabaseOperationError,
 			}
 		}
 
@@ -178,7 +178,7 @@ func (tx OChainTokenDepositTransaction) Execute(ctx t.TransactionContext) *abcit
 	}
 
 	return &abcitypes.ExecTxResult{
-		Code: types.InvalidTransactionError,
+		Code: types.EntityNotFoundError,
 	}
 }
 

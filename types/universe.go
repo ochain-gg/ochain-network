@@ -82,6 +82,7 @@ type OChainUniverseWithAttributes struct {
 	Speed                   uint64 `cbor:"speed"`
 	ResourcesMarketEnabled  bool   `cbor:"resourcesMarketEnabled"`
 	IsStretchable           bool   `cbor:"isStretchable"` // if true, max galaxy increase in function of colinized planets
+	Paused                  bool   `cbor:"paused"`        // if true, all transactions except OCT withdrawal are blocked
 	MaxGalaxy               uint64 `cbor:"maxGalaxy"`
 	MaxSolarSystemPerGalaxy uint64 `cbor:"maxSolarSystemPerGalaxy"`
 	MaxPlanetPerSolarSystem uint64 `cbor:"maxPlanetPerSolarSystem"`
@@ -97,6 +98,7 @@ type OChainUniverse struct {
 	Speed                  uint64 `cbor:"3,keyasint"`
 	ResourcesMarketEnabled bool   `cbor:"4,keyasint"`
 	IsStretchable          bool   `cbor:"5,keyasint"` // if true, max galaxy increase in function of colinized planets
+	Paused                 bool   `cbor:"14,keyasint"` // if true, all transactions except OCT withdrawal are blocked
 
 	MaxGalaxy               uint64 `cbor:"6,keyasint"`
 	MaxSolarSystemPerGalaxy uint64 `cbor:"7,keyasint"`
@@ -118,6 +120,7 @@ func (universe *OChainUniverse) WithAttributes() OChainUniverseWithAttributes {
 		Speed:                   universe.Speed,
 		ResourcesMarketEnabled:  universe.ResourcesMarketEnabled,
 		IsStretchable:           universe.IsStretchable,
+		Paused:                  universe.Paused,
 		MaxGalaxy:               universe.MaxGalaxy,
 		MaxSolarSystemPerGalaxy: universe.MaxSolarSystemPerGalaxy,
 		MaxPlanetPerSolarSystem: universe.MaxPlanetPerSolarSystem,

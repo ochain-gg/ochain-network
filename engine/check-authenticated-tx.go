@@ -4,6 +4,7 @@ import (
 	abcitypes "github.com/cometbft/cometbft/abci/types"
 	"github.com/ochain-gg/ochain-network/engine/transactions"
 	account_transactions "github.com/ochain-gg/ochain-network/engine/transactions/account"
+	governance_transactions "github.com/ochain-gg/ochain-network/engine/transactions/governance"
 	planet_transactions "github.com/ochain-gg/ochain-network/engine/transactions/game/planet"
 	"github.com/ochain-gg/ochain-network/types"
 )
@@ -111,6 +112,60 @@ func CheckAuthenticatedTx(ctx transactions.TransactionContext, req *abcitypes.Ch
 	case transactions.SwapResources:
 
 		transaction, err := planet_transactions.ParseSwapResourcesTransaction(tx)
+		if err != nil {
+			return &abcitypes.CheckTxResponse{Code: types.ParsingTransactionDataError, GasWanted: 0, GasUsed: 0}
+		}
+
+		return transaction.Check(ctx)
+
+	case transactions.GovernanceStake:
+
+		transaction, err := governance_transactions.ParseStakeTransaction(tx)
+		if err != nil {
+			return &abcitypes.CheckTxResponse{Code: types.ParsingTransactionDataError, GasWanted: 0, GasUsed: 0}
+		}
+
+		return transaction.Check(ctx)
+
+	case transactions.GovernanceUnstakeStart:
+
+		transaction, err := governance_transactions.ParseUnstakeStartTransaction(tx)
+		if err != nil {
+			return &abcitypes.CheckTxResponse{Code: types.ParsingTransactionDataError, GasWanted: 0, GasUsed: 0}
+		}
+
+		return transaction.Check(ctx)
+
+	case transactions.GovernanceUnstakeExecute:
+
+		transaction, err := governance_transactions.ParseUnstakeExecuteTransaction(tx)
+		if err != nil {
+			return &abcitypes.CheckTxResponse{Code: types.ParsingTransactionDataError, GasWanted: 0, GasUsed: 0}
+		}
+
+		return transaction.Check(ctx)
+
+	case transactions.CreateGovernanceProposal:
+
+		transaction, err := governance_transactions.ParseCreateProposalTransaction(tx)
+		if err != nil {
+			return &abcitypes.CheckTxResponse{Code: types.ParsingTransactionDataError, GasWanted: 0, GasUsed: 0}
+		}
+
+		return transaction.Check(ctx)
+
+	case transactions.VoteOnProposal:
+
+		transaction, err := governance_transactions.ParseVoteOnProposalTransaction(tx)
+		if err != nil {
+			return &abcitypes.CheckTxResponse{Code: types.ParsingTransactionDataError, GasWanted: 0, GasUsed: 0}
+		}
+
+		return transaction.Check(ctx)
+
+	case transactions.ExecuteProposal:
+
+		transaction, err := governance_transactions.ParseExecuteProposalTransaction(tx)
 		if err != nil {
 			return &abcitypes.CheckTxResponse{Code: types.ParsingTransactionDataError, GasWanted: 0, GasUsed: 0}
 		}

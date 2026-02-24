@@ -44,33 +44,33 @@ func (tx *RegisterUniverseAccountTransaction) Check(ctx t.TransactionContext) *a
 	_, err := ctx.Db.GlobalsAccounts.Get(tx.From)
 	if err != nil {
 		return &abcitypes.CheckTxResponse{
-			Code: types.InvalidTransactionError,
+			Code: types.GlobalAccountNotFoundError,
 		}
 	}
 
 	universeExists, err := ctx.Db.Universes.Exists(tx.Data.UniverseId)
 	if err != nil {
 		return &abcitypes.CheckTxResponse{
-			Code: types.InvalidTransactionError,
+			Code: types.DatabaseOperationError,
 		}
 	}
 
 	if !universeExists {
 		return &abcitypes.CheckTxResponse{
-			Code: types.InvalidTransactionError,
+			Code: types.UniverseNotFoundError,
 		}
 	}
 
 	exists, err := ctx.Db.UniverseAccounts.Exists(tx.Data.UniverseId, tx.From)
 	if err != nil {
 		return &abcitypes.CheckTxResponse{
-			Code: types.InvalidTransactionError,
+			Code: types.DatabaseOperationError,
 		}
 	}
 
 	if exists {
 		return &abcitypes.CheckTxResponse{
-			Code: types.InvalidTransactionError,
+			Code: types.AccountAlreadyExistsError,
 		}
 	}
 
@@ -90,14 +90,14 @@ func (tx *RegisterUniverseAccountTransaction) Execute(ctx t.TransactionContext) 
 	globalAccount, err := ctx.Db.GlobalsAccounts.Get(tx.From)
 	if err != nil {
 		return &abcitypes.ExecTxResult{
-			Code: types.InvalidTransactionError,
+			Code: types.GlobalAccountNotFoundError,
 		}
 	}
 
 	universe, err := ctx.Db.Universes.Get(tx.Data.UniverseId)
 	if err != nil {
 		return &abcitypes.ExecTxResult{
-			Code: types.InvalidTransactionError,
+			Code: types.UniverseNotFoundError,
 		}
 	}
 
@@ -171,7 +171,7 @@ func (tx *RegisterUniverseAccountTransaction) Execute(ctx t.TransactionContext) 
 		exists, err := ctx.Db.Planets.Exists(tx.Data.UniverseId, coordinateId)
 		if err != nil {
 			return &abcitypes.ExecTxResult{
-				Code: types.InvalidTransactionError,
+				Code: types.DatabaseOperationError,
 			}
 		}
 
@@ -249,14 +249,14 @@ func (tx *RegisterUniverseAccountTransaction) Execute(ctx t.TransactionContext) 
 	err = ctx.Db.UniverseAccounts.Insert(account)
 	if err != nil {
 		return &abcitypes.ExecTxResult{
-			Code: types.InvalidTransactionError,
+			Code: types.DatabaseOperationError,
 		}
 	}
 
 	err = ctx.Db.Planets.Insert(universe.Id, p)
 	if err != nil {
 		return &abcitypes.ExecTxResult{
-			Code: types.InvalidTransactionError,
+			Code: types.DatabaseOperationError,
 		}
 	}
 
@@ -264,7 +264,7 @@ func (tx *RegisterUniverseAccountTransaction) Execute(ctx t.TransactionContext) 
 	err = ctx.Db.Universes.Update(universe)
 	if err != nil {
 		return &abcitypes.ExecTxResult{
-			Code: types.InvalidTransactionError,
+			Code: types.DatabaseOperationError,
 		}
 	}
 

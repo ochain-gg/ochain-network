@@ -1,119 +1,166 @@
 package governance_transactions
 
-// type ExecuteOChainTokenUnstakeTransactionData struct {
-// 	Amount string `cbor:"1,keyasint"`
-// }
+import (
+	"fmt"
 
-// type ExecuteOChainTokenUnstakeTransaction struct {
-// 	Type      t.TransactionType                        `cbor:"1,keyasint"`
-// 	From      string                                   `cbor:"2,keyasint"`
-// 	Nonce     uint64                                   `cbor:"3,keyasint"`
-// 	Data      ExecuteOChainTokenUnstakeTransactionData `cbor:"4,keyasint"`
-// 	Signature []byte                                   `cbor:"5,keyasint"`
-// }
+	abcitypes "github.com/cometbft/cometbft/abci/types"
+	"github.com/fxamacker/cbor/v2"
 
-// func (tx *ExecuteOChainTokenUnstakeTransaction) Check(ctx t.TransactionContext) *abcitypes.CheckTxResponse {
-// 	globalAccount, err := ctx.Db.GlobalsAccounts.Get(tx.From)
-// 	if err != nil {
-// 		return &abcitypes.CheckTxResponse{
-// 			Code: types.InvalidTransactionError,
-// 		}
-// 	}
+	t "github.com/ochain-gg/ochain-network/engine/transactions"
+	"github.com/ochain-gg/ochain-network/types"
+)
 
-// 	if globalAccount.StackedBalance < tx.Data.Amount {
-// 		return &abcitypes.CheckTxResponse{
-// 			Code: types.InvalidTransactionError,
-// 		}
-// 	}
+type UnstakeExecuteTransactionData struct {
+	// No additional data needed, just executes the pending unstake
+}
 
-// 	return &abcitypes.CheckTxResponse{
-// 		Code: types.NoError,
-// 	}
-// }
+type UnstakeExecuteTransaction struct {
+	Type      t.TransactionType              `cbor:"1,keyasint"`
+	From      string                         `cbor:"2,keyasint"`
+	Nonce     uint64                         `cbor:"3,keyasint"`
+	Data      UnstakeExecuteTransactionData  `cbor:"4,keyasint"`
+	Signature []byte                         `cbor:"5,keyasint"`
+}
 
-// func (tx *ExecuteOChainTokenUnstakeTransaction) Execute(ctx t.TransactionContext) *abcitypes.ExecTxResult {
-// 	response := tx.Check(ctx)
-// 	if response.Code != types.NoError {
-// 		return &abcitypes.ExecTxResult{
-// 			Code: response.Code,
-// 		}
-// 	}
+func (tx *UnstakeExecuteTransaction) Transaction() (t.Transaction, error) {
+	txData, err := cbor.Marshal(tx.Data)
+	if err != nil {
+		return t.Transaction{}, err
+	}
 
-// 	globalAccount, err := ctx.Db.GlobalsAccounts.Get(tx.From)
-// 	if err == nil {
-// 		return &abcitypes.ExecTxResult{
-// 			Code: types.InvalidTransactionError,
-// 		}
-// 	}
+	return t.Transaction{
+		Type:      tx.Type,
+		From:      tx.From,
+		Nonce:     tx.Nonce,
+		Data:      txData,
+		Signature: tx.Signature,
+	}, nil
+}
 
-// 	globalAccount.TokenBalance -= tx.Data.Amount
-// 	globalAccount.StackedBalance += tx.Data.Amount
+func (tx *UnstakeExecuteTransaction) Check(ctx t.TransactionContext) *abcitypes.CheckTxResponse {
+	// Check if account exists
+	_, err := ctx.Db.GlobalsAccounts.Get(tx.From)
+	if err != nil {
+		return &abcitypes.CheckTxResponse{
+			Code: types.GlobalAccountNotFoundError,
+		}
+	}
 
-// 	txGasCost, err := globalAccount.ApplyGasCost(uint64(ctx.Date.Unix()))
-// 	if err != nil {
-// 		return &abcitypes.ExecTxResult{
-// 			Code: types.GasCostHigherThanBalance,
-// 		}
-// 	}
+	// Check if there's a pending unstake
+	pendingUnstake, err := ctx.Db.PendingUnstakes.GetAt(tx.From, ctx.Txn.ReadTs())
+	if err != nil {
+		return &abcitypes.CheckTxResponse{
+			Code: types.NoPendingUnstakeFound,
+		}
+	}
 
-// 	err = ctx.Db.GlobalsAccounts.Update(globalAccount)
-// 	if err != nil {
-// 		return &abcitypes.ExecTxResult{
-// 			Code: types.InvalidTransactionError,
-// 		}
-// 	}
+	// Check if cooldown period has passed
+	if ctx.Date.Unix() < pendingUnstake.WithdrawableAt {
+		return &abcitypes.CheckTxResponse{
+			Code: types.UnstakeCooldownNotCompleted,
+		}
+	}
 
-// 	events := []abcitypes.Event{
-// 		{
-// 			Type: "OChainTokenStacked",
-// 			Attributes: []abcitypes.EventAttribute{
-// 				{Key: "account", Value: tx.From, Index: true},
-// 				{Key: "amount", Value: string(tx.Data.Amount), Index: true},
-// 			},
-// 		},
-// 	}
+	return &abcitypes.CheckTxResponse{
+		Code: types.NoError,
+	}
+}
 
-// 	receipt := t.TransactionReceipt{
-// 		GasCost: txGasCost,
-// 	}
+func (tx *UnstakeExecuteTransaction) Execute(ctx t.TransactionContext) *abcitypes.ExecTxResult {
+	response := tx.Check(ctx)
+	if response.Code != types.NoError {
+		return &abcitypes.ExecTxResult{
+			Code: response.Code,
+		}
+	}
 
-// 	return &abcitypes.ExecTxResult{
-// 		Code:      types.NoError,
-// 		Events:    events,
-// 		GasUsed:   100,
-// 		GasWanted: 100,
-// 		Data:      receipt.Bytes(),
-// 	}
-// }
+	// Get account
+	account, err := ctx.Db.GlobalsAccounts.Get(tx.From)
+	if err != nil {
+		return &abcitypes.ExecTxResult{
+			Code: types.GlobalAccountNotFoundError,
+		}
+	}
 
-// func (tx *ExecuteOChainTokenUnstakeTransaction) Transaction() (t.Transaction, error) {
-// 	txData, err := cbor.Marshal(tx.Data)
-// 	if err != nil {
-// 		return t.Transaction{}, err
-// 	}
+	// Get pending unstake
+	pendingUnstake, err := ctx.Db.PendingUnstakes.Get(tx.From)
+	if err != nil {
+		return &abcitypes.ExecTxResult{
+			Code: types.NoPendingUnstakeFound,
+		}
+	}
 
-// 	return t.Transaction{
-// 		Type:      tx.Type,
-// 		From:      tx.From,
-// 		Nonce:     tx.Nonce,
-// 		Data:      txData,
-// 		Signature: tx.Signature,
-// 	}, nil
-// }
+	// Calculate gas cost
+	gasCost, err := account.ApplyGasCost(uint64(ctx.Date.Unix()))
+	if err != nil {
+		return &abcitypes.ExecTxResult{
+			Code: types.GasCostHigherThanBalance,
+		}
+	}
 
-// func ParseExecuteOChainTokenUnstakeTransaction(tx t.Transaction) (ExecuteOChainTokenUnstakeTransaction, error) {
-// 	var txData ExecuteOChainTokenUnstakeTransactionData
-// 	err := cbor.Unmarshal(tx.Data, &txData)
+	// Return tokens to account balance
+	account.TokenBalance += pendingUnstake.Amount
 
-// 	if err != nil {
-// 		return ExecuteOChainTokenUnstakeTransaction{}, err
-// 	}
+	// Update account in database
+	err = ctx.Db.GlobalsAccounts.Update(account)
+	if err != nil {
+		return &abcitypes.ExecTxResult{
+			Code: types.DatabaseOperationError,
+		}
+	}
 
-// 	return ExecuteOChainTokenUnstakeTransaction{
-// 		Type:      tx.Type,
-// 		From:      tx.From,
-// 		Nonce:     tx.Nonce,
-// 		Data:      txData,
-// 		Signature: tx.Signature,
-// 	}, nil
-// }
+	// Delete pending unstake
+	err = ctx.Db.PendingUnstakes.Delete(tx.From)
+	if err != nil {
+		return &abcitypes.ExecTxResult{
+			Code: types.DatabaseOperationError,
+		}
+	}
+
+	events := []abcitypes.Event{
+		{
+			Type: "UnstakeExecuted",
+			Attributes: []abcitypes.EventAttribute{
+				{Key: "address", Value: tx.From, Index: true},
+				{Key: "amount", Value: fmt.Sprint(pendingUnstake.Amount)},
+				{Key: "newTokenBalance", Value: fmt.Sprint(account.TokenBalance)},
+			},
+		},
+	}
+
+	receipt := t.TransactionReceipt{
+		GasCost: gasCost,
+	}
+
+	receiptBytes, err := cbor.Marshal(receipt)
+	if err != nil {
+		return &abcitypes.ExecTxResult{
+			Code: types.SerializationError,
+		}
+	}
+
+	return &abcitypes.ExecTxResult{
+		Code:      types.NoError,
+		Events:    events,
+		GasUsed:   int64(gasCost),
+		GasWanted: int64(gasCost),
+		Data:      receiptBytes,
+	}
+}
+
+func ParseUnstakeExecuteTransaction(tx t.Transaction) (UnstakeExecuteTransaction, error) {
+	var txData UnstakeExecuteTransactionData
+	err := cbor.Unmarshal(tx.Data, &txData)
+
+	if err != nil {
+		return UnstakeExecuteTransaction{}, err
+	}
+
+	return UnstakeExecuteTransaction{
+		Type:      tx.Type,
+		From:      tx.From,
+		Nonce:     tx.Nonce,
+		Data:      txData,
+		Signature: tx.Signature,
+	}, nil
+}
