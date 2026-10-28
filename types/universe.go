@@ -32,6 +32,11 @@ func (resource *OChainResources) Total() uint64 {
 	return resource.OCT + resource.Metal + resource.Crystal + resource.Deuterium
 }
 
+// ToPoints converts resources to leaderboard points (1 point per 1000 resources)
+func (resource *OChainResources) ToPoints() uint64 {
+	return resource.Total() / 1000
+}
+
 func (resource *OChainResources) Add(r OChainResources) {
 	resource.OCT += r.OCT
 	resource.Metal += r.Metal

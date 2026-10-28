@@ -190,6 +190,11 @@ type OChainUniverseAccountWeeklyUsage struct {
 	DepositedAmount     uint64 `cbor:"6,keyasint"`
 }
 
+// AddPoints adds leaderboard points to the account based on resources spent
+func (acc *OChainUniverseAccount) AddPoints(resources OChainResources) {
+	acc.Points += resources.ToPoints()
+}
+
 func (acc *OChainUniverseAccount) WithAttribute() OChainUniverseAccountWithAttributes {
 	var commanders []OChainCommanderBonusWithAttributes
 	for i := range acc.Commanders {

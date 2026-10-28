@@ -189,6 +189,15 @@ func (tx *UpgradeTechnologyTransaction) Execute(ctx t.TransactionContext) *abcit
 		}
 	}
 
+	// Add leaderboard points based on resources spent
+	account.AddPoints(upgradeCost)
+	err = ctx.Db.UniverseAccounts.Update(account)
+	if err != nil {
+		return &abcitypes.ExecTxResult{
+			Code: types.InvalidTransactionError,
+		}
+	}
+
 	err = ctx.Db.Planets.Update(tx.Data.Universe, planet)
 	if err != nil {
 		return &abcitypes.ExecTxResult{
